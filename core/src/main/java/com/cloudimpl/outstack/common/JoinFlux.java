@@ -16,11 +16,10 @@
 package com.cloudimpl.outstack.common;
 
 import java.time.Duration;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
 
@@ -76,17 +75,7 @@ public class JoinFlux<T> {
         return fluxProcessor.flux();
     }
     
-    public static void main(String[] args) throws InterruptedException {
-        List<String> history = new CopyOnWriteArrayList<>();
-        Flux<Long> flux = Flux.interval(Duration.ofSeconds(1));
-        Flux<String> realtime = flux.share().map(i->""+i);
-        realtime.doOnNext(s->System.out.println("addding : "+s)).doOnNext(i->history.add("histroy"+i)).subscribe();
-        Thread.sleep(10000);
-        JoinFlux.create(Flux.fromIterable(history), realtime).doOnNext(System.out::println).subscribe();
-        Thread.sleep(100000000);
-    }
-
-    private void close() {
+     private void close() {
         this.queue.clear();
     }
 
@@ -97,4 +86,17 @@ public class JoinFlux<T> {
                 .doOnTerminate(()->joinFlux.close())
                 .doOnCancel(()->joinFlux.close());
     }
+    
+    public static void main(String[] args) throws InterruptedException {
+        Flux<Long> flx = Flux.fromIterable(Arrays.asList(1L,2L,2L,2L,2L,4L,5L)).concatWith(Flux.interval(Duration.ofSeconds(1))).groupBy(Function.identity()).flatMap(f->f.reduce((a,b)->Long.compare(a, b) > 0 ? a: b));
+        flx.subscribe(System.out::println);
+//        List<String> history = new CopyOnWriteArrayList<>();
+//        Flux<Long> flux = Flux.interval(Duration.ofSeconds(1));
+//        Flux<String> realtime = flux.share().map(i->""+i);
+//        realtime.doOnNext(s->System.out.println("addding : "+s)).doOnNext(i->history.add("histroy"+i)).subscribe();
+//        Thread.sleep(10000);
+//        JoinFlux.create(Flux.fromIterable(history), realtime).doOnNext(System.out::println).subscribe();
+        Thread.sleep(100000000);
+    }
+    
 }

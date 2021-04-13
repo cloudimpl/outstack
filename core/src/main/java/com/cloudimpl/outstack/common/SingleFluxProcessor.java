@@ -15,7 +15,6 @@
  */
 package com.cloudimpl.outstack.common;
 
-import java.util.function.Consumer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 

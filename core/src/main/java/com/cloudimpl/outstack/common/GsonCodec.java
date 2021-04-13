@@ -30,8 +30,12 @@ public class GsonCodec {
     }
 
     public static void registerTypeAdaptor(Class<?> cls, Supplier<JsonDeserializer<?>> supplierDeserializer, Supplier<JsonSerializer<?>> supplierSerializer) {
-        serializers.put(cls, supplierSerializer);
-        deSerializers.put(cls, supplierDeserializer);
+        if (supplierSerializer != null) {
+            serializers.put(cls, supplierSerializer);
+        }
+        if (supplierDeserializer != null) {
+            deSerializers.put(cls, supplierDeserializer);
+        }
     }
 //  private static Gson getGson() {
 //    Gson gson = THR_GSON.get();
@@ -53,8 +57,9 @@ public class GsonCodec {
 
     private static Gson createGson(boolean pretty) {
         GsonBuilder builder = new GsonBuilder();
-        if(pretty)
+        if (pretty) {
             builder.setPrettyPrinting();
+        }
         serializers.entrySet().forEach(s -> builder.registerTypeAdapter(s.getKey(), s.getValue().get()));
         deSerializers.entrySet().forEach(s -> builder.registerTypeAdapter(s.getKey(), s.getValue().get()));
         return builder.create();
@@ -67,11 +72,10 @@ public class GsonCodec {
         return THR_GSON.get().toJson(obj);
     }
 
-    public static Gson getGson()
-    {
+    public static Gson getGson() {
         return THR_GSON.get();
     }
-    
+
     public static String encodePretty(Object obj) {
         return THR_GSON_PRINTER.get().toJson(obj);
     }
@@ -98,7 +102,7 @@ public class GsonCodec {
         }
         return THR_GSON.get().toJson(el);
     }
-    
+
     public static JsonElement encodeToJsonWithType(Object obj) {
         if (obj instanceof String) {
             return new JsonPrimitive((String) obj);
@@ -130,7 +134,7 @@ public class GsonCodec {
     public static JsonObject toJsonObject(String data) {
         return THR_GSON_PARSER.get().parse(data).getAsJsonObject();
     }
-    
+
     public static JsonElement toJsonElement(String data) {
         return THR_GSON_PARSER.get().parse(data);
     }
@@ -150,22 +154,19 @@ public class GsonCodec {
         return THR_GSON.get().fromJson(jsonElement, clazz);
     }
 
-    public static Object decode(String json)
-    {
-        if(isJsonEl(json.charAt(0)))
-        {
+    public static Object decode(String json) {
+        if (isJsonEl(json.charAt(0))) {
             JsonElement el = JsonParser.parseString(json);
             return decode(el);
-        }else
+        } else {
             return json;
+        }
     }
-    
-    
-    private static boolean isJsonEl(char c)
-    {
+
+    private static boolean isJsonEl(char c) {
         return c == '{' || c == '}' || c == '[' || c == ']';
     }
-    
+
     public static Object decode(JsonElement elem) {
 
         if (elem.isJsonObject()) {
