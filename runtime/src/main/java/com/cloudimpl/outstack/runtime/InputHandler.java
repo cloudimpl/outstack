@@ -5,11 +5,14 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import java.util.function.Function;
+
 /**
  *
  * @author nuwan
  * @param <T>
+ * @param <R>
  */
-public interface Context{
-    
+public interface InputHandler<T extends Input,R> extends Function<T, R>{
+
 }

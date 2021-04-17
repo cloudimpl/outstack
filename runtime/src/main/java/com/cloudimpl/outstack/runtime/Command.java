@@ -7,9 +7,8 @@ package com.cloudimpl.outstack.runtime;
 
 /**
  *
- * @author nuwan
- * @param <T>
+ * @author nuwansa
  */
-public interface Context{
+public interface Command extends Input{
     
 }

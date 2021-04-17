@@ -14,7 +14,7 @@ import com.google.common.collect.Multimap;
  *
  * @author nuwan
  */
-public class MemEntityRepository implements EntityRepositoy{
+public class MemEntityRepository implements EventRepositoy{
     private final Multimap<String,Entity> map = HashMultimap.create();
     private final Entity rootEntity;
     private final String keyPrefix;

@@ -7,8 +7,9 @@ package com.cloudimpl.outstack.runtime;
 
 /**
  *
- * @author nuwan
+ * @author nuwansa
+ * @param <T>
  */
-public interface CommandHandler {
-    
+public abstract class CommandHandler<T extends Command, R> implements InputHandler<T,R> {
+
 }

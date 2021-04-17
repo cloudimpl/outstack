@@ -3,13 +3,12 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.cloudimpl.outstack.runtime;
+package com.cloudimpl.outstack.runtime.domain.v1;
 
 /**
  *
  * @author nuwan
- * @param <T>
  */
-public interface Context{
-    
+public interface IResource {
+    String getRn();
 }

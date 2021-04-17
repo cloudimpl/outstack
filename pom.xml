@@ -100,7 +100,7 @@
         </plugins>
     </build>
     <modules>
-        <module>domain-example</module>
+        <!--<module>domain-example</module>-->
         <module>core</module>
         <module>runtime</module>
     </modules>

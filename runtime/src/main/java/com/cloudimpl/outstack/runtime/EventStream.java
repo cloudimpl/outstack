@@ -5,11 +5,14 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domain.v1.Event;
+import reactor.core.publisher.Flux;
+
 /**
  *
- * @author nuwan
- * @param <T>
+ * @author nuwansa
  */
-public interface Context{
-    
+public interface EventStream {
+    void publish(Event event);
+    Flux<Event> flux();
 }

@@ -5,11 +5,14 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domain.v1.Entity;
+
 /**
  *
- * @author nuwan
- * @param <T>
+ * @author nuwansa
+ * @param <E>
+ * @param <C>
  */
-public interface Context{
-    
+public abstract class EntityCommandHandler<E extends Entity,C extends Command,R> extends CommandHandler<C, R>{
+
 }
