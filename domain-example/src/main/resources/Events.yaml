@@ -1,0 +1,20 @@
+apiVersion: com.cloudimpl.domainspec/v1
+kind: Event
+metadata:
+  namespace: com.xventure.projectA
+spec:
+  - template:
+     metadata:
+       type: UserCreated
+       owner: User
+     fieldRefs:
+       - id
+       - name
+       - firstname
+       - orderType
+  - template:
+     metadata:
+       type: OrganizationCreated
+       owner: Organization
+     fieldRefs:
+       - name

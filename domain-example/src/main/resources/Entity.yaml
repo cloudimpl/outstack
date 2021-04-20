@@ -1,0 +1,54 @@
+apiVersion: com.cloudimpl.domainspec/v1
+kind: Entity
+metadata:
+  namespace: com.xventure.projectA
+spec:
+  - template:
+      metadata:
+        type: User
+        module: user
+        name: user 
+        plural: users
+        id: userId
+        tenant: true
+      fieldRefs:
+        - name: id
+          metadata:
+            maxLen : 20
+            minLen : 10
+        - name
+        - firstname
+        - userId
+        - orderType
+        - address
+      logic:
+        - apply:
+            evt: UserCreated
+            stmt:
+               - this.id = evt.id
+               - this.name = evt.name
+               - this.firstname = evt.firstname
+  - template:
+      metadata:
+        type: Organization
+        module: org
+        name: organization 
+        plural: organizations
+        id: orgId
+        rootEntity: User
+      fieldRefs:
+        - name: id
+          metadata:
+            maxLen : 20
+            minLen : 10
+        - name
+        - firstname
+        - orderType
+        - address
+      logic:
+        - apply:
+            evt: UserCreated
+            stmt:
+               - this.id = evt.id
+               - this.name = evt.name
+               - this.firstname = evt.firstname

@@ -5,11 +5,15 @@
  */
 package com.cloudimpl.outstack.runtime.domain.v1;
 
+import java.text.MessageFormat;
+
 /**
  *
  * @author nuwan
  */
-public interface IResource {
-    String getRN();
-    String getTRN();
+public class DomainEventException extends RuntimeException{
+
+    public DomainEventException(String format,Object... args) {
+        super(MessageFormat.format(format, args));
+    }
 }

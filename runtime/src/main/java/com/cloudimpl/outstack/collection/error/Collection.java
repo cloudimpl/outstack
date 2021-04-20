@@ -3,7 +3,9 @@ package com.cloudimpl.outstack.collection.error;
 
 public enum Collection implements com.cloudimpl.error.core.ErrorCode {
     RELECTION_EXCEPTION(1000,"reflection error"),
-    ROOT_DOESNT_EXIST(1001,"[entity]:[id] doesn't exist");
+    ROOT_DOESNT_EXIST(1001,"[entity]:[id] doesn't exist"),
+    INVALID_OWNER(1002,"event [event] apply failed for entity [entity], invalid owner [owner]");
+    
     private final int errorNo ;
     private final String format ;
 

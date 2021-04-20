@@ -14,5 +14,6 @@ import reactor.core.publisher.Flux;
  */
 public interface EventStream {
     void publish(Event event);
+    void checkpoint();
     Flux<Event> flux();
 }

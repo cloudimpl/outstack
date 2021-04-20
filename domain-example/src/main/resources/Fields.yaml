@@ -1,0 +1,33 @@
+apiVersion: com.cloudimpl.domainspec/v1
+kind: Field
+metadata:
+  name: field
+  plural: fields
+  namespace: com.xventure.projectA
+spec:
+  types:
+    - type: string
+      fields:
+        - name: id
+          metadata:
+              maxLen: 20
+        - name
+        - name: firstname
+          metadata:
+            desc: user firstname
+        - userId
+        - streetNo
+        - orgId
+    - type: int
+      fields:
+        - qty
+        - count
+        - zipCode
+        - postalCode
+    - type: OrderType
+      fields:
+        - orderType
+    - type: Address
+      fields:
+        - address
+

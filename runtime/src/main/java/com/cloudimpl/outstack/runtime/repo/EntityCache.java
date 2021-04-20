@@ -5,10 +5,10 @@
  */
 package com.cloudimpl.outstack.runtime.repo;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -16,7 +16,7 @@ import java.util.function.Function;
  * @author nuwansa
  */
 public class EntityCache {
-    private final Cache<String,Entity> map;
+    private final Cache<String,EntitySnapshot> map;
 
     public EntityCache(int maxSize,Duration evictionDuration) {
         map = Caffeine.newBuilder()
@@ -25,13 +25,24 @@ public class EntityCache {
                 .build();
     }
     
-    public void put(String id,Entity entity)
+    public void put(String id,EntitySnapshot entity)
     {
         map.put(id, entity);
     }
     
-    public <T extends Entity> T get(String id,Function<? super String,? extends Entity> mapper)
+    public EntitySnapshot get(String id,Function<? super String,EntitySnapshot> mapper)
     {
-        return (T) map.get(id, mapper);
+        return map.get(id, mapper);
+    }
+    
+    public static void main(String[] args) {
+        System.out.println(UUID.randomUUID().toString());
+        System.out.println(UUID.randomUUID().toString());
+        System.out.println(UUID.randomUUID().toString());
+        System.out.println(UUID.randomUUID().toString());
+        System.out.println(UUID.randomUUID().toString());
+        System.out.println(UUID.randomUUID().toString());
+        String s = "trn:restrata:sso:tenant/00fdd02a-c082-421b-b3b8-357c9cbdf4dc/User/ee0495fc-3be5-40a8-a7e5-0a9479835b06/Trip/7662d4bd-ac9e-493e-9794-50d469f4ae28";
+        System.out.println(s.length());
     }
 }
