@@ -5,16 +5,17 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domain.v1.Command;
+import com.cloudimpl.outstack.runtime.domain.v1.Event;
 import com.cloudimpl.outstack.runtime.domain.v1.Input;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 
 /**
  *
  * @author nuwan
  * @param <C>
- * @param <T>
- * @param <R>
+ * @param <I>
  */
-public interface InputHandler<C extends Context,T extends Input,R> extends BiFunction<C,T, R>{
-
+public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>{
+    
 }

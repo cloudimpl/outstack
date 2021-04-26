@@ -8,40 +8,53 @@ package com.cloudimpl.outstack.runtime;
 import com.cloudimpl.outstack.collection.error.CollectionException;
 import com.cloudimpl.outstack.runtime.domain.v1.Entity;
 import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.repo.EventRepositoy;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  *
  * @author nuwansa
  * @param <T>
  */
-public class EntityContext<T extends Entity> {
+public abstract class EntityContext<T extends Entity> implements Context {
 
     private final String tenantId;
-    private final EventRepositoy repo;
-    private final Class<T> entityType;
-
-    public EntityContext(Class<T> entityType, String tenantId, EventRepositoy repo) {
+    protected final Class<T> entityType;
+    private final List<Event> events;
+    protected final Function<String, ? extends Entity> entitySupplier;
+    protected final Supplier<String> idGenerator;
+    protected final ResourceHelper resourceHelper;
+    protected final CRUDOpertations crudOperations;
+    protected final Consumer<Event> eventPublisher;
+    public EntityContext(Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier,Supplier<String> idGenerator,ResourceHelper resourceHelper,CRUDOpertations crudOperations,Consumer<Event> eventPublisher) {
         this.tenantId = tenantId;
+        this.events = new LinkedList<>();
         this.entityType = entityType;
-        this.repo = repo;
+        this.entitySupplier = entitySupplier;
+        this.idGenerator = idGenerator;
+        this.resourceHelper = resourceHelper;
+        this.crudOperations = crudOperations;
+        this.eventPublisher = eventPublisher;
     }
 
     public String getTenantId() {
         return tenantId;
     }
 
-    public <E extends Event> T apply(String id, E event) {
-        if (event.getOwner() != entityType) {
-            throw CollectionException.INVALID_OWNER(err -> err.setEvent(event.getClass().getSimpleName()).setEntity(this.entityType.getSimpleName()).setOwner(event.getOwner().getSimpleName()));
-        }
-        event.setTenantId(tenantId);
-
-        return null;
+    public List<Event> getEvents() {
+        return this.events;
     }
 
-    public T getEntity(String id) {
-        return null;
+    protected void addEvent(Event<T> event)
+    {
+        this.events.add(event);
     }
-
+    public abstract T create(String id,Event<T> event);
+    public abstract T update(String id,Event<T> event);
+    public abstract T delete(String id);
+    public abstract T rename(String id,String newId);
+    
 }

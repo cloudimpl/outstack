@@ -5,16 +5,12 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Input;
-import java.util.function.BiFunction;
+import com.cloudimpl.outstack.runtime.domain.v1.Command;
 
 /**
  *
  * @author nuwan
- * @param <C>
- * @param <T>
- * @param <R>
  */
-public interface InputHandler<C extends Context,T extends Input,R> extends BiFunction<C,T, R>{
-
+public interface PostCommand extends Command{
+    
 }

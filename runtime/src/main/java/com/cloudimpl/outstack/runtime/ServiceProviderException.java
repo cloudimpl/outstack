@@ -5,10 +5,16 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import java.text.MessageFormat;
+
 /**
  *
- * @author nuwansa
+ * @author nuwan
  */
-public interface Command extends Input{
+public class ServiceProviderException extends RuntimeException{
+
+    public ServiceProviderException(String format,Object... args) {
+        super(MessageFormat.format(format, args));
+    }
     
 }

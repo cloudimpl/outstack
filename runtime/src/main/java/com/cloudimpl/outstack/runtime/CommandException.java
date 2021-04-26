@@ -5,16 +5,16 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Input;
-import java.util.function.BiFunction;
+import java.text.MessageFormat;
 
 /**
  *
  * @author nuwan
- * @param <C>
- * @param <T>
- * @param <R>
  */
-public interface InputHandler<C extends Context,T extends Input,R> extends BiFunction<C,T, R>{
+public class CommandException extends RuntimeException{
 
+    public CommandException(String format,Object... args) {
+        super(MessageFormat.format(format, args));
+    }
+    
 }

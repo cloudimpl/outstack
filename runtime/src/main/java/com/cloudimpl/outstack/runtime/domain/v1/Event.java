@@ -10,14 +10,19 @@ import java.text.MessageFormat;
 /**
  *
  * @author nuwan
+ * @param <T>
  */
-public abstract class Event implements IResource {
+public abstract class Event<T extends Entity> implements IResource ,Input{
 
+    public enum Action {
+        CREATE, UPDATE, DELETE, RENAME
+    }
     private String _tenantId;
     private long _seqNum;
     private String _tid;
     private String _rootTid;
-    
+    private Action _action;
+
     public void setTenantId(String tenantId) {
         this._tenantId = tenantId;
     }
@@ -26,10 +31,23 @@ public abstract class Event implements IResource {
         this._seqNum = seq;
     }
 
+    public void setAction(Action action)
+    {
+        this._action = action;
+    }
     public long getSeqNum() {
         return _seqNum;
     }
 
+    public Action getAction() {
+        return _action;
+    }
+
+    public boolean isConsumed()
+    {
+        return this._action != null;
+    }
+    
     public void setRootTid(String rootTid) {
         this._rootTid = rootTid;
     }
@@ -38,20 +56,19 @@ public abstract class Event implements IResource {
         this._tid = tid;
     }
 
-    public String getTenantId() {
+    @Override
+    public String tenantId() {
         return _tenantId;
     }
 
-    public String tid()
-    {
+    public String tid() {
         return _tid;
     }
-    
-    public String rootTid()
-    {
+
+    public String rootTid() {
         return _rootTid;
     }
-    
+
     public abstract Class<? extends Entity> getOwner();
 
     public abstract Class<? extends RootEntity> getRootOwner();
@@ -63,17 +80,17 @@ public abstract class Event implements IResource {
     @Override
     public String getTRN() {
         if (RootEntity.isMyType(getOwner())) {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}",
-                        getTenantId(), getOwner().getSimpleName(), tid(), getClass().getSimpleName(), getSeqNum());
+                        tenantId(), getOwner().getSimpleName(), tid(), getClass().getSimpleName(), getSeqNum());
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}",
                         getOwner().getSimpleName(), tid(), getClass().getSimpleName(), getSeqNum());
             }
         } else {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}/{5}/{6}",
-                        getTenantId(), getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), tid(), getClass().getSimpleName(), getSeqNum());
+                        tenantId(), getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), tid(), getClass().getSimpleName(), getSeqNum());
 
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}/{4}/{5}",
@@ -86,39 +103,39 @@ public abstract class Event implements IResource {
     @Override
     public String getRN() {
         if (RootEntity.isMyType(getOwner())) {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}",
-                        getTenantId(), getOwner().getSimpleName(), entityId(), getClass().getSimpleName(), getSeqNum());
+                        tenantId(), getOwner().getSimpleName(), entityId(), getClass().getSimpleName(), getSeqNum());
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}",
                         getOwner().getSimpleName(), entityId(), getClass().getSimpleName(), getSeqNum());
             }
         } else {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}/{5}/{6}",
-                        getTenantId(), getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId(),getClass().getSimpleName(), getSeqNum());
+                        tenantId(), getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), entityId(), getClass().getSimpleName(), getSeqNum());
 
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}/{4}/{5}",
-                        getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId(), getClass().getSimpleName(), getSeqNum());
+                        getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), entityId(), getClass().getSimpleName(), getSeqNum());
 
             }
         }
     }
-    
+
     public String getEntityTRN() {
         if (RootEntity.isMyType(getOwner())) {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}",
-                        getTenantId(), getOwner().getSimpleName(), tid());
+                        tenantId(), getOwner().getSimpleName(), tid());
             } else {
                 return MessageFormat.format("{1}/{2}",
                         getOwner().getSimpleName(), tid());
             }
         } else {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}",
-                        getTenantId(), getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), tid());
+                        tenantId(), getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), tid());
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}",
                         getRootOwner().getSimpleName(), rootTid(), getOwner().getSimpleName(), tid());
@@ -128,28 +145,28 @@ public abstract class Event implements IResource {
 
     public String getEntityRN() {
         if (RootEntity.isMyType(getOwner())) {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}",
-                        getTenantId(), getOwner().getSimpleName(), entityId());
+                        tenantId(), getOwner().getSimpleName(), entityId());
             } else {
                 return MessageFormat.format("{1}/{2}",
                         getOwner().getSimpleName(), entityId());
             }
         } else {
-            if (getTenantId() != null) {
+            if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}",
-                        getTenantId(), getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId());
+                        tenantId(), getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId());
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}",
                         getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId());
             }
         }
     }
-    
+
     public String getRootEntityTRN() {
-        if (getTenantId() != null) {
+        if (tenantId() != null) {
             return MessageFormat.format("tenant/{0}/{1}/{2}",
-                    getTenantId(), getRootOwner().getSimpleName(), rootTid());
+                    tenantId(), getRootOwner().getSimpleName(), rootTid());
         } else {
             return MessageFormat.format("{1}/{2}",
                     getRootOwner().getSimpleName(), rootTid());
@@ -157,15 +174,15 @@ public abstract class Event implements IResource {
     }
 
     public String getRootEntityRN() {
-        if (getTenantId() != null) {
+        if (tenantId() != null) {
             return MessageFormat.format("tenant/{0}/{1}/{2}",
-                    getTenantId(), getRootOwner().getSimpleName(), entityId());
+                    tenantId(), getRootOwner().getSimpleName(), entityId());
         } else {
             return MessageFormat.format("{1}/{2}",
                     getRootOwner().getSimpleName(), entityId());
         }
     }
-    
+
     public boolean isRootEvent() {
         return getRootOwner() == getOwner();
     }

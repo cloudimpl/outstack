@@ -32,6 +32,4 @@ public class ContextTransaction {
     {
         this.eventList.add(event);
     }
-    
-    public 
 }

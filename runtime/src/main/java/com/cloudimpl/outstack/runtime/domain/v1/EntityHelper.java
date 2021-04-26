@@ -17,6 +17,10 @@ public class EntityHelper {
         entity.setTid(tid);
     }
 
+    public static void updateRootTid(ChildEntity entity, String rootTid) {
+        entity.setRootTid(rootTid);
+    }
+    
     public static <T extends Entity> boolean hasTenant(Class<T> entityType) {
         return ITenant.class.isAssignableFrom(entityType);
     }
@@ -25,22 +29,22 @@ public class EntityHelper {
         return RootEntity.isMyType(entityType);
     }
 
-    public static <T extends Entity> T createEntity(Class<?> type, Event event) {
+    public static <T extends Entity> T createEntity(Class<T> type, Event event) {
         if (event.isRootEvent()) {
-            if (event.getTenantId() != null) {
-                return Util.createObject((Class<T>) type,
-                        new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(event.entityId(), event.getTenantId()));
+            if (event.tenantId() != null) {
+                return Util.createObject(type,
+                        new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(event.entityId(), event.tenantId()));
             } else {
-                return Util.createObject((Class<T>) type,
+                return Util.createObject(type,
                         new Util.VarArg<>(String.class), new Util.VarArg<>(event.entityId()));
             }
         } else {
-            if (event.getTenantId() != null) {
-                return Util.createObject((Class<T>) type,
+            if (event.tenantId() != null) {
+                return Util.createObject(type,
                         new Util.VarArg<>(String.class, String.class, String.class), new Util.VarArg<>(event.rootEntityId(), event.entityId(),
-                                event.getTenantId()));
+                                event.tenantId()));
             } else {
-                return Util.createObject((Class<T>) type,
+                return Util.createObject(type,
                         new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(event.rootEntityId(), event.entityId()));
 
             }
@@ -63,14 +67,12 @@ public class EntityHelper {
     }
     
     public static <R extends RootEntity,T extends ChildEntity<R>> T createChildEntity(Class<? extends RootEntity> rootType,String rootId,Class<T> childType,String entityId, String tenantId) {
-       
-
         if (tenantId != null) {
-            return Util.createObject((Class<T>) rootType,
-                    new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, tenantId));
+            return Util.createObject(childType,
+                    new Util.VarArg<>(String.class,String.class, String.class), new Util.VarArg<>(rootId,entityId, tenantId));
         } else {
-            return Util.createObject((Class<T>) rootType,
-                    new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
+            return Util.createObject(childType,
+                    new Util.VarArg<>(String.class,String.class), new Util.VarArg<>(rootId,entityId));
         }
 
     }

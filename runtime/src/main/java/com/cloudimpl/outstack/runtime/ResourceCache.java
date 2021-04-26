@@ -3,11 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.cloudimpl.outstack.runtime.repo;
+package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domain.v1.Entity;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -15,24 +17,24 @@ import java.util.function.Function;
  *
  * @author nuwansa
  */
-public class EntityCache {
-    private final Cache<String,EntitySnapshot> map;
+public class ResourceCache<T> {
+    private final Cache<String,T> map;
 
-    public EntityCache(int maxSize,Duration evictionDuration) {
+    public ResourceCache(int maxSize,Duration evictionDuration) {
         map = Caffeine.newBuilder()
                 .maximumSize(maxSize)
                 .expireAfterAccess(evictionDuration)
                 .build();
     }
     
-    public void put(String id,EntitySnapshot entity)
+    public void put(String id,T resource)
     {
-        map.put(id, entity);
+        map.put(id, resource);
     }
     
-    public EntitySnapshot get(String id,Function<? super String,EntitySnapshot> mapper)
+    public <T> Optional<T> get(String id)
     {
-        return map.get(id, mapper);
+        return Optional.ofNullable((T) map.getIfPresent(id));
     }
     
     public static void main(String[] args) {

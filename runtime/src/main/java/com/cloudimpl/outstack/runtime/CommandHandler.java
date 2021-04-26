@@ -5,11 +5,14 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domain.v1.Command;
+
 /**
  *
  * @author nuwansa
+ * @param <C>
  * @param <T>
  */
-public abstract class CommandHandler<T extends Command, R> implements InputHandler<T,R> {
+public interface CommandHandler<C extends Context,T extends Command, R> extends InputHandler<C,T,R> {
 
 }

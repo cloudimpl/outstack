@@ -103,5 +103,6 @@
         <!--<module>domain-example</module>-->
         <module>core</module>
         <module>runtime</module>
+        <module>service-core</module>
     </modules>
 </project>
