@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.IResource;
+import com.cloudimpl.outstack.runtime.domainspec.IResource;
 import java.text.MessageFormat;
 
 /**

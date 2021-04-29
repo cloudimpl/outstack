@@ -10,7 +10,7 @@ spec:
         name: user 
         plural: users
         id: userId
-        tenant: true
+        tenant: false
       fieldRefs:
         - name: id
           metadata:
@@ -47,8 +47,6 @@ spec:
         - address
       logic:
         - apply:
-            evt: UserCreated
+            evt: OrganizationCreated
             stmt:
-               - this.id = evt.id
                - this.name = evt.name
-               - this.firstname = evt.firstname

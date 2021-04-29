@@ -5,8 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.List;
 import java.util.function.Function;

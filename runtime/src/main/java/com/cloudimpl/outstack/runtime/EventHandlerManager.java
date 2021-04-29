@@ -6,8 +6,8 @@
 package com.cloudimpl.outstack.runtime;
 
 import static com.cloudimpl.outstack.runtime.ServiceProvider.validateHandler;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.domain.v1.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import com.google.common.collect.Multimaps;
 import java.util.HashMap;

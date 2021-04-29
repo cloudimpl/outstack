@@ -5,9 +5,9 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Command;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.domain.v1.Input;
+import com.cloudimpl.outstack.runtime.domainspec.Command;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Input;
 import java.util.function.BiConsumer;
 
 /**

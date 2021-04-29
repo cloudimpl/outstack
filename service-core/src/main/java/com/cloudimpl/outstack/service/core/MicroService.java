@@ -6,23 +6,27 @@
 package com.cloudimpl.outstack.service.core;
 
 import com.cloudimpl.outstack.common.CloudMessage;
+import com.cloudimpl.outstack.common.RouterType;
 import com.cloudimpl.outstack.core.Inject;
-import com.cloudimpl.outstack.runtime.EventRepositoy;
+import com.cloudimpl.outstack.core.annon.CloudFunction;
+import com.cloudimpl.outstack.core.annon.Router;
+import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
-import com.cloudimpl.outstack.runtime.domain.v1.RootEntity;
-import java.util.function.Function;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
  * @param <T>
  */
+@CloudFunction(name = "FirstService")
+@Router(routerType = RouterType.ROUND_ROBIN)
 public  class MicroService<T extends RootEntity> extends ServiceProvider<T, CloudMessage>{
   
     @Inject
-    public MicroService(EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
-        super(eventRepository, resourceHelper);
+    public MicroService(Class<T> rootType,EventRepositoryFactory eventRepositoryFactory, ResourceHelper resourceHelper) {
+        super(eventRepositoryFactory.createRepository(rootType), resourceHelper);
     }
   
     

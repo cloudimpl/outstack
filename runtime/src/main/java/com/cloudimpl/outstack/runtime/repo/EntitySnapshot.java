@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.repo;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 
 /**
  *

@@ -8,11 +8,11 @@ package com.cloudimpl.outstack.runtime.repo;
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.EventStream;
-import com.cloudimpl.outstack.runtime.domain.v1.ChildEntity;
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
-import com.cloudimpl.outstack.runtime.domain.v1.EntityRenamed;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.domain.v1.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  *
  * @author nuwan
+ * @param <T>
  */
 public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> {
 
@@ -37,10 +38,10 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         for (Event event : events) {
             switch (event.getAction()) {
                 case CREATE: {
-                    Entity e = createEntity(transaction.getEntityTrn(event), event);
+                    Entity e = createEntity(transaction.getEntityTrn(event.getRootEntityTRN()),transaction.getEntityTrn(event), event);
                     mapEntitiesByBrn.put(transaction.getEntityBrn(event), e);
                     mapEntitiesByTrn.put(transaction.getEntityTrn(event), e);
-                    break;
+                    break;  
                 }
                 case UPDATE: {
                     Entity e = updateEntity(transaction.getEntityTrn(event), event);
@@ -69,15 +70,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         }
     }
 
-    private Entity createEntity(String fqTrd, Event event) {
+    private Entity createEntity(String rootFqTrd,String fqTrd, Event event) {
         Entity e;
         if (event.isRootEvent()) {
             e = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.tid());
             e.applyEvent(event);
         } else {
-            RootEntity root = (RootEntity) mapEntitiesByTrn.get(fqTrd);
+            RootEntity root = (RootEntity) mapEntitiesByTrn.get(rootFqTrd);
             e = root.createChildEntity(event.getOwner(), event.entityId(), event.tid());
-            e.applyEvent(event);
+            e.applyEvent(event); 
         }
         return e;
     }
@@ -108,12 +109,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     @Override
     protected <K extends Entity> Optional<K> loadEntityByBrn(String resourceName) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return Optional.ofNullable((K) mapEntitiesByBrn.get(resourceName));
     }
 
     @Override
     protected <K extends Entity> Optional<K> loadEntityByTrn(String resourceName) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return Optional.ofNullable((K) mapEntitiesByTrn.get(resourceName));
     }
 
 }

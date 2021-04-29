@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import java.time.Duration;

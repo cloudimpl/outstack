@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import reactor.core.publisher.Flux;
 
 /**

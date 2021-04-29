@@ -5,10 +5,10 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.ChildEntity;
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.domain.v1.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -35,8 +35,8 @@ public class EntityContextProvider<T extends RootEntity> {
         this.resourceHelper = resourceHelper;
     }
 
-    public Transaction createTransaction(String tenantId) {
-        return new Transaction(entityProvider, idGenerator, tenantId, resourceHelper);
+    public Transaction createTransaction(String rootTid, String tenantId) {
+        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, resourceHelper);
     }
 
     public static final class Transaction< R extends RootEntity> implements CRUDOpertations {
@@ -51,18 +51,15 @@ public class EntityContextProvider<T extends RootEntity> {
         private Object reply;
         private final List<Event> eventList;
 
-        public Transaction(Function<String, ? extends Entity> entityProvider, Supplier<String> idGenerator, String tenantId, ResourceHelper resourceHelper) {
+        public Transaction(Function<String, ? extends Entity> entityProvider, Supplier<String> idGenerator, String rootTid, String tenantId, ResourceHelper resourceHelper) {
             this.mapBrnEntities = new HashMap<>();
             this.mapTrnEntities = new HashMap<>();
             this.entityProvider = entityProvider;
             this.idGenerator = idGenerator;
+            this.rootTid = rootTid;
             this.tenantId = tenantId;
             this.resourceHelper = resourceHelper;
             this.eventList = new LinkedList<>();
-        }
-
-        public void setRootTid(String rootTid) {
-            this.rootTid = rootTid;
         }
 
         public String getTenantId() {
@@ -92,23 +89,34 @@ public class EntityContextProvider<T extends RootEntity> {
         public String getEntityTrn(Event event) {
             return resourceHelper.getFQTrn(event.getEntityTRN());
         }
-        
+
         public String getEntityBrn(Event event) {
-            return resourceHelper.getFQTrn(event.getEntityRN());
+            return resourceHelper.getFQBrn(event.getEntityRN());
         }
-        
-         public String getEntityBrn(String resourceRN) {
-            return resourceHelper.getFQTrn(resourceRN);
+
+        public String getEntityBrn(String resourceRN) {
+            return resourceHelper.getFQBrn(resourceRN);
+        }
+
+        public String getEntityTrn(String resourceTRN) {
+            return resourceHelper.getFQTrn(resourceTRN);
         }
 
         public <C extends ChildEntity<R>, K extends Entity> EntityContext<?> getContext(Class<K> entityType) {
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
-                return new RootEntityContext<>(rootType, tenantId, this::getEntity, idGenerator, resourceHelper, this, this::publishEvent);
+                return new RootEntityContext<>(rootType, rootTid, tenantId, this::getEntity, idGenerator, resourceHelper, this, this::publishEvent);
             } else {
+                validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
                 return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, this::getEntity, idGenerator, resourceHelper, this, this::publishEvent);
+            }
+        }
+
+        private void validateRootTid() {
+            if (rootTid == null) {
+                throw new ServiceProviderException("rootId not available");
             }
         }
 
@@ -144,12 +152,7 @@ public class EntityContextProvider<T extends RootEntity> {
                 } else if (!this.rootTid.equals(entity.tid())) {
                     throw new ServiceProviderException("multiple root id modification on same transaction not supported. expecting {0} , found {1}", this.rootTid, entity.id());
                 }
-
             }
-        }
-
-        public void endTransaction() {
-
         }
 
         @Override

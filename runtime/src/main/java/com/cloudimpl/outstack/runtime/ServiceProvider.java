@@ -5,11 +5,11 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.ChildEntity;
-import com.cloudimpl.outstack.runtime.domain.v1.Command;
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.domain.v1.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.Command;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  * @param <T>
  */
-public abstract class ServiceProvider<T extends RootEntity, R> implements Function<Command, Publisher<?>> {
+public  class ServiceProvider<T extends RootEntity, R> implements Function<Command, Publisher<?>> {
 
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
@@ -41,7 +41,7 @@ public abstract class ServiceProvider<T extends RootEntity, R> implements Functi
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
         validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityCommandHandler.class, 0));
-        EntityCommandHandler exist = mapCmdHandlers.computeIfAbsent(handlerType.getSimpleName().toLowerCase(), n -> Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(),Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
         if (exist != null) {
             throw new ServiceProviderException("commad handler {0} already exist ", handlerType.getSimpleName());
         }
@@ -71,7 +71,7 @@ public abstract class ServiceProvider<T extends RootEntity, R> implements Functi
     @Override
     public Publisher apply(Command cmd) {
 
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(cmd.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(cmd.rootTid(),cmd.tenantId());
         return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(tx, cmd))
                 .doOnNext(ct -> this.evtHandlerManager.emit(tx, ct.getEvents()))
                 .doOnNext(ct->eventRepository.saveTx(tx))
@@ -79,7 +79,7 @@ public abstract class ServiceProvider<T extends RootEntity, R> implements Functi
     }
 
     public void applyEvent(Event event){
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootTid(),event.tenantId());
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
     } 

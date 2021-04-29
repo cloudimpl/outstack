@@ -5,13 +5,13 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.ChildEntity;
-import com.cloudimpl.outstack.runtime.domain.v1.DomainEventException;
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
-import com.cloudimpl.outstack.runtime.domain.v1.EntityDeleted;
-import com.cloudimpl.outstack.runtime.domain.v1.EntityRenamed;
-import com.cloudimpl.outstack.runtime.domain.v1.Event;
-import com.cloudimpl.outstack.runtime.domain.v1.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
+import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -26,16 +26,11 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
 
     private final Class<R> rootType;
     private final String rootTid;
-    private String tid;
 
-    public ChildEntityContext(Class<R> rootType, String rootTid, Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier, Supplier<String> idGenerator, ResourceHelper resourceHelper,CRUDOpertations crudOperations,Consumer<Event> eventPublisher) {
-        super(entityType, tenantId, entitySupplier, idGenerator, resourceHelper,crudOperations,eventPublisher);
+    public ChildEntityContext(Class<R> rootType, String rootTid, Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier, Supplier<String> idGenerator, ResourceHelper resourceHelper, CRUDOpertations crudOperations, Consumer<Event> eventPublisher) {
+        super(entityType, tenantId, entitySupplier, idGenerator, resourceHelper, crudOperations, eventPublisher);
         this.rootType = rootType;
         this.rootTid = rootTid;
-    }
-
-    public void setTid(String tid) {
-        this.tid = tid;
     }
 
     @Override
@@ -47,6 +42,9 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         T child = (T) entitySupplier.apply(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, root.id(), entityType, id, getTenantId())));
         if (child != null) {
             throw new DomainEventException("child entity {0} is already exist", child.getRN());
+        }
+        if (!event.entityId().equals(id)) {
+            throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
         }
         child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
@@ -70,8 +68,11 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         if (child == null) {
             throw new DomainEventException("child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.id(), entityType, id, getTenantId()));
         }
-        if (!root.id().equals(id)) {
+        if (!child.id().equals(id)) {
             throw new DomainEventException("invalid id {0} for child entity {1}", id, child.getRN());
+        }
+        if (!event.entityId().equals(id)) {
+            throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
         }
         child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
@@ -129,7 +130,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setAction(Event.Action.RENAME);
         addEvent(event);
         child = child.rename(newId);
-        crudOperations.rename(id,child);
+        crudOperations.rename(id, child);
         eventPublisher.accept(event);
         return child;
     }

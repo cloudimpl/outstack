@@ -5,8 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Command;
-import com.cloudimpl.outstack.runtime.domain.v1.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Command;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**

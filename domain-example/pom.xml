@@ -10,23 +10,14 @@
     <packaging>jar</packaging>
     <properties>
         <com.cloudimpl.codegen.provider>com.cloudimpl.domainspec.generator.DomainSpecCodeGenerator</com.cloudimpl.codegen.provider>
-        <com.cloudimpl.outstack.domaingen.specNamespace>com.cloudimpl.domainspec.v1</com.cloudimpl.outstack.domaingen.specNamespace>
+        <com.cloudimpl.outstack.domaingen.domainLocation>/Users/nuwan/Github/outstack/domaingen-example/src/main/java</com.cloudimpl.outstack.domaingen.domainLocation>
+        <com.cloudimpl.outstack.domaingen.specNamespace>com.cloudimpl.outstack.runtime.domainspec</com.cloudimpl.outstack.domaingen.specNamespace>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.cloudimpl.outstack-tools</groupId>
             <artifactId>domainspec</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.5.6</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <version>2.4.4</version>
         </dependency>
         <dependency>
             <groupId>javax.validation</groupId>

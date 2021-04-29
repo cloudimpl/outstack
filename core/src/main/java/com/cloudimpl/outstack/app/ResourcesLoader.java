@@ -41,9 +41,14 @@ public class ResourcesLoader {
     public ResourcesLoader() {
         ScanResult rs = new ClassGraph().enableAnnotationInfo().enableClassInfo().scan();
         ClassInfoList list = rs.getClassesWithAnnotation(CloudFunction.class.getName());
-        metaList = list.loadClasses().stream().map(c -> SrvUtil.serviceMeta(c)).collect(Collectors.toList());
+        metaList = list.loadClasses().stream().map(this::toServiceMeta).collect(Collectors.toList());
         list = rs.getClassesImplementing(ServiceEndpointPlugin.class.getName());
         endpoints = list.loadClasses().stream().map(s->s.asSubclass(ServiceEndpointPlugin.class)).collect(Collectors.toList());
+    }
+    
+    protected ServiceMeta toServiceMeta(Class<?> serviceType)
+    {
+        return SrvUtil.serviceMeta(serviceType);
     }
     
     public List<ServiceMeta> getList()

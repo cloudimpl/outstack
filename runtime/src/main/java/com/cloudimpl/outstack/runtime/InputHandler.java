@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domain.v1.Input;
+import com.cloudimpl.outstack.runtime.domainspec.Input;
 import java.util.function.BiFunction;
 
 /**

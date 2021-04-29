@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.core.annon;
 
+import com.cloudimpl.outstack.core.MetaExtractor;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,4 +30,5 @@ import java.lang.annotation.Target;
 public @interface CloudFunction {
     String name();
     String id() default "";
+    Class<? extends MetaExtractor> metaProvider() default MetaExtractor.EmptyExtractor.class;
 }
