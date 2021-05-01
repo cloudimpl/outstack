@@ -10,6 +10,6 @@ package com.cloudimpl.outstack.runtime.domainspec;
  * @author nuwan
  */
 public interface IResource {
-    String getRN();
+    String getBRN();
     String getTRN();
 }

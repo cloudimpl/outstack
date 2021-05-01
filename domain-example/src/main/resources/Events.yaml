@@ -1,20 +1,17 @@
 apiVersion: com.cloudimpl.domainspec/v1
 kind: Event
 metadata:
-  namespace: com.xventure.projectA
+  namespace: com.restrata.platform.events
 spec:
-  - template:
-     metadata:
-       type: UserCreated
-       owner: User
-     fieldRefs:
-       - id
-       - name
-       - firstname
-       - orderType
   - template:
      metadata:
        type: OrganizationCreated
        owner: Organization
      fieldRefs:
-       - name
+       - website
+  - template:
+     metadata:
+       type: TenantCreated
+       owner: Tenant
+     fieldRefs:
+       - endpoint

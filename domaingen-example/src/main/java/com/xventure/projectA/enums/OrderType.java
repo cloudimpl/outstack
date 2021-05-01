@@ -5,6 +5,7 @@ public enum OrderType {
     MARKET() ,
     LIMIT() ,
     PEG() ,
-    IOC() ;
+    IOC() ,
+    NEW() ;
 
 }

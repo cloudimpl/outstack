@@ -14,23 +14,23 @@ import com.google.gson.JsonObject;
  */
 public abstract class Entity implements IResource {
 
-    private String _tid;
+    private String _id;
 
-    void setTid(String tid) {
-        this._tid = tid;
+    final void setTid(String id) {
+        this._id = id;
     }
 
-    public String tid() {
-        return _tid;
+    public final String id() {
+        return _id;
     }
 
-    public abstract String id();
+    public abstract String entityId();
 
-    public boolean hasTenant() {
+    public final boolean hasTenant() {
         return this instanceof ITenant;
     }
 
-    public boolean isRoot() {
+    public final boolean isRoot() {
         return this instanceof RootEntity;
     }
 
@@ -48,25 +48,28 @@ public abstract class Entity implements IResource {
         return GsonCodec.decode((Class<T>) this.getClass(), json);
     }
 
-    public <T extends Entity> T rename(String newId)
-    {
+    public <T extends Entity> T rename(String newEntityId) {
         JsonObject json = GsonCodec.encodeToJson(this).getAsJsonObject();
-        json.addProperty(idField(), newId);
+        json.addProperty(idField(), newEntityId);
         return GsonCodec.decode((Class<T>) this.getClass(), json.toString());
     }
-    
+
     public abstract String idField();
-    
-    public static void checkTenantEligibility(Class<? extends Entity> type,String tenantId) {
+
+    public static void checkTenantEligibility(Class<? extends Entity> type, String tenantId) {
         if (EntityHelper.hasTenant(type) && tenantId == null) {
             throw new DomainEventException("tenantId is null for entity creation");
         } else if (!EntityHelper.hasTenant(type) && tenantId != null) {
             throw new DomainEventException("tenantId is not applicable for entity creation");
         }
     }
-    
-     public static  boolean hasTenant(Class<? extends Entity> entityType) {
+
+    public static boolean hasTenant(Class<? extends Entity> entityType) {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
+    @Override
+    public String toString() {
+        return GsonCodec.encode(this);
+    }
 }

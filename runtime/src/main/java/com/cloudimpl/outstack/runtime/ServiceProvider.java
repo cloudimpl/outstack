@@ -32,8 +32,8 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
-        rootType = Util.extractGenericParameter(this.getClass(), ServiceProvider.class, 0);
+    public ServiceProvider(Class<T> rootType,EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
+        this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
         contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, resourceHelper);
@@ -71,7 +71,7 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
     @Override
     public Publisher apply(Command cmd) {
 
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(cmd.rootTid(),cmd.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(cmd.rootId(),cmd.tenantId());
         return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(tx, cmd))
                 .doOnNext(ct -> this.evtHandlerManager.emit(tx, ct.getEvents()))
                 .doOnNext(ct->eventRepository.saveTx(tx))
@@ -79,7 +79,7 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
     }
 
     public void applyEvent(Event event){
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootTid(),event.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(),event.tenantId());
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
     } 

@@ -1,20 +1,17 @@
 apiVersion: com.cloudimpl.domainspec/v1
 kind: Command
 metadata:
-  namespace: com.xventure.projectA
+  namespace: com.restrata.platform
 spec:
   - template:
       metadata:
-        type: UserCreateRequest
-        module: user
-        name: user 
+        type: OrganizationCreateRequest
+        module: commands
       fieldRefs:
-        - name: id
-          metadata:
-            maxLen : 20
-            minLen : 10
-        - name
-        - firstname
-        - userId
-        - orderType
-        - address
+        - website
+  - template:
+      metadata:
+        type: TenantCreateRequest
+        module: commands
+      fieldRefs:
+        - endpoint

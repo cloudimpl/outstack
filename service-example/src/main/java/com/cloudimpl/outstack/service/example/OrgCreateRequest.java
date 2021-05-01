@@ -13,8 +13,13 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  */
 public class OrgCreateRequest extends Command{
 
-    public OrgCreateRequest() {
-        this.command = "create2";
+    public OrgCreateRequest(Builder builder) {
+        super(builder.withCommand("CreateOrganization"));
     }
+
+    public OrgCreateRequest(String rootId) {
+        this(builder().withRootId(rootId));
+    }
+  
     
 }

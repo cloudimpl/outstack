@@ -134,9 +134,9 @@ public class EntityContextProvider<T extends RootEntity> {
             }
             if (entity.isRoot()) {
                 if (this.rootTid == null) {
-                    this.rootTid = entity.tid();
-                } else if (!this.rootTid.equals(entity.tid())) {
-                    throw new ServiceProviderException("multiple root id modification on same transaction not supported. expecting {0} , found {1}", this.rootTid, entity.id());
+                    this.rootTid = entity.id();
+                } else if (!this.rootTid.equals(entity.id())) {
+                    throw new ServiceProviderException("multiple root id modification on same transaction not supported. expecting {0} , found {1}", this.rootTid, entity.entityId());
                 }
 
             }
@@ -148,9 +148,9 @@ public class EntityContextProvider<T extends RootEntity> {
             mapTrnEntities.put(resourceHelper.getFQTrn(entity), entity);
             if (entity.isRoot()) {
                 if (this.rootTid == null) {
-                    this.rootTid = entity.tid();
-                } else if (!this.rootTid.equals(entity.tid())) {
-                    throw new ServiceProviderException("multiple root id modification on same transaction not supported. expecting {0} , found {1}", this.rootTid, entity.id());
+                    this.rootTid = entity.id();
+                } else if (!this.rootTid.equals(entity.id())) {
+                    throw new ServiceProviderException("multiple root id modification on same transaction not supported. expecting {0} , found {1}", this.rootTid, entity.entityId());
                 }
             }
         }
@@ -180,7 +180,7 @@ public class EntityContextProvider<T extends RootEntity> {
                 mapBrnEntities.remove(resourceHelper.getFQBrn(RootEntity.makeRN((Class<? extends RootEntity>) entity.getClass(), oldId, getTenantId())));
             } else {
                 ChildEntity child = (ChildEntity) entity;
-                mapBrnEntities.remove(resourceHelper.getFQBrn(ChildEntity.makeRN(child.rootType(), child.rootTid(), child.getClass(), oldId, getTenantId())));
+                mapBrnEntities.remove(resourceHelper.getFQBrn(ChildEntity.makeRN(child.rootType(), child.rootId(), child.getClass(), oldId, getTenantId())));
             }
             mapBrnEntities.put(resourceHelper.getFQBrn(entity), entity);
         }

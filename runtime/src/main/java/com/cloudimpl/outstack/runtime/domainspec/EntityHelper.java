@@ -13,12 +13,12 @@ import com.cloudimpl.outstack.runtime.util.Util;
  */
 public class EntityHelper {
 
-    public static void updateTid(Entity entity, String tid) {
-        entity.setTid(tid);
+    public static void updateId(Entity entity, String id) {
+        entity.setTid(id);
     }
 
-    public static void updateRootTid(ChildEntity entity, String rootTid) {
-        entity.setRootTid(rootTid);
+    public static void updateRootId(ChildEntity entity, String rootId) {
+        entity.setRootId(rootId);
     }
     
     public static <T extends Entity> boolean hasTenant(Class<T> entityType) {

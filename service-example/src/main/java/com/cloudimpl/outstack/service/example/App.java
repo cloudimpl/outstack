@@ -5,11 +5,13 @@
  */
 package com.cloudimpl.outstack.service.example;
 
+import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepository;
 import com.xventure.projectA.OrganizationCreated;
+import com.xventure.projectA.org.Organization;
 import com.xventure.projectA.user.User;
 import reactor.core.publisher.Mono;
 
@@ -22,11 +24,12 @@ public class App {
         EventRepositoy<User> repo = new MemEventRepository<>(User.class,null);
         ResourceHelper helper = new ResourceHelper("test", "abc");
         UserService service = new UserService(repo, helper);
-        Mono.from(service.apply(new UserCreateReq())).doOnError(err->Throwable.class.cast(err).printStackTrace())
+        Mono.from(service.apply(CloudMessage.builder().withData(new UserCreateReq()).build())).doOnError(err->Throwable.class.cast(err).printStackTrace())
                 .doOnNext(e->System.out.println(GsonCodec.encode(e)))
-                .flatMap(e->service.apply(new OrgCreateRequest().withRootTid(((User)e).tid())))
+                //.flatMap(e->service.apply(CloudMessage.builder().withData(new OrgCreateRequest(((User)e).id())).build()))
                 .doOnError(err->Throwable.class.cast(err).printStackTrace())
                 .doOnNext(e->System.out.println(GsonCodec.encode(e)))
+               // .flatMap(e->service.apply(CloudMessage.builder().withData(new OrgCreateRequest(((Organization)e).rootId())).build()))
                 .subscribe(); 
   //      Mono.from(service.apply(new UserCreateReq())).doOnError(err->Throwable.class.cast(err).printStackTrace()).subscribe();
         //  Mono.from(service.apply(new OrgCreateRequest())).doOnError(err->Throwable.class.cast(err).printStackTrace()).subscribe();

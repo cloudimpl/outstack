@@ -13,13 +13,12 @@ spec:
         - LIMIT
         - PEG
         - IOC
-  - template:
-      metadata:
-        name: Address
-        type: object
-        module: value
-      values:
-        - streetNo
-        - zipCode
-        - postalCode
+        - NEW
+#  - template:
+#      metadata:
+#        name: Address
+#        type: object
+#        module: value
+#      values:
+#        - name
 

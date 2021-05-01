@@ -13,8 +13,14 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  */
 public class UserCreateReq extends Command{
 
-    public UserCreateReq() {
-        this.command = "create";
+    public UserCreateReq(Builder builder) {
+        super(builder.withCommand("CreateUser"));
     }
+
+    public UserCreateReq() {
+        this(builder());
+    }
+
+    
     
 }

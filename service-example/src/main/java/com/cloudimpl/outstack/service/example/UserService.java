@@ -12,6 +12,7 @@ import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
+import com.cloudimpl.outstack.spring.component.SpringService;
 import com.xventure.projectA.user.User;
 
 /**
@@ -20,13 +21,13 @@ import com.xventure.projectA.user.User;
  */
 @CloudFunction(name = "UserService")
 @Router(routerType = RouterType.ROUND_ROBIN)
-public class UserService extends ServiceProvider<User, CloudMessage>{
+public class UserService extends SpringService<User>{
     
     public UserService(EventRepositoy<User> eventRepository, ResourceHelper resourceHelper) {
         super(eventRepository, resourceHelper);
-        registerCommandHandler(create.class);
-        registerCommandHandler(delete.class);
-        registerCommandHandler(create2.class);
+        registerCommandHandler(CreateUser.class);
+        registerCommandHandler(CreateOrganization.class);
+        registerEventHandler(UpdateOrganization.class);
     }
     
 }

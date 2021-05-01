@@ -103,7 +103,6 @@
         <!--<module>domain-example</module>-->
         <module>core</module>
         <module>runtime</module>
-        <module>service-core</module>
         <module>outstack-spring</module>
         <module>outstack-spring-example</module>
         <module>domaingen-example</module>

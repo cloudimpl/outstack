@@ -14,59 +14,59 @@ import java.text.MessageFormat;
  */
 public abstract class ChildEntity<T extends RootEntity> extends Entity {
 
-    private String _rootTid;
+    private String _rootId;
 
-    public void setRootTid(String _rootTid) {
-        this._rootTid = _rootTid;
+    public final void setRootId(String rootId) {
+        this._rootId = rootId;
     }
 
-    public String rootTid() {
-        return this._rootTid;
+    public String rootId() {
+        return this._rootId;
     }
 
-    public abstract String rootId();
+    public abstract String rootEntityId();
 
     public abstract Class<T> rootType();
 
     @Override
     public String getTRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", ITenant.class.cast(this).getTenantId(), rootType().getSimpleName(), rootTid(), getClass().getSimpleName(), tid());
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", ITenant.class.cast(this).getTenantId(), rootType().getSimpleName(), rootId(), getClass().getSimpleName(), id());
         } else {
-            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType().getSimpleName(), rootTid(), getClass().getSimpleName(), tid());
+            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType().getSimpleName(), rootId(), getClass().getSimpleName(), id());
         }
     }
     
     @Override
-    public String getRN() {
+    public String getBRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", ITenant.class.cast(this).getTenantId(), rootType().getSimpleName(),rootTid(), getClass().getSimpleName(), id());
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", ITenant.class.cast(this).getTenantId(), rootType().getSimpleName(),rootId(), getClass().getSimpleName(), entityId());
         } else {
-            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType().getSimpleName(), rootTid(), getClass().getSimpleName(), id());
+            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType().getSimpleName(), rootId(), getClass().getSimpleName(), entityId());
         }
     }
     
-    public static <R extends RootEntity,T extends ChildEntity<R>> String makeRN(Class<R> rootType,String rootTid,Class<T> childType,String entityId, String tenantId)
+    public static <R extends RootEntity,T extends ChildEntity<R>> String makeRN(Class<R> rootType,String rootId,Class<T> childType,String entityId, String tenantId)
     {
         if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", tenantId, rootType.getSimpleName(), rootTid,childType.getSimpleName(),entityId);
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", tenantId, rootType.getSimpleName(), rootId,childType.getSimpleName(),entityId);
         } else {
-            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType.getSimpleName(), rootTid,childType.getSimpleName(),entityId);
+            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType.getSimpleName(), rootId,childType.getSimpleName(),entityId);
         }
     }
     
-    public static <R extends RootEntity,T extends ChildEntity<R>> String makeTRN(Class<R> rootType,String rootTid,Class<T> childType,String entityTid, String tenantTid)
+    public static <R extends RootEntity,T extends ChildEntity<R>> String makeTRN(Class<R> rootType,String rootId,Class<T> childType,String id, String tenantId)
     {
-        if (tenantTid != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", tenantTid, rootType.getSimpleName(), rootTid,childType.getSimpleName(),entityTid);
+        if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", tenantId, rootType.getSimpleName(), rootId,childType.getSimpleName(),id);
         } else {
-            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType.getSimpleName(), rootTid,childType.getSimpleName(),entityTid);
+            return MessageFormat.format("{0}/{1}/{2}/{3}", rootType.getSimpleName(), rootId,childType.getSimpleName(),id);
         }
     }
     
     public static final ChildEntity DELETED = new ChildEntity() {
         @Override
-        public String rootId() {
+        public String rootEntityId() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
@@ -76,7 +76,7 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
         }
 
         @Override
-        public String id() {
+        public String entityId() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 

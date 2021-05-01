@@ -34,8 +34,8 @@ public class EventHandlerManager<T extends RootEntity> {
     }
 
     public void register(Class<? extends EntityEventHandler> handlerType) {
-        validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityCommandHandler.class, 0));
-        EntityEventHandler exist = mapEvtHandlers.computeIfAbsent(handlerType.getSimpleName().toLowerCase(), n -> Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityEventHandler.class, 0));
+        EntityEventHandler exist = mapEvtHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
         if (exist != null) {
             throw new ServiceProviderException("event handler {0} already exist ", handlerType.getSimpleName());
         }

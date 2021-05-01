@@ -23,7 +23,7 @@ public class ResourceHelper {
     
     public  String getFQBrn(IResource resource)
     {
-        return MessageFormat.format("brn:{0}:{1}:{2}", productOwner,product,resource.getRN());
+        return MessageFormat.format("brn:{0}:{1}:{2}", productOwner,product,resource.getBRN());
     }
     
     public  String getFQTrn(IResource resource)

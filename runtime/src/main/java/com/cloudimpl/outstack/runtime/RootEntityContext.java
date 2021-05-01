@@ -36,7 +36,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> {
         Objects.requireNonNull(event);
         T root = (T) entitySupplier.apply(resourceHelper.getFQBrn(RootEntity.makeRN(entityType, id, getTenantId())));
         if (root != null) {
-            throw new DomainEventException("root entity {0} already exist", root.getRN());
+            throw new DomainEventException("root entity {0} already exist", root.getBRN());
         }
         if (!event.entityId().equals(id)) {
             throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
@@ -44,12 +44,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> {
         root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
 
         event.setTenantId(getTenantId());
-        event.setTid(root.tid());
-        event.setRootTid(root.tid());
+        event.setId(root.id());
+        event.setRootId(root.id());
         event.setAction(Event.Action.CREATE);
         root.applyEvent(event);
         addEvent(event);
-        this.tid = root.tid();
+        this.tid = root.id();
         crudOperations.create(root);
         eventPublisher.accept(event);
         return root;
@@ -66,15 +66,15 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> {
         if (root == null) {
             throw new DomainEventException("root entity not available for entity {0}", entityType.getSimpleName());
         }
-        if (!root.id().equals(id)) {
-            throw new DomainEventException("update failed,invalid id {0} for root entity {1}", id, root.getRN());
+        if (!root.entityId().equals(id)) {
+            throw new DomainEventException("update failed,invalid id {0} for root entity {1}", id, root.getBRN());
         }
         if (!event.entityId().equals(id)) {
             throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
         }
         event.setTenantId(getTenantId());
-        event.setTid(tid);
-        event.setRootTid(tid);
+        event.setId(tid);
+        event.setRootId(tid);
         event.setAction(Event.Action.UPDATE);
         root.applyEvent(event);
         addEvent(event);
@@ -94,13 +94,13 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> {
         if (root == null) {
             throw new DomainEventException("root entity id {0} not available for entity {1}", id, entityType.getSimpleName());
         }
-        if (!root.id().equals(id)) {
-            throw new DomainEventException("invalid id {0} for root entity {1}", id, root.getRN());
+        if (!root.entityId().equals(id)) {
+            throw new DomainEventException("invalid id {0} for root entity {1}", id, root.getBRN());
         }
 
-        EntityDeleted event = new EntityDeleted(entityType, entityType, root.id(), root.id());
-        event.setTid(tid);
-        event.setRootTid(tid);
+        EntityDeleted event = new EntityDeleted(entityType, entityType, root.entityId(), root.entityId());
+        event.setId(tid);
+        event.setRootId(tid);
         event.setTenantId(getTenantId());
         event.setAction(Event.Action.DELETE);
         addEvent(event);
@@ -121,14 +121,14 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> {
         if (root == null) {
             throw new DomainEventException("root entity id {0} not available for entity {1}", id, entityType.getSimpleName());
         }
-        if (!root.id().equals(id)) {
-            throw new DomainEventException("invalid id {0} for root entity {1}", id, root.getRN());
+        if (!root.entityId().equals(id)) {
+            throw new DomainEventException("invalid id {0} for root entity {1}", id, root.getBRN());
         }
        
         EntityRenamed event = new EntityRenamed(entityType, entityType, newId, id, newId);
         event.setTenantId(getTenantId());
-        event.setTid(tid);
-        event.setRootTid(tid);
+        event.setId(tid);
+        event.setRootId(tid);
         event.setAction(Event.Action.RENAME);
         addEvent(event);
         root = root.rename(newId);

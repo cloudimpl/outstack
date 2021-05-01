@@ -35,25 +35,27 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public synchronized void saveTx(EntityContextProvider.Transaction transaction) {
         List<Event> events = transaction.getEventList();
+        
         for (Event event : events) {
+            System.out.println("tx: "+event);
+            Entity e = null;
             switch (event.getAction()) {
                 case CREATE: {
-                    Entity e = createEntity(transaction.getEntityTrn(event.getRootEntityTRN()),transaction.getEntityTrn(event), event);
+                    e = createEntity(transaction.getEntityTrn(event.getRootEntityTRN()),transaction.getEntityTrn(event), event);
                     mapEntitiesByBrn.put(transaction.getEntityBrn(event), e);
                     mapEntitiesByTrn.put(transaction.getEntityTrn(event), e);
                     break;  
                 }
                 case UPDATE: {
-                    Entity e = updateEntity(transaction.getEntityTrn(event), event);
+                    e = updateEntity(transaction.getEntityTrn(event), event);
                     break;
                 }
                 case DELETE: {
-                    deleteEntity(transaction.getEntityBrn(event));
+                    e = deleteEntity(transaction.getEntityBrn(event));
                     break;
                 }
                 case RENAME: {
                     EntityRenamed renamedEvent = (EntityRenamed) event;
-                    Entity e;
                     if (event.isRootEvent()) {
                         e = renamEntity(transaction.getEntityBrn(RootEntity.makeRN(event.getOwner(), renamedEvent.getOldEntityId(), event.tenantId())),
                                  transaction.getEntityBrn(RootEntity.makeRN(event.getOwner(), renamedEvent.entityId(), event.tenantId())),
@@ -67,17 +69,18 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                     break;
                 }
             }
+            System.out.println("entity: "+e);
         }
     }
 
     private Entity createEntity(String rootFqTrd,String fqTrd, Event event) {
         Entity e;
         if (event.isRootEvent()) {
-            e = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.tid());
+            e = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
             e.applyEvent(event);
         } else {
             RootEntity root = (RootEntity) mapEntitiesByTrn.get(rootFqTrd);
-            e = root.createChildEntity(event.getOwner(), event.entityId(), event.tid());
+            e = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
             e.applyEvent(event); 
         }
         return e;
@@ -95,8 +98,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         return e;
     }
 
-    private void deleteEntity(String fqBrn) {
-        mapEntitiesByBrn.remove(fqBrn);
+    private Entity deleteEntity(String fqBrn) {
+        return mapEntitiesByBrn.remove(fqBrn);
     }
 
     private Entity renamEntity(String oldBrn, String newBrn, Event event) {

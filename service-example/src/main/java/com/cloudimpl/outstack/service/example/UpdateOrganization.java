@@ -7,18 +7,20 @@ package com.cloudimpl.outstack.service.example;
 
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.EntityEventHandler;
 import com.xventure.projectA.OrganizationCreated;
+import com.xventure.projectA.UserCreated;
 import com.xventure.projectA.org.Organization;
 
 /**
  *
  * @author nuwan
  */
-public class CreateOrganization extends EntityCommandHandler<Organization, OrgCreateRequest, Organization>{
+public class UpdateOrganization extends EntityEventHandler<Organization, UserCreated>{
 
     @Override
-    protected Organization execute(EntityContext<Organization> context, OrgCreateRequest command) {
-        return context.create("testorg", new OrganizationCreated("xxx", "testorg", "test"));
+    protected void execute(EntityContext<Organization> context, UserCreated evt) {
+         context.create("testorg", new OrganizationCreated("xxx", "testorg", "test"));
     }
     
 }

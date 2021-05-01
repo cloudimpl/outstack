@@ -15,32 +15,32 @@ import java.text.MessageFormat;
 public abstract class RootEntity extends Entity {
     
     @Override
-    public String getRN() {
+    public String getBRN() {
         if (hasTenant()) { //tenant/1234/User/1/Device/12"
-            return makeRN(this.getClass(), id(),ITenant.class.cast(this).getTenantId());
+            return makeRN(this.getClass(), entityId(),ITenant.class.cast(this).getTenantId());
         } else {
-            return makeRN(this.getClass(), id(), null);
+            return makeRN(this.getClass(), entityId(), null);
         }
     }
     
     @Override
     public String getTRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return makeTRN(this.getClass(), tid(), ITenant.class.cast(this).getTenantId());
+            return makeTRN(this.getClass(), id(), ITenant.class.cast(this).getTenantId());
         } else {
-            return makeTRN(this.getClass(),tid(),null);
+            return makeTRN(this.getClass(),id(),null);
         }
     }
     
-    public <T extends ChildEntity> T createChildEntity(Class<T> type, String entityId, String tid) {
+    public <T extends ChildEntity> T createChildEntity(Class<T> type, String entityId, String id) {
         T t;
         if (hasTenant()) {
-            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class, String.class), new Util.VarArg<>(id(), entityId, ITenant.class.cast(this).getTenantId()));
+            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class, String.class), new Util.VarArg<>(entityId(), entityId, ITenant.class.cast(this).getTenantId()));
         } else {
-            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(id(), entityId));
+            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId(), entityId));
         }
-        EntityHelper.updateTid(t, tid);
-        EntityHelper.updateRootTid(t, tid());
+        EntityHelper.updateId(t, id);
+        EntityHelper.updateRootId(t, id());
         return t;
     }
     
@@ -53,7 +53,7 @@ public abstract class RootEntity extends Entity {
         {
             root =  Util.createObject(type, new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
         }
-        EntityHelper.updateTid(root, tid);
+        EntityHelper.updateId(root, tid);
         return root;
     }
     
@@ -69,17 +69,17 @@ public abstract class RootEntity extends Entity {
         }
     }
     
-    public static String makeTRN(Class<? extends RootEntity> type, String entityTid, String tenantTid) {
-        if (tenantTid != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}", tenantTid, type.getSimpleName(), entityTid);
+    public static String makeTRN(Class<? extends RootEntity> type, String id, String tenantId) {
+        if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
+            return MessageFormat.format("tenant/{0}/{1}/{2}", tenantId, type.getSimpleName(), id);
         } else {
-            return MessageFormat.format("{0}/{1}", type.getSimpleName(), entityTid);
+            return MessageFormat.format("{0}/{1}", type.getSimpleName(), id);
         }
     }
     
     public static final RootEntity DELETED = new RootEntity() {
         @Override
-        public String id() {
+        public String entityId() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
