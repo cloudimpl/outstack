@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.spring.component;
 
+import com.cloudimpl.outstack.spring.service.ServiceDescriptorManager;
 import com.cloudimpl.outstack.app.AppConfig;
 import com.cloudimpl.outstack.app.ResourcesLoader;
 import com.cloudimpl.outstack.collection.AwsCollectionProvider;
@@ -14,10 +15,16 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.coreImpl.SharedResources;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
+import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
+import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
+import com.cloudimpl.outstack.spring.service.ServiceDescriptorVersionManager;
+import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,13 +54,20 @@ public class Cluster {
 
     private CloudNode node;
 
+    private ServiceDescriptorVersionManager serviceVersionDescriptorMan;
     public Cluster() {
     }
 
     @PostConstruct
     public void init() {
+        serviceVersionDescriptorMan = new ServiceDescriptorVersionManager();
+        EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory();
+        ResourceHelper resourceHelper = new ResourceHelper("cloudimpl", "exampleProduct");
         AppConfig appConfig = AppConfig.builder().withGossipPort(gossipPort).withSeedName(seedName).withServicePort(servicePort).build();
         Injector injector = new Injector();
+        injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
+        injector.bind(ResourceHelper.class).to(resourceHelper);
+        injector.bind(ServiceDescriptorVersionManager.class).to(serviceVersionDescriptorMan);
         injector.bind(LogWriter.class).to(new ConsoleLogWriter());
         injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
         injector.nameBind("leaderOptions", CollectionOptions.builder().withOption("TableName", "Test").build());
@@ -75,6 +89,11 @@ public class Cluster {
         System.exit(-1);
     }
 
+    public ServiceDescriptorVersionManager getServiceDescriptorManager()
+    {
+        return serviceVersionDescriptorMan;
+    }
+    
     public <T> Mono<T> requestReply(String serviceName, Object msg) {
         return this.node.requestReply(serviceName, msg);
     }

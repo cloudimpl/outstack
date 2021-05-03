@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * @author nuwansa
  */
-public abstract class Command implements Input {
+public abstract class Command implements Input,ICommand {
 
     private final String rootId;
     private final String tenantId;
@@ -28,20 +28,22 @@ public abstract class Command implements Input {
         return rootId;
     }
 
+    @Override
     public String commandName() {
         return command;
     }
 
+    public <T extends Command> T unwrap(Class<T> type)
+    {
+        return (T) this;
+    }
+    
     @Override
     public String tenantId() {
         return tenantId;
     }
 
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    public static class Builder {
+    public static abstract class Builder {
 
         protected String rootId;
         protected String tenantId;
@@ -62,10 +64,6 @@ public abstract class Command implements Input {
             return this;
         }
 
-        public <T extends Command> T build() {
-            Command cmd = new Command(this) {
-            };
-            return (T) cmd;
-        }
+        public abstract <T extends Command> T build() ;
     }
 }

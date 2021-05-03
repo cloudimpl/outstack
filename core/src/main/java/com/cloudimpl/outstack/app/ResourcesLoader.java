@@ -78,7 +78,7 @@ public class ResourcesLoader {
             {
                 node.registerService(meta.getFunc().name(), com.cloudimpl.outstack.core.CloudFunction.builder()
                         .withFunction((Class<? extends Function<?, ? extends Publisher>>) meta.getServiceType())
-                        .withId(meta.getFunc().id())
+                        .withId(meta.getFunc().id()).withAttr(meta.getAttr())
                 .withRouter(CloudRouterDescriptor.builder().withRouterType(meta.getRouterType()).build()).build());
                 break;
             }
@@ -86,7 +86,7 @@ public class ResourcesLoader {
             {
                 node.registerService(meta.getFunc().name(), com.cloudimpl.outstack.core.CloudFunction.builder()
                         .withFunction((Class<? extends Function<?, ? extends Publisher>>) meta.getServiceType())
-                        .withId(meta.getFunc().id())
+                        .withId(meta.getFunc().id()).withAttr(meta.getAttr())
                 .withRouter(CloudRouterDescriptor.builder()
                         .withRouterType(meta.getRouterType())
                         .withLoadBalancer(meta.getRouter()

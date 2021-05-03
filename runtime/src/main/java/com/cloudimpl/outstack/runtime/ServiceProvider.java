@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ICommand;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
@@ -24,7 +25,7 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  * @param <T>
  */
-public  class ServiceProvider<T extends RootEntity, R> implements Function<Command, Publisher<?>> {
+public  class ServiceProvider<T extends RootEntity, R> implements Function<Object, Publisher<?>> {
 
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
@@ -69,13 +70,17 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
     }
 
     @Override
-    public Publisher apply(Command cmd) {
-
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(cmd.rootId(),cmd.tenantId());
-        return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(tx, cmd))
-                .doOnNext(ct -> this.evtHandlerManager.emit(tx, ct.getEvents()))
-                .doOnNext(ct->eventRepository.saveTx(tx))
-                .map(ct -> tx.getReply());
+    public Publisher apply(Object input) {
+      
+        if(!ICommand.class.isInstance(input))
+        {
+            return Mono.error(()->new CommandException("invalid input received. {0}", input));
+        }
+        ICommand cmd  = ICommand.class.cast(input);    
+        return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
+                .doOnNext(ct -> this.evtHandlerManager.emit(ct.getTx(), ct.getEvents()))
+                .doOnNext(ct->eventRepository.saveTx(ct.getTx()))
+                .map(ct -> ct.getTx().getReply());
     }
 
     public void applyEvent(Event event){

@@ -35,7 +35,7 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Router router = funcType.getAnnotation(Router.class);
         Objects.requireNonNull(func);
-        
+        Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String,String> attr = new HashMap<>();
         attr.put("seviceMeta",GsonCodec.encode(getServiceDescription(funcType)));
         //attr.put("plural", value)
@@ -47,28 +47,33 @@ public class SpringUtil {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends Handler<?>>> handlers = SpringService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(rootType.getSimpleName(),entityMeta.version(),entityMeta.plural(),Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(serviceType.getSimpleName(),rootType.getSimpleName(),entityMeta.version(),entityMeta.plural(),Entity.hasTenant(rootType));
         handlers.stream().filter(h->EntityCommandHandler.class.isAssignableFrom(h)).forEach(h->{
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityCommandHandler.class, 0);
+            EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
+            SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(),eMeta.plural());
+            
             if(eType == rootType)
             {
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
             }
             else
             {
-                desc.putChildAction(eType.getSimpleName(),new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
+                desc.putChildAction(entityDesc,new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
             }
         });
         
         handlers.stream().filter(h->EntityEventHandler.class.isAssignableFrom(h)).forEach(h->{
-            Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityEventHandler.class, 0);
+            Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityCommandHandler.class, 0);
+            EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
+            SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(),eMeta.plural());
             if(eType == rootType)
             {
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
             }
             else
             {
-                desc.putChildAction(eType.getSimpleName(),new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
+                desc.putChildAction(entityDesc,new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
             }
         });
         return desc;

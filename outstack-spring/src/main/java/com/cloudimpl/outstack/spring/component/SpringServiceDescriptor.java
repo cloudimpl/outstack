@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.spring.component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -14,19 +15,22 @@ import java.util.Optional;
  * @author nuwan
  */
 public class SpringServiceDescriptor {
-    private final String rootType;
     private final Map<String,ActionDescriptor> rootActions;
     private final Map<String,Map<String,ActionDescriptor>> childActions;
-    private final String plural;
+    private final Map<String,EntityDescriptor> mapDescriptors;
+    private final EntityDescriptor rootDesc;
     private final String version;
     private final boolean isTenant;
-    public SpringServiceDescriptor(String rootType,String version,String plural,boolean isTenant) {
-        this.rootType = rootType;
-        this.plural = plural;
+    private final String  serviceName;
+    
+    public SpringServiceDescriptor(String serviceName,String rootType,String version,String plural,boolean isTenant) {
+        this.serviceName = serviceName;
+        this.rootDesc = new EntityDescriptor(rootType, plural);
         this.version = version;
         this.isTenant = isTenant;
         this.rootActions = new HashMap<>();
         this.childActions = new HashMap<>();
+        this.mapDescriptors = new HashMap<>();
     }
     
     public void putRootAction(ActionDescriptor action)
@@ -34,16 +38,16 @@ public class SpringServiceDescriptor {
         this.rootActions.put(action.getName(),action);
     }
     
-    public void putChildAction(String child,ActionDescriptor action)
+    public void putChildAction(EntityDescriptor child,ActionDescriptor action)
     {
-       Map<String,ActionDescriptor> map = childActions.get(child);
+       this.mapDescriptors.put(child.getPlural(), child);
+       Map<String,ActionDescriptor> map = childActions.get(child.getName());
        if(map == null)
        {
            map = new HashMap<>();
-           childActions.put(child, map);
+           childActions.put(child.getName(), map);
        }
        map.put(action.getName(),action);
-       
     }
 
     public boolean isTenantService()
@@ -51,9 +55,14 @@ public class SpringServiceDescriptor {
         return isTenant;
     }
     
+    public Optional<EntityDescriptor> getEntityDescriptorByPlural(String plural)
+    {
+        return Optional.ofNullable(mapDescriptors.get(plural));
+    }
+    
     public String getPlural()
     {
-        return plural;
+        return rootDesc.getPlural();
     }
     
     public String getVersion()
@@ -62,7 +71,11 @@ public class SpringServiceDescriptor {
     }
     
     public String getRootType() {
-        return rootType;
+        return rootDesc.getName();
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
     
     public Optional<ActionDescriptor> getRootAction(String action)
@@ -92,6 +105,50 @@ public class SpringServiceDescriptor {
 
         public String getName() {
             return name;
+        }    
+    }
+    
+    public static final class EntityDescriptor
+    {
+        private final String name;
+        private final String plural;
+
+        public EntityDescriptor(String name, String plural) {
+            this.name = name;
+            this.plural = plural;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getPlural() {
+            return plural;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 89 * hash + Objects.hashCode(this.plural);
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final EntityDescriptor other = (EntityDescriptor) obj;
+            if (!Objects.equals(this.plural, other.plural)) {
+                return false;
+            }
+            return true;
         }
         
         

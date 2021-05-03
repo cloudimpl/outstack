@@ -48,7 +48,7 @@ public class ServiceMeta {
         this.serviceType = serviceType;
         this.func = func;
         this.router = router;
-        this.attr = attr;
+        this.attr = Collections.unmodifiableMap(attr);
     }
 
     public CloudFunction getFunc() {
@@ -62,6 +62,11 @@ public class ServiceMeta {
     public Class<?> getServiceType() {
         return serviceType;
     }
+
+    public Map<String, String> getAttr() {
+        return attr;
+    }
+   
 
     public Class<? extends CloudRouter> getRouterType() {
         switch (router.routerType()) {

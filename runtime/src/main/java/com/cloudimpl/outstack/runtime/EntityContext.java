@@ -29,6 +29,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected final ResourceHelper resourceHelper;
     protected final CRUDOpertations crudOperations;
     protected final Consumer<Event> eventPublisher;
+    protected EntityContextProvider.Transaction tx;
     public EntityContext(Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier,Supplier<String> idGenerator,ResourceHelper resourceHelper,CRUDOpertations crudOperations,Consumer<Event> eventPublisher) {
         this.tenantId = tenantId;
         this.events = new LinkedList<>();
@@ -40,6 +41,15 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.eventPublisher = eventPublisher;
     }
 
+    protected EntityContextProvider.Transaction getTx()
+    {
+        return this.tx;
+    }
+
+    public void setTx(EntityContextProvider.Transaction tx) {
+        this.tx = tx;
+    }
+   
     public String getTenantId() {
         return tenantId;
     }
