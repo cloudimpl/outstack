@@ -20,7 +20,9 @@ import com.cloudimpl.outstack.core.CloudException;
 import com.cloudimpl.outstack.node.NodeConfig;
 import io.scalecube.net.Address;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -50,6 +52,16 @@ public class AppConfig implements Callable<Integer> {
     List<String> seeds;
 
     List<Address> endpoints = Collections.EMPTY_LIST;
+
+    public AppConfig() {
+    }
+
+    public AppConfig(Builder builder) {
+        this.gossipPort = builder.gossipPort;
+        this.seedName = builder.seedName;
+        this.servicePort = builder.servicePort;
+        this.seeds = new LinkedList<>(builder.seeds);
+    }
 
     @Override
     public Integer call() throws Exception {
@@ -91,14 +103,14 @@ public class AppConfig implements Callable<Integer> {
             return Mono.just(builder);
         } else {
             return Mono.fromSupplier(() -> resolveDns(seedName))
-                    .doOnError(thr->System.out.println(thr.getMessage()))
+                    .doOnError(thr -> System.out.println(thr.getMessage()))
                     .retryWhen(RetryUtil.wrap(Retry
                             .any()
                             .exponentialBackoffWithJitter(Duration.ofSeconds(1), Duration.ofSeconds(20)))
                     )
-                    .doOnNext(s->System.out.println("seed node found : "+s))
-                    .map(s->Address.create(s, gossipPort))
-                    .doOnNext(addr->System.out.println("seed addr : "+addr))
+                    .doOnNext(s -> System.out.println("seed node found : " + s))
+                    .map(s -> Address.create(s, gossipPort))
+                    .doOnNext(addr -> System.out.println("seed addr : " + addr))
                     .doOnNext(addr -> builder.withSeedNodes(addr))
                     .map(s -> builder);
         }
@@ -111,5 +123,47 @@ public class AppConfig implements Callable<Integer> {
             throw new CloudException("service addr is null");
         }
         return addr;
+    }
+
+    public static Builder builder()
+    {
+        return new Builder();
+    }
+    
+    public static final class Builder {
+
+        int gossipPort = 12000;
+
+        boolean waitForSeed = false;
+
+        String seedName = null;
+
+        int servicePort = 10000;
+
+        List<String> seeds = new LinkedList<>();
+
+        public Builder withGossipPort(int port) {
+            this.gossipPort = port;
+            return this;
+        }
+
+        public Builder withSeedName(String seedName) {
+            this.seedName = seedName;
+            return this;
+        }
+
+        public Builder withServicePort(int servicePort) {
+            this.servicePort = servicePort;
+            return this;
+        }
+
+        public Builder withSeeds(String... seeds) {
+            this.seeds.addAll(Arrays.asList(seeds));
+            return this;
+        }
+
+        public AppConfig build() {
+            return new AppConfig(this);
+        }
     }
 }

@@ -29,6 +29,7 @@ import io.scalecube.cluster.metadata.MetadataCodec;
 import io.scalecube.cluster.transport.api.Message;
 import io.scalecube.cluster.transport.api.MessageCodec;
 import io.scalecube.net.Address;
+import io.scalecube.transport.netty.tcp.TcpTransportFactory;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -103,6 +104,7 @@ public class CloudNode implements MetadataCodec{
 
         gossipCluster = new ClusterImpl()
                 .membership(options -> options.seedMembers(config.getSeeds()))
+                .transportFactory(TcpTransportFactory::new)
                 .config(opt -> opt
                 .metadataCodec(this)
                 .transport(op -> op.port(config.getGossipPort()).messageCodec(new MessageCodecImpl())))
@@ -126,6 +128,12 @@ public class CloudNode implements MetadataCodec{
         startEndpointServices();
     }
 
+    public void shutdown()
+    {
+        this.transportManager.close();
+        this.gossipCluster.shutdown();
+    }
+    
     private String getMemberId()
     {
         return gossipCluster.member().id();

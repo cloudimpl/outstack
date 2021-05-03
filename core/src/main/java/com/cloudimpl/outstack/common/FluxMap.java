@@ -27,7 +27,7 @@ public class FluxMap<K, V> {
     private final SingleFluxProcessor<Item<K, V>> itemProcessor;
     private final Flux<Event<K, V>> flux;
     private final FluxProcessor<Event<K, V>> publisher;
-    public static final Scheduler defaultSched = Schedulers.newSingle("fluxmap");
+    public static final Scheduler defaultSched = Schedulers.newSingle("fluxmap",true);
     
     public FluxMap(){
         this(defaultSched);
