@@ -1,4 +1,4 @@
-package com.restrata.platform.commands;
+package com.cloudimpl.outstack.domain.example.commands;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 

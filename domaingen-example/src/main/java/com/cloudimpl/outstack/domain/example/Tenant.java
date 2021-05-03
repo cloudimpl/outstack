@@ -1,11 +1,11 @@
-package com.restrata.platform;
+package com.cloudimpl.outstack.domain.example;
 
-import com.restrata.platform.events.TenantCreated;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import com.cloudimpl.outstack.domain.example.Organization;
+import com.cloudimpl.outstack.domain.example.TenantCreated;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.restrata.platform.Organization;
 
 @EntityMeta(plural="tenants",version="V1")
 public class Tenant extends ChildEntity<Organization> {

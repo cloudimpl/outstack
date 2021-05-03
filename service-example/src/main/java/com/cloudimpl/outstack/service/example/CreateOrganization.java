@@ -5,11 +5,12 @@
  */
 package com.cloudimpl.outstack.service.example;
 
+import com.cloudimpl.outstack.domain.example.Organization;
+import com.cloudimpl.outstack.domain.example.OrganizationCreated;
+import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
-import com.restrata.platform.Organization;
-import com.restrata.platform.commands.OrganizationCreateRequest;
-import com.restrata.platform.events.OrganizationCreated;
+
 
 /**
  *

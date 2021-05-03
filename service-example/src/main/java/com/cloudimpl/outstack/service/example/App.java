@@ -7,11 +7,12 @@ package com.cloudimpl.outstack.service.example;
 
 import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.domain.example.Organization;
+import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepository;
-import com.restrata.platform.Organization;
-import com.restrata.platform.commands.OrganizationCreateRequest;
+
 
 import reactor.core.publisher.Mono;
 

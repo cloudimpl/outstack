@@ -5,10 +5,10 @@
  */
 package com.cloudimpl.outstack.service.example;
 
+import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.spring.component.SpringService;
-import com.restrata.platform.Organization;
 
 /**
  *

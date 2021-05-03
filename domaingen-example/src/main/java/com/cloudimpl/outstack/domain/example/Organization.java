@@ -1,9 +1,9 @@
-package com.restrata.platform;
+package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import com.restrata.platform.events.OrganizationCreated;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.domain.example.OrganizationCreated;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 
 @EntityMeta(plural="organizations",version="V1")

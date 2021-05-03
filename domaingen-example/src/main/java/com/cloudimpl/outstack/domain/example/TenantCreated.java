@@ -1,10 +1,10 @@
-package com.restrata.platform.events;
+package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.restrata.platform.Tenant;
+import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.restrata.platform.Organization;
+import com.cloudimpl.outstack.domain.example.Tenant;
 
 public class TenantCreated extends Event<Tenant> {
     private final String endpoint ;

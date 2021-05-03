@@ -1,9 +1,9 @@
-package com.restrata.platform.events;
+package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.restrata.platform.Organization;
 
 public class OrganizationCreated extends Event<Organization> {
     private final String website ;

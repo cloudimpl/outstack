@@ -1,4 +1,4 @@
-package com.xventure.projectA.enums;
+package com.cloudimpl.outstack.domain.example.enums;
 
 
 public enum OrderType {
