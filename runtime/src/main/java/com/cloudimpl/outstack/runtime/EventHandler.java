@@ -14,6 +14,6 @@ import java.util.function.BiConsumer;
  * @param <C>
  * @param <I>
  */
-public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>,Handler{
+public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>{
     
 }

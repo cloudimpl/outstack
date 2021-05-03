@@ -15,7 +15,7 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <T>
  * @param <E>
  */
-public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> implements EventHandler<EntityContext<T>, E> {
+public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> implements Handler<T>, EventHandler<EntityContext<T>, E> {
 
     private final Class<T> enityType;
     private final Class<E> eventType;

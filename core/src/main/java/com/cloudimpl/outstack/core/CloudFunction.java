@@ -45,6 +45,10 @@ public class CloudFunction {
         return routerDesc;
     }
 
+    public Map<String, String> getAttr() {
+        return attr;
+    }
+
     public static Builder builder() {
         return new Builder();
     }

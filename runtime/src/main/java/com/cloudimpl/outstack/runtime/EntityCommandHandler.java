@@ -16,7 +16,7 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <T>
  * @param <I>
  */
-public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements CommandHandler<EntityContext<T>,I, R>
+public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements Handler<T>,CommandHandler<EntityContext<T>,I, R>
 {
     private final Class<T> enityType;
 

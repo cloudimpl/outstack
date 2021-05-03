@@ -14,6 +14,6 @@ import java.util.function.BiFunction;
  * @param <C>
  * @param <T>
  */
-public interface CommandHandler<C extends Context,T extends Command, R> extends Handler,BiFunction<C, T, R>{
+public interface CommandHandler<C extends Context,T extends Command, R> extends BiFunction<C, T, R>{
 
 }
