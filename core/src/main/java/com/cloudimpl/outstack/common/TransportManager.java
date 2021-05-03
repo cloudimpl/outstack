@@ -4,6 +4,7 @@
  */
 package com.cloudimpl.outstack.common;
 
+import io.rsocket.Closeable;
 import io.rsocket.ConnectionSetupPayload;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
@@ -13,6 +14,8 @@ import io.rsocket.core.RSocketServer;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.rsocket.transport.netty.server.TcpServerTransport;
 import io.rsocket.util.DefaultPayload;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.reactivestreams.Publisher;
@@ -27,7 +30,8 @@ public class TransportManager {
 
     private final Map<RouteEndpoint, Mono<RSocket>> mapConnections = new ConcurrentHashMap<>();
     private final MessageCodec defaultCodec;
-
+    private final List<Closeable> closeables = new LinkedList<>();
+    
     public TransportManager(MessageCodec defaultCodec) {
         this.defaultCodec = defaultCodec;
     }
@@ -42,11 +46,11 @@ public class TransportManager {
     }
 
     public void createEndpoint(String host, int port, EndpointListener listener) {
-        createEndpoint(host, port, defaultCodec, listener);
+        closeables.add(createEndpoint(host, port, defaultCodec, listener));
     }
 
-    public void createEndpoint(String host, int port, MessageCodec codec, EndpointListener listener) {
-        RSocketServer.create((SocketAcceptor) new SocketAcceptorImpl(codec, listener))
+    public Closeable createEndpoint(String host, int port, MessageCodec codec, EndpointListener listener) {
+        return RSocketServer.create((SocketAcceptor) new SocketAcceptorImpl(codec, listener))
                 // .frameDecoder(PayloadDecoder.ZERO_COPY)
                 //  .acceptor((SocketAcceptor) new SocketAcceptorImpl(codec, listener))     
                 .bindNow(TcpServerTransport.create(host, port));
@@ -135,5 +139,10 @@ public class TransportManager {
                 }
             });
         }
+    }
+    
+    public void close()
+    {
+        closeables.forEach(c->c.dispose());
     }
 }

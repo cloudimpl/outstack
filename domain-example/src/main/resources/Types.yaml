@@ -8,6 +8,8 @@ spec:
         name: OrderType
         type: enum
         module: enums
+      args:
+         -
       values:
         - MARKET
         - LIMIT

@@ -13,7 +13,10 @@ import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
+import java.util.HashSet;
+import java.util.Set;
 import org.reactivestreams.Publisher;
+import com.cloudimpl.outstack.runtime.Handler;
 
 /**
  *
@@ -21,24 +24,23 @@ import org.reactivestreams.Publisher;
  * @param <T>
  */
 public class SpringService<T extends RootEntity>{
+    
+    private static Set<Class<? extends Handler>> HANDLERS = new HashSet<>();
+    
     private final ServiceProvider<T,CloudMessage> serviceProvider;
     public SpringService(EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
         serviceProvider = new ServiceProvider<>(Util.extractGenericParameter(this.getClass(), SpringService.class, 0),eventRepository, resourceHelper);
+        HANDLERS.stream().filter(h->EntityCommandHandler.class.isAssignableFrom(h)).forEach(e->serviceProvider.registerCommandHandler((Class<? extends EntityCommandHandler>) e));
+        HANDLERS.stream().filter(h->EntityEventHandler.class.isAssignableFrom(h)).forEach(e->serviceProvider.registerEventHandler((Class<? extends EntityEventHandler>) e));
     }
     
-    public void registerCommandHandler(Class<? extends EntityCommandHandler> commandHandlerType)
+    public static void $(Class<? extends Handler> handler)
     {
-        this.serviceProvider.registerCommandHandler(commandHandlerType);
-    }
-    
-    public void registerEventHandler(Class<? extends EntityEventHandler> eventHandlerType)
-    {
-        this.serviceProvider.registerEventHandler(eventHandlerType);
+        HANDLERS.add(handler);
     }
     
     public Publisher apply(CloudMessage msg)
     {
         return serviceProvider.apply(msg.data());
     }
-    
 }

@@ -8,6 +8,7 @@ spec:
         type: Organization
         name: Organization 
         plural: organizations
+        version: V1
         id: orgName
         tenant: false
       fieldRefs:

@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.spring.component;
 import com.cloudimpl.outstack.app.ResourcesLoader;
 import com.cloudimpl.outstack.app.ServiceMeta;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
+import com.cloudimpl.outstack.spring.util.SpringUtil;
 import com.cloudimpl.outstack.util.SrvUtil;
 
 /**
@@ -19,9 +20,9 @@ public class ResourcesLoaderEx extends ResourcesLoader{
     @Override
     protected ServiceMeta toServiceMeta(Class<?> serviceType)
     {
-        if(ServiceProvider.class.isAssignableFrom(serviceType))
+        if(SpringService.class.isAssignableFrom(serviceType))
         {
-            
+            return SpringUtil.serviceProviderMeta((Class<? extends ServiceProvider>) serviceType);
         }
         return SrvUtil.serviceMeta(serviceType);
     }

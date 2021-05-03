@@ -7,18 +7,19 @@ package com.cloudimpl.outstack.service.example;
 
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
-import com.xventure.projectA.OrganizationCreated;
-import com.xventure.projectA.org.Organization;
+import com.restrata.platform.Organization;
+import com.restrata.platform.commands.OrganizationCreateRequest;
+import com.restrata.platform.events.OrganizationCreated;
 
 /**
  *
  * @author nuwan
  */
-public class CreateOrganization extends EntityCommandHandler<Organization, OrgCreateRequest, Organization>{
+public class CreateOrganization extends EntityCommandHandler<Organization, OrganizationCreateRequest,Organization>{
 
     @Override
-    protected Organization execute(EntityContext<Organization> context, OrgCreateRequest command) {
-        return context.create("testorg", new OrganizationCreated("xxx", "testorg", "test"));
+    protected Organization execute(EntityContext<Organization> context, OrganizationCreateRequest command) {
+        return context.create(command.getOrgName(), new OrganizationCreated("xxx", command.getOrgName()));
     }
     
 }

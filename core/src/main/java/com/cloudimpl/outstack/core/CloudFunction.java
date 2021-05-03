@@ -55,7 +55,7 @@ public class CloudFunction {
         private String inputType;
         private CloudRouterDescriptor routerDesc;
         private String id;
-        private Map<String,String> attr;
+        private Map<String,String> attr = Collections.EMPTY_MAP;
         public Builder withFunction(Class<? extends Function<?, ? extends Publisher>> functionType) {
             this.functionType = functionType;
             this.inputType = CloudUtil.extractGenericParameter(functionType, Function.class, 0).getName();

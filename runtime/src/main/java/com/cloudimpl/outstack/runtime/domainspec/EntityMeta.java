@@ -11,4 +11,5 @@ package com.cloudimpl.outstack.runtime.domainspec;
  */
 public @interface EntityMeta {
     String plural();
+    String version();
 }

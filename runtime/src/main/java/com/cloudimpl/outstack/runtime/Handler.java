@@ -11,10 +11,7 @@ import java.util.function.BiFunction;
 /**
  *
  * @author nuwan
- * @param <C>
- * @param <T>
- * @param <R>
  */
-public interface InputHandler<C extends Context,T extends Input,R> extends BiFunction<C,T, R>{
+public interface Handler{
 
 }

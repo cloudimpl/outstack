@@ -24,8 +24,6 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
         return this._rootId;
     }
 
-    public abstract String rootEntityId();
-
     public abstract Class<T> rootType();
 
     @Override
@@ -65,10 +63,6 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
     }
     
     public static final ChildEntity DELETED = new ChildEntity() {
-        @Override
-        public String rootEntityId() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
 
         @Override
         public Class rootType() {

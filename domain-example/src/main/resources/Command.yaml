@@ -8,10 +8,12 @@ spec:
         type: OrganizationCreateRequest
         module: commands
       fieldRefs:
+        - orgName
         - website
   - template:
       metadata:
         type: TenantCreateRequest
         module: commands
       fieldRefs:
+        - tenantName
         - endpoint

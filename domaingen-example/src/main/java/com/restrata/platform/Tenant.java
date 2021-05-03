@@ -7,23 +7,17 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.restrata.platform.Organization;
 
-@EntityMeta(plural="tenants")
+@EntityMeta(plural="tenants",version="V1")
 public class Tenant extends ChildEntity<Organization> {
     private String endpoint ;
-    private final String orgName ;
     private final String tenantName ;
 
-    public Tenant(String orgName, String tenantName) {
-        this.orgName = orgName ;
+    public Tenant(String tenantName) {
         this.tenantName = tenantName ;
     }
 
     public String getEndpoint() {
         return this.endpoint ;
-    }
-
-    public String getOrgName() {
-        return this.orgName ;
     }
 
     public String getTenantName() {
@@ -33,11 +27,6 @@ public class Tenant extends ChildEntity<Organization> {
     @Override
     public String entityId() {
         return tenantName;
-    }
-
-    @Override
-    public String rootEntityId() {
-        return orgName;
     }
 
     @Override

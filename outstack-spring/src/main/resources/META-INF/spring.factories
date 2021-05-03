@@ -1,0 +1,4 @@
+#org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+#com.cloudimpl.outstack.spring.security.JwtConfiguration
+spring.main.web-application-type=reactive
+

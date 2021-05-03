@@ -107,5 +107,6 @@
         <module>outstack-spring-example</module>
         <module>domaingen-example</module>
         <module>service-example</module>
+        <module>outstack-spring-test</module>
     </modules>
 </project>

@@ -35,9 +35,9 @@ public abstract class RootEntity extends Entity {
     public <T extends ChildEntity> T createChildEntity(Class<T> type, String entityId, String id) {
         T t;
         if (hasTenant()) {
-            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class, String.class), new Util.VarArg<>(entityId(), entityId, ITenant.class.cast(this).getTenantId()));
+            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, ITenant.class.cast(this).getTenantId()));
         } else {
-            t = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId(), entityId));
+            t = Util.createObject(type, new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
         }
         EntityHelper.updateId(t, id);
         EntityHelper.updateRootId(t, id());

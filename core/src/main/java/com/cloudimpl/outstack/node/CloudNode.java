@@ -128,6 +128,12 @@ public class CloudNode implements MetadataCodec{
         startEndpointServices();
     }
 
+    public void shutdown()
+    {
+        this.transportManager.close();
+        this.gossipCluster.shutdown();
+    }
+    
     private String getMemberId()
     {
         return gossipCluster.member().id();

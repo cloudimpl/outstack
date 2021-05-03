@@ -5,8 +5,6 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Command;
-import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Input;
 import java.util.function.BiConsumer;
 
@@ -16,6 +14,6 @@ import java.util.function.BiConsumer;
  * @param <C>
  * @param <I>
  */
-public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>{
+public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>,Handler{
     
 }

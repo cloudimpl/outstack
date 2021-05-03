@@ -6,7 +6,7 @@ import com.restrata.platform.events.OrganizationCreated;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 
-@EntityMeta(plural="organizations")
+@EntityMeta(plural="organizations",version="V1")
 public class Organization extends RootEntity {
     private String website ;
     private final String orgName ;

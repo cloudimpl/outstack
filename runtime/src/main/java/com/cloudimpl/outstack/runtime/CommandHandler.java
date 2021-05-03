@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
+import java.util.function.BiFunction;
 
 /**
  *
@@ -13,6 +14,6 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  * @param <C>
  * @param <T>
  */
-public interface CommandHandler<C extends Context,T extends Command, R> extends InputHandler<C,T,R> {
+public interface CommandHandler<C extends Context,T extends Command, R> extends Handler,BiFunction<C, T, R>{
 
 }

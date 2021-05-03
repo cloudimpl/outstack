@@ -73,6 +73,7 @@ public class ResourcesLoader {
             case ROUND_ROBIN:
             case SERVICE_ID:
             case LEADER:
+            case LOCAL:
             case NODE_ID:
             {
                 node.registerService(meta.getFunc().name(), com.cloudimpl.outstack.core.CloudFunction.builder()

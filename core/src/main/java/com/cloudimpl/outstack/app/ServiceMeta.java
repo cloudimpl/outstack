@@ -21,6 +21,7 @@ import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.routers.DynamicRouter;
 import com.cloudimpl.outstack.routers.LeaderRouter;
+import com.cloudimpl.outstack.routers.LocalRouter;
 import com.cloudimpl.outstack.routers.NodeIdRouter;
 import com.cloudimpl.outstack.routers.RoundRobinRouter;
 import com.cloudimpl.outstack.routers.ServiceIdRouter;
@@ -74,6 +75,8 @@ public class ServiceMeta {
                 return NodeIdRouter.class;
             case LEADER:
                 return LeaderRouter.class;
+            case LOCAL:
+                return LocalRouter.class;
             default:
                 throw new CloudException(router.routerType()+" not supported");
         }

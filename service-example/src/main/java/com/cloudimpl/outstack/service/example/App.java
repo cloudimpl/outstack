@@ -10,9 +10,9 @@ import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepository;
-import com.xventure.projectA.OrganizationCreated;
-import com.xventure.projectA.org.Organization;
-import com.xventure.projectA.user.User;
+import com.restrata.platform.Organization;
+import com.restrata.platform.commands.OrganizationCreateRequest;
+
 import reactor.core.publisher.Mono;
 
 /**
@@ -21,10 +21,10 @@ import reactor.core.publisher.Mono;
  */
 public class App {
     public static void main(String[] args) {
-        EventRepositoy<User> repo = new MemEventRepository<>(User.class,null);
+        EventRepositoy<Organization> repo = new MemEventRepository<>(Organization.class,null);
         ResourceHelper helper = new ResourceHelper("test", "abc");
-        UserService service = new UserService(repo, helper);
-        Mono.from(service.apply(CloudMessage.builder().withData(new UserCreateReq()).build())).doOnError(err->Throwable.class.cast(err).printStackTrace())
+        OrganizationService service = new OrganizationService(repo, helper);
+        Mono.from(service.apply(CloudMessage.builder().withData(OrganizationCreateRequest.builder().withOrgName("testOrg").withCommand("createOrganization").build()).build())).doOnError(err->Throwable.class.cast(err).printStackTrace())
                 .doOnNext(e->System.out.println(GsonCodec.encode(e)))
                 //.flatMap(e->service.apply(CloudMessage.builder().withData(new OrgCreateRequest(((User)e).id())).build()))
                 .doOnError(err->Throwable.class.cast(err).printStackTrace())
