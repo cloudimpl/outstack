@@ -8,16 +8,16 @@ package com.cloudimpl.outstack.service.example;
 import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.runtime.EntityQueryContext;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
-import com.cloudimpl.outstack.runtime.domainspec.QueryByIdReuuest;
+import com.cloudimpl.outstack.runtime.domainspec.QueryByIdRequest;
 
 /**
  *
  * @author nuwan
  */
-public class GetOrganization extends EntityQueryHandler<Organization,QueryByIdReuuest, Organization>{
+public class GetOrganization extends EntityQueryHandler<Organization,QueryByIdRequest, Organization>{
 
     @Override
-    protected Organization execute(EntityQueryContext<Organization> context, QueryByIdReuuest query) {
+    protected Organization execute(EntityQueryContext<Organization> context, QueryByIdRequest query) {
         return context.getById(query.rootId()).orElseThrow();
     }
     

@@ -219,7 +219,7 @@ public class EntityContextProvider<T extends RootEntity> {
         }
         
         @Override
-        public <R extends RootEntity, T extends ChildEntity<R>> Collection<T> getAllChildByType(String rootTrn,Class<T> childType) {
+        public <R extends RootEntity,T extends ChildEntity<R>> Collection<T> getAllChildByType(String rootTrn,Class<T> childType) {
             
             Map<String,T> map = queryOperation.getAllChildByType(rootTrn,childType).stream().collect(Collectors.toMap(c->c.getTRN(), c->(T)c));
             mapTrnEntities.headMap(rootTrn).entrySet().forEach(p->map.put(p.getKey(), (T)p.getValue()));

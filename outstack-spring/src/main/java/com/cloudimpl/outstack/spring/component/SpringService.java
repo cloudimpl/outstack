@@ -66,7 +66,7 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     
     public static boolean filter(Class<? extends RootEntity> rootType,Class<? extends Handler<?>> handlerType)
     {
-        Class<? extends Entity> entityType = Util.extractGenericParameter(handlerType, Handler.class, 0);
+        Class<? extends Entity> entityType = Util.extractGenericParameter(handlerType, handlerType.getSuperclass(), 0);
         Class<? extends Entity> root = RootEntity.isMyType(entityType)? entityType: Util.extractGenericParameter(entityType,ChildEntity.class, 0);
         return rootType == root;
     }

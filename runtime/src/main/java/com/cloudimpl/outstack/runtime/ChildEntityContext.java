@@ -189,6 +189,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         return root;
     }
     
+    @Override
     public Collection<T> getAllByEntityType(Class<T> type)
     {
          return queryOperation.getAllChildByType(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType,rootId,getTenantId())),type);

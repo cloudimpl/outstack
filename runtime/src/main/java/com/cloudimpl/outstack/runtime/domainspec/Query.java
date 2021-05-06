@@ -10,9 +10,9 @@ package com.cloudimpl.outstack.runtime.domainspec;
  * @author nuwan
  */
 public abstract class Query implements IQuery{
-    String _rootId;
-    String _tenantId;
-    String _id;
+    private  String _rootId;
+    private  String _tenantId;
+    private  String _id;
     public Query(Builder builder)
     {
         this._rootId = builder.rootId;
@@ -20,7 +20,7 @@ public abstract class Query implements IQuery{
         this._id = builder.id;
     }
     
-    public String tenantId()
+    public final String tenantId()
     {
         return _tenantId;
     }
@@ -53,9 +53,14 @@ public abstract class Query implements IQuery{
         return this.getClass().getSimpleName();
     }
     
-    public String rootId()
+    public final String rootId()
     {
         return this._rootId;
+    }
+    
+    public final String id()
+    {
+        return this._id;
     }
     
     public abstract static  class Builder

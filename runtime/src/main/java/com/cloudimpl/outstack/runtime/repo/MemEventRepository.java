@@ -17,6 +17,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -138,7 +139,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     @Override
     public <R extends RootEntity, T extends ChildEntity<R>> Collection<T> getAllChildByType(String rootTrn,Class<T> childType) {
-       return mapEntites.headMap(rootTrn+"/"+childType.getSimpleName()).values().stream().map(e->(T)e).collect(Collectors.toList());
+        SortedMap<String,Entity> map = mapEntites.subMap(rootTrn+"/"+childType.getSimpleName(),rootTrn+"/"+childType.getSimpleName() + Character.MAX_VALUE);
+       return map.values().stream().map(e->(T)e).collect(Collectors.toList());
     }
 
 }

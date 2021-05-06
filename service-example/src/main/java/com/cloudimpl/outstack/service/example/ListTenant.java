@@ -10,16 +10,17 @@ import com.cloudimpl.outstack.domain.example.Tenant;
 import com.cloudimpl.outstack.runtime.EntityQueryContext;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.domainspec.QueryByIdRequest;
+import java.util.Collection;
 
 /**
  *
  * @author nuwan
  */
-public class GetTenant extends EntityQueryHandler<Tenant,QueryByIdRequest, Tenant>{
+public class ListTenant extends EntityQueryHandler<Tenant,QueryByIdRequest, Collection<Tenant>>{
 
     @Override
-    protected Tenant execute(EntityQueryContext<Tenant> context, QueryByIdRequest query) {
-        return context.getById(query.id()).orElseThrow();
+    protected Collection<Tenant> execute(EntityQueryContext<Tenant> context, QueryByIdRequest query) {
+        return context.<Organization,Tenant>asChildQueryContext().getAllByEntityType(Tenant.class);
     }
     
 }
