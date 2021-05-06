@@ -22,4 +22,6 @@ public interface RootEntityQueryContext<T extends RootEntity> extends EntityQuer
     <C extends ChildEntity<T>> Optional<C> getChildById(Class<C> childType, String id);
 
     <C extends ChildEntity<T>> Collection<C> getAllChildsByType(Class<C> childType);
+    
+    Optional<T> getRoot();
 }

@@ -13,8 +13,6 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -196,5 +194,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     @Override
     public <R extends RootEntity, K extends ChildEntity<R>> ChildEntityQueryContext<R, K> asChildQueryContext() {
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Optional<T> getRoot() {
+        if(this._id == null)
+            return Optional.empty();
+        return Optional.ofNullable((T)entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType, this._id, getTenantId()))));
     }
 }
