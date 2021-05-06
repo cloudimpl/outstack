@@ -10,9 +10,7 @@ import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
-import com.cloudimpl.outstack.runtime.util.Util;
 import com.cloudimpl.outstack.spring.component.SpringService;
 
 /**
@@ -24,6 +22,9 @@ import com.cloudimpl.outstack.spring.component.SpringService;
 public class OrganizationService extends SpringService<Organization>{
     static{
         $(CreateOrganization.class);
+        $(CreateTenant.class);
+        $(GetOrganization.class);
+        $(GetTenant.class);
     }
     public OrganizationService(EventRepositoryFactory eventRepoFactory, ResourceHelper resourceHelper) {
         super(eventRepoFactory, resourceHelper);

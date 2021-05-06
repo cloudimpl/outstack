@@ -5,12 +5,16 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import java.text.MessageFormat;
 
 /**
  *
  * @author nuwan
  */
-public interface Handler<T extends Entity>{
+public class QueryException extends RuntimeException{
 
+    public QueryException(String format,Object... args) {
+        super(MessageFormat.format(format, args));
+    }
+    
 }

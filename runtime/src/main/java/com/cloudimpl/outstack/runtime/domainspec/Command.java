@@ -13,26 +13,34 @@ import java.util.Objects;
  */
 public abstract class Command implements Input,ICommand {
 
-    private final String rootId;
-    private final String tenantId;
-    private final String command;
+    private  String rootId;
+    private  String tenantId;
 
     public Command(Builder builder) {
-        Objects.requireNonNull(builder.command);
         this.rootId = builder.rootId;
         this.tenantId = builder.tenantId;
-        this.command = builder.command;
     }
 
     public String rootId() {
         return rootId;
     }
 
+    protected void setRootId(String rootId)
+    {
+        this.rootId = rootId;
+    }
+    
+    protected void setTenantId(String tenantId)
+    {
+        this.tenantId = tenantId;
+    }
+    
     @Override
     public String commandName() {
-        return command;
+        return this.getClass().getSimpleName();
     }
 
+    @Override
     public <T extends Command> T unwrap(Class<T> type)
     {
         return (T) this;
@@ -43,11 +51,10 @@ public abstract class Command implements Input,ICommand {
         return tenantId;
     }
 
-    public static abstract class Builder {
+    public static  class Builder {
 
         protected String rootId;
         protected String tenantId;
-        protected String command;
 
         public Builder withRootId(String rootId) {
             this.rootId = rootId;
@@ -59,11 +66,10 @@ public abstract class Command implements Input,ICommand {
             return this;
         }
 
-        public Builder withCommand(String command) {
-            this.command = command;
-            return this;
+        public  <T extends Command> T build()
+        {
+            return (T) new Command(this) {
+            };
         }
-
-        public abstract <T extends Command> T build() ;
     }
 }

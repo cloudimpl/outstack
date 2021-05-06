@@ -18,7 +18,7 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <T>
  * @param <I>
  */
-public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements Handler<T>,CommandHandler<EntityContext<T>,I, R>
+public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements Handler<T>
 {
     private final Class<T> enityType;
     private final Class<I> cmdType;
@@ -32,14 +32,13 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         return Entity.hasTenant(enityType);
     }
     
-    @Override
-    public R apply(EntityContext<T> context,I command)
+    public  R apply(EntityContext<T> context,I command)
     {
         validateInput(command);
         return execute(context, command);
     }
     
-    protected abstract R execute(EntityContext<T> context,I command);
+    protected abstract  R execute(EntityContext<T> context,I command);
     
     private void validateInput(I command)
     {

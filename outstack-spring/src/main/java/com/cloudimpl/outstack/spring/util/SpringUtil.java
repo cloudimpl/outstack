@@ -10,6 +10,7 @@ import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityEventHandler;
+import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.Handler;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
@@ -74,6 +75,20 @@ public class SpringUtil {
             else
             {
                 desc.putChildAction(entityDesc,new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
+            }
+        });
+        
+        handlers.stream().filter(h->EntityQueryHandler.class.isAssignableFrom(h)).forEach(h->{
+            Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityQueryHandler.class, 0);
+            EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
+            SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(),eMeta.plural());
+            if(eType == rootType)
+            {
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+            }
+            else
+            {
+                desc.putChildAction(entityDesc,new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             }
         });
         return desc;

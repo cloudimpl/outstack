@@ -10,6 +10,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -25,27 +27,39 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  * @param <T>
  */
-public  class ServiceProvider<T extends RootEntity, R> implements Function<Object, Publisher<?>> {
+public class ServiceProvider<T extends RootEntity, R> implements Function<Object, Publisher<?>> {
 
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
+    private final Map<String, EntityQueryHandler> mapQueryHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
     private final Class<? extends RootEntity> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(Class<T> rootType,EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
+    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, resourceHelper);
+        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, resourceHelper, eventRepository);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
+
         validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityCommandHandler.class, 0));
-        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(),Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
         if (exist != null) {
             throw new ServiceProviderException("commad handler {0} already exist ", handlerType.getSimpleName());
         }
+        validate(s -> mapQueryHandlers.get(s) != null, handlerType.getSimpleName().toLowerCase(), "handler name " + handlerType.getSimpleName() + " already exist");
+    }
+
+    public void registerQueryHandler(Class<? extends EntityQueryHandler> handlerType) {
+        validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityQueryHandler.class, 0));
+        EntityQueryHandler exist = mapQueryHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        if (exist != null) {
+            throw new ServiceProviderException("query handler {0} already exist ", handlerType.getSimpleName());
+        }
+        validate(s -> mapCmdHandlers.get(s) != null, handlerType.getSimpleName().toLowerCase(), "handler name " + handlerType.getSimpleName() + " already exist");
     }
 
     public void registerEventHandler(Class<? extends EntityEventHandler> handlerType) {
@@ -54,6 +68,10 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Objec
 
     public Optional<EntityCommandHandler> getCmdHandler(String name) {
         return Optional.ofNullable(mapCmdHandlers.get(name.toLowerCase()));
+    }
+    
+    public Optional<EntityQueryHandler> getQueryHandler(String name) {
+        return Optional.ofNullable(mapQueryHandlers.get(name.toLowerCase()));
     }
 
     public static void validateHandler(String name, Class<? extends RootEntity> rootType, Class<? extends Entity> type) {
@@ -67,25 +85,43 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Objec
                 throw new ServiceProviderException("handler {0} root entity type {1} not matched with service provider type {2}", name, root.getName(), rootType.getName());
             }
         }
+
     }
 
     @Override
     public Publisher apply(Object input) {
-      
-        if(!ICommand.class.isInstance(input))
-        {
-            return Mono.error(()->new CommandException("invalid input received. {0}", input));
+
+        if (ICommand.class.isInstance(input)) {
+            return applyCommand((ICommand) input);
+        } else if (IQuery.class.isInstance(input)) {
+            return applyQuery((IQuery) input);
+        } else {
+            return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
-        ICommand cmd  = ICommand.class.cast(input);    
+
+    }
+
+    private Publisher applyCommand(ICommand cmd) {
         return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
                 .doOnNext(ct -> this.evtHandlerManager.emit(ct.getTx(), ct.getEvents()))
-                .doOnNext(ct->eventRepository.saveTx(ct.getTx()))
+                .doOnNext(ct -> eventRepository.saveTx(ct.getTx()))
                 .map(ct -> ct.getTx().getReply());
     }
 
-    public void applyEvent(Event event){
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(),event.tenantId());
+    private Publisher applyQuery(IQuery query) {
+        return Mono.just(getQueryHandler(query.queryName()).orElseThrow(() -> new QueryException("query {0} not found", query.queryName().toLowerCase())).emit(contextProvider, query))
+                .map(ct -> ct.getTx().getReply());
+    }
+    
+    public void applyEvent(Event event) {
+        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(), event.tenantId());
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
-    } 
+    }
+
+    public void validate(Predicate<String> pred, String name, String error) {
+        if (pred.test(name)) {
+            throw new ServiceProviderException(error);
+        }
+    }
 }

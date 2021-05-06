@@ -12,6 +12,9 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -22,15 +25,16 @@ import java.util.function.Supplier;
  * @param <R>
  * @param <T>
  */
-public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> extends EntityContext<T> {
+public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> extends EntityContext<T> implements ChildEntityQueryContext<R, T>{
 
     private final Class<R> rootType;
     private final String rootId;
-
-    public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier, Supplier<String> idGenerator, ResourceHelper resourceHelper, CRUDOpertations crudOperations, Consumer<Event> eventPublisher) {
-        super(entityType, tenantId, entitySupplier, idGenerator, resourceHelper, crudOperations, eventPublisher);
+    
+    public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier, Supplier<String> idGenerator, ResourceHelper resourceHelper, CRUDOperations crudOperations,QueryOperations queryOperation, Consumer<Event> eventPublisher) {
+        super(entityType, tenantId, entitySupplier, idGenerator, resourceHelper, crudOperations,queryOperation, eventPublisher);
         this.rootType = rootType;
         this.rootId = rootId;
+        Objects.requireNonNull(this.rootId);
     }
 
     @Override
@@ -39,13 +43,18 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         if (root == null) {
             throw new DomainEventException("root entity {0} is not exist", event.getRootEntityRN());
         }
-        T child = (T) entitySupplier.apply(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+        T child = (T) entitySupplier.apply(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, root.id(), entityType, id, getTenantId())));
         if (child != null) {
             throw new DomainEventException("child entity {0} is already exist", child.getBRN());
         }
         if (!event.entityId().equals(id)) {
             throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
         }
+        if(!root.entityId().equals(event.rootEntityId()))
+        {
+            throw new DomainEventException("root entity Id and event root id not equal. {0} , {1}", root.entityId(), event.rootEntityId());
+        }
+        
         child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
@@ -139,4 +148,59 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         return child;
     }
 
+    @Override
+    public <R extends RootEntity> RootEntityContext<R> asRootContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public ChildEntityContext<R,T> asChildContext() {
+        return this;
+    }
+
+    @Override
+    public Optional<T> getByEntityId(String id)
+    {
+        R root = (R) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, rootId, getTenantId())));
+        if (root == null) {
+            throw new DomainEventException("root entity {0} is not exist", RootEntity.makeTRN(rootType, rootId, getTenantId()));
+        }
+        return Optional.ofNullable((T)entitySupplier.apply(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, root.id(), entityType, id, getTenantId()))));
+    }
+    
+    
+    @Override
+    public Optional<T> getById(String id)
+    {
+        R root = (R) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, rootId, getTenantId())));
+        if (root == null) {
+            throw new DomainEventException("root entity {0} is not exist", RootEntity.makeTRN(rootType, rootId, getTenantId()));
+        }
+        return Optional.ofNullable((T)entitySupplier.apply(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, root.id(), entityType, id, getTenantId()))));
+    }
+    
+    @Override
+    public R getRoot()
+    {
+        R root = (R) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, rootId, getTenantId())));
+        if (root == null) {
+            throw new DomainEventException("root entity {0} is not exist", RootEntity.makeTRN(rootType, rootId, getTenantId()));
+        }
+        return root;
+    }
+    
+    public Collection<T> getAllByEntityType(Class<T> type)
+    {
+         return queryOperation.getAllChildByType(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType,rootId,getTenantId())),type);
+    }
+
+    @Override
+    public <R extends RootEntity> RootEntityQueryContext<R> asRootQueryContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public ChildEntityQueryContext<R, T> asChildQueryContext() {
+        return  this;
+    }
 }

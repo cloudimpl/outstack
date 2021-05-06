@@ -6,9 +6,9 @@
 package com.cloudimpl.outstack.spring.component;
 
 import com.cloudimpl.outstack.common.CloudMessage;
-import com.cloudimpl.outstack.runtime.CommandHandler;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityEventHandler;
+import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
@@ -47,6 +47,11 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
                 .filter(h->SpringService.filter(root, h))
                 .filter(h->EntityEventHandler.class.isAssignableFrom(h))
                 .forEach(e->serviceProvider.registerEventHandler((Class<? extends EntityEventHandler>) e));
+        
+        HANDLERS.stream()
+                .filter(h->SpringService.filter(root, h))
+                .filter(h->EntityQueryHandler.class.isAssignableFrom(h))
+                .forEach(e->serviceProvider.registerQueryHandler((Class<? extends EntityQueryHandler>) e));
     }
     
     public static void $(Class<? extends Handler<?>> handler)
@@ -73,7 +78,7 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     
     public static boolean isCommandHandler(Class<? extends Handler<?>> handlerType)
     {
-        return CommandHandler.class.isAssignableFrom(handlerType);
+        return EntityCommandHandler.class.isAssignableFrom(handlerType);
     }
     
     public static boolean isEventHandler(Class<? extends Handler<?>> eventType)

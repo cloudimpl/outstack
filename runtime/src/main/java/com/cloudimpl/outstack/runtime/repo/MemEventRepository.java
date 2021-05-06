@@ -13,10 +13,13 @@ import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -25,8 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> {
 
-    private final Map<String, Entity> mapEntitiesByTrn = new ConcurrentHashMap<>();
-    private final Map<String, Entity> mapEntitiesByBrn = new ConcurrentHashMap<>();
+    private final TreeMap<String, Entity> mapEntites = new TreeMap<>();
 
     public MemEventRepository(Class<T> rootType, EventStream eventStream) {
         super(rootType, eventStream);
@@ -42,8 +44,10 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             switch (event.getAction()) {
                 case CREATE: {
                     e = createEntity(transaction.getEntityTrn(event.getRootEntityTRN()),transaction.getEntityTrn(event), event);
-                    mapEntitiesByBrn.put(transaction.getEntityBrn(event), e);
-                    mapEntitiesByTrn.put(transaction.getEntityTrn(event), e);
+                    mapEntites.put(transaction.getEntityBrn(e.getBRN()), e);
+                    mapEntites.put(transaction.getEntityTrn(e.getTRN()), e);
+                    System.out.println("interting brn:"+transaction.getEntityBrn(e.getBRN()));
+                    System.out.println("interting trn:"+transaction.getEntityTrn(e.getBRN()));
                     break;  
                 }
                 case UPDATE: {
@@ -65,7 +69,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                                  transaction.getEntityBrn(ChildEntity.makeRN(event.getRootOwner(), event.rootEntityId(), event.getOwner(), renamedEvent.entityId(), event.tenantId())),
                                  event);
                     }
-                    mapEntitiesByTrn.put(transaction.getEntityTrn(event), e);
+                    mapEntites.put(transaction.getEntityTrn(event), e);
                     break;
                 }
             }
@@ -79,7 +83,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             e = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
             e.applyEvent(event);
         } else {
-            RootEntity root = (RootEntity) mapEntitiesByTrn.get(rootFqTrd);
+            RootEntity root = (RootEntity) mapEntites.get(rootFqTrd);
             e = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
             e.applyEvent(event); 
         }
@@ -89,35 +93,52 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     private Entity updateEntity(String fqTrd, Event event) {
         Entity e;
         if (event.isRootEvent()) {
-            e = mapEntitiesByTrn.get(fqTrd);
+            e = mapEntites.get(fqTrd);
             e.applyEvent(event);
         } else {
-            e = mapEntitiesByTrn.get(fqTrd);
+            e = mapEntites.get(fqTrd);
             e.applyEvent(event);
         }
         return e;
     }
 
     private Entity deleteEntity(String fqBrn) {
-        return mapEntitiesByBrn.remove(fqBrn);
+        return mapEntites.remove(fqBrn);
     }
 
     private Entity renamEntity(String oldBrn, String newBrn, Event event) {
-        Entity e = mapEntitiesByBrn.get(oldBrn);
+        Entity e = mapEntites.get(oldBrn);
         e = e.rename(event.entityId());
-        mapEntitiesByBrn.remove(oldBrn);
-        mapEntitiesByBrn.put(newBrn, e);
+        mapEntites.remove(oldBrn);
+        mapEntites.put(newBrn, e);
         return e;
     }
 
     @Override
-    protected <K extends Entity> Optional<K> loadEntityByBrn(String resourceName) {
-        return Optional.ofNullable((K) mapEntitiesByBrn.get(resourceName));
+    protected synchronized <K extends Entity> Optional<K> loadEntityByBrn(String resourceName) {
+        System.out.println("loading brn: "+resourceName);
+        return Optional.ofNullable((K) mapEntites.get(resourceName));
     }
 
     @Override
-    protected <K extends Entity> Optional<K> loadEntityByTrn(String resourceName) {
-        return Optional.ofNullable((K) mapEntitiesByTrn.get(resourceName));
+    protected synchronized <K extends Entity> Optional<K> loadEntityByTrn(String resourceName) {
+        System.out.println("loading trn: "+resourceName);
+        return Optional.ofNullable((K) mapEntites.get(resourceName));
+    }
+
+    @Override
+    public <T extends RootEntity> Optional<T> getRootById(String rn) {
+        return Optional.ofNullable((T) mapEntites.get(rn));
+    }
+
+    @Override
+    public <R extends RootEntity, T extends ChildEntity<R>> Optional<T> getChildById(String rn) {
+       return Optional.ofNullable((T) mapEntites.get(rn));
+    }
+
+    @Override
+    public <R extends RootEntity, T extends ChildEntity<R>> Collection<T> getAllChildByType(String rootTrn,Class<T> childType) {
+       return mapEntites.headMap(rootTrn+"/"+childType.getSimpleName()).values().stream().map(e->(T)e).collect(Collectors.toList());
     }
 
 }

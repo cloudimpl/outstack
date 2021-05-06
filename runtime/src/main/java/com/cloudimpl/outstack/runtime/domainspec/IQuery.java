@@ -3,14 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.cloudimpl.outstack.runtime;
-
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
+package com.cloudimpl.outstack.runtime.domainspec;
 
 /**
  *
  * @author nuwan
  */
-public interface Handler<T extends Entity>{
-
+public interface IQuery {
+    String queryName();
+    <T extends Query> T unwrap(Class<T> type);
 }

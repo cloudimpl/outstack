@@ -9,43 +9,54 @@ import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+import com.cloudimpl.outstack.runtime.domainspec.IQuery;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
+import com.cloudimpl.outstack.runtime.domainspec.QueryHelper;
 import java.util.Optional;
 
 /**
  *
  * @author nuwan
  */
-public class CommandWrapper implements ICommand {
+public class QueryWrapper implements IQuery {
 
-    private final String command;
+    private final String query;
     private final String rootId;
+    private final String id;
     private final String tenantId;
     private final String payload;
 
-    public CommandWrapper(Builder builder) {
-        this.command = builder.command;
+    public QueryWrapper(Builder builder) {
+        this.query = builder.query;
         this.rootId = builder.rootId;
+        this.id = builder.id;
         this.tenantId = builder.tenantId;
-        this.payload = builder.payload;
+        this.payload = builder.payload == null?"{}":builder.payload;
     }
 
     @Override
-    public <T extends Command> T unwrap(Class<T> type) {
-        T cmd = GsonCodec.decode(type, payload);
-        CommandHelper.withRootId(cmd, rootId);
-        CommandHelper.withTenantId(cmd, tenantId);
-        return cmd;
+    public <T extends Query> T unwrap(Class<T> type) {
+        T query = GsonCodec.decode(type, payload);
+        QueryHelper.withRootId(query, rootId);
+        QueryHelper.withId(query, id);
+        QueryHelper.withTenantId(query, tenantId);
+        return query;
     }
 
     @Override
-    public String commandName() {
-        return command;
+    public String queryName() {
+        return this.query;
     }
 
     public Optional<String> getRootId() {
         return Optional.ofNullable(rootId);
     }
 
+    public Optional<String> getId()
+    {
+        return Optional.ofNullable(id);
+    }
+    
     public static Builder builder()
     {
         return new Builder();
@@ -53,20 +64,27 @@ public class CommandWrapper implements ICommand {
     
     public static final class Builder {
 
-        private  String command;
+        private  String query;
         private  String rootId;
+        private  String id;
         private  String tenantId;
         private  String payload;
         
-        public Builder withCommand(String command)
+        public Builder withQuery(String query)
         {
-            this.command = command;
+            this.query = query;
             return this;
         }
         
         public Builder withRootId(String rootId)
         {
             this.rootId = rootId;
+            return this;
+        }
+        
+        public Builder withId(String id)
+        {
+            this.id = id;
             return this;
         }
         
@@ -82,9 +100,9 @@ public class CommandWrapper implements ICommand {
             return this;
         }
         
-        public CommandWrapper build()
+        public QueryWrapper build()
         {
-            return new CommandWrapper(this);
+            return new QueryWrapper(this);
         }
     }
 }

@@ -11,6 +11,10 @@ import com.cloudimpl.outstack.runtime.domainspec.Entity;
  *
  * @author nuwan
  */
-public interface Handler<T extends Entity>{
-
+public interface CRUDOperations {
+    void create(Entity entity);
+    void update(Entity entity);
+    void delete(Entity entity);
+    void rename(String oldId,Entity entity);
+   
 }

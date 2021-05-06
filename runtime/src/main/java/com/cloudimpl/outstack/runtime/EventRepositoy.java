@@ -17,8 +17,9 @@ import java.util.UUID;
  * @author nuwan
  * @param <T>
  */
-public abstract class EventRepositoy<T extends RootEntity> {
+public abstract class EventRepositoy<T extends RootEntity> implements QueryOperations{
 
+    public static final String TID_PREFIX = "id-";
     private final Class<T> rootType;
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
@@ -35,7 +36,7 @@ public abstract class EventRepositoy<T extends RootEntity> {
 //        txList.getEvents().forEach(this::publish);
 //    }
     public String generateTid() {
-        return UUID.randomUUID().toString();
+        return TID_PREFIX+UUID.randomUUID().toString();
     }
 
     public abstract void saveTx(EntityContextProvider.Transaction transaction);

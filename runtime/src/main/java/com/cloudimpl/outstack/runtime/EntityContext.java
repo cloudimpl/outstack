@@ -6,8 +6,10 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.collection.error.CollectionException;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -27,10 +29,11 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected final Function<String, ? extends Entity> entitySupplier;
     protected final Supplier<String> idGenerator;
     protected final ResourceHelper resourceHelper;
-    protected final CRUDOpertations crudOperations;
+    protected final CRUDOperations crudOperations;
+    protected final QueryOperations queryOperation;
     protected final Consumer<Event> eventPublisher;
     protected EntityContextProvider.Transaction tx;
-    public EntityContext(Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier,Supplier<String> idGenerator,ResourceHelper resourceHelper,CRUDOpertations crudOperations,Consumer<Event> eventPublisher) {
+    public EntityContext(Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier,Supplier<String> idGenerator,ResourceHelper resourceHelper,CRUDOperations crudOperations,QueryOperations queryOperation,Consumer<Event> eventPublisher) {
         this.tenantId = tenantId;
         this.events = new LinkedList<>();
         this.entityType = entityType;
@@ -39,6 +42,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.resourceHelper = resourceHelper;
         this.crudOperations = crudOperations;
         this.eventPublisher = eventPublisher;
+        this.queryOperation = queryOperation;
     }
 
     protected EntityContextProvider.Transaction getTx()
@@ -67,4 +71,8 @@ public abstract class EntityContext<T extends Entity> implements Context {
     public abstract T delete(String id);
     public abstract T rename(String id,String newId);
     
+    public abstract <R extends RootEntity> RootEntityContext<R> asRootContext();
+
+
+    public abstract <R extends RootEntity,K extends ChildEntity<R>> ChildEntityContext<R,K> asChildContext() ;
 }
