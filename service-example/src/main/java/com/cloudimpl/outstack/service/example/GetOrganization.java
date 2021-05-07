@@ -18,7 +18,7 @@ public class GetOrganization extends EntityQueryHandler<Organization,QueryByIdRe
 
     @Override
     protected Organization execute(EntityQueryContext<Organization> context, QueryByIdRequest query) {
-        return context.getById(query.rootId()).orElseThrow();
+        return context.getEntityById(query.rootId()).orElseThrow();
     }
     
 }

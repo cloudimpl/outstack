@@ -21,4 +21,10 @@ public class CommandHelper {
         cmd.setTenantId(tenantId);
         return cmd;
     }
+    
+    public static Command withId(Command cmd,String id)
+    {
+        cmd.setId(id);
+        return cmd;
+    }
 }

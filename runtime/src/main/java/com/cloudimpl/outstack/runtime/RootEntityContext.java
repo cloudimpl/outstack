@@ -24,38 +24,37 @@ import java.util.function.Supplier;
  * @author nuwan
  * @param <T>
  */
-public class RootEntityContext<T extends RootEntity> extends EntityContext<T> implements RootEntityQueryContext<T>{
+public class RootEntityContext<T extends RootEntity> extends EntityContext<T> implements RootEntityQueryContext<T> {
 
     private String _id;
 
-    public RootEntityContext(Class<T> entityType,String tid, String tenantId, Function<String, ? extends Entity> entitySupplier, Supplier<String> idGenerator, ResourceHelper resourceHelper, CRUDOperations crudOperations,QueryOperations queryOperation, Consumer<Event> eventPublisher) {
-        super(entityType, tenantId, entitySupplier, idGenerator, resourceHelper, crudOperations,queryOperation, eventPublisher);
+    public RootEntityContext(Class<T> entityType, String tid, String tenantId, EntityProvider<T> entitySupplier, Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations queryOperation, Consumer<Event> eventPublisher) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher);
         this._id = tid;
     }
 
     @Override
-     public  RootEntityContext<T> asRootContext()
-     {
-         return this;
-     }
-     
+    public RootEntityContext<T> asRootContext() {
+        return this;
+    }
+
     @Override
     public T create(String id, Event<T> event) {
         EntityIdHelper.validateEntityId(id);
         Objects.requireNonNull(event);
- 
-        if(_id != null)
-        {
+
+        if (_id != null) {
             throw new DomainEventException("rootId violation.");
         }
-        T root = (T) entitySupplier.apply(resourceHelper.getFQBrn(RootEntity.makeRN(entityType, id, getTenantId())));
-        if (root != null) {
-            throw new DomainEventException("root entity {0} already exist", root.getBRN());
-        }
+        this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
+                .ifPresent(e -> {
+                    throw new DomainEventException("root entity {0} already exist", ((T)e).getBRN());
+                });
+
         if (!event.entityId().equals(id)) {
             throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
         }
-        root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
+        T root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
 
         event.setTenantId(getTenantId());
         event.setId(root.id());
@@ -76,16 +75,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         if (_id == null) {
             throw new DomainEventException("root tid not available for entity {0}", entityType.getSimpleName());
         }
-        T root = (T) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType, this._id, getTenantId())));
-        if (root == null) {
-            throw new DomainEventException("root entity not available for entity {0}", entityType.getSimpleName());
-        }
-        if (!root.entityId().equals(id)) {
-            throw new DomainEventException("update failed,invalid id {0} for root entity {1}", id, root.getBRN());
-        }
-        if (!event.entityId().equals(id)) {
-            throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
-        }
+        T root = (T)this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
+                .orElseThrow(() -> new DomainEventException("root entity not available for entity {0}", entityType.getSimpleName()));     
+        EntityIdHelper.validateId(id, root);
+        EntityIdHelper.validateId(_id, root);
+        EntityIdHelper.validateId(id, event);
+        
         event.setTenantId(getTenantId());
         event.setId(_id);
         event.setRootId(_id);
@@ -104,14 +99,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
             throw new DomainEventException("root tid not available for entity {0}", entityType.getSimpleName());
         }
 
-        T root = (T) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType, this._id, getTenantId())));
-        if (root == null) {
-            throw new DomainEventException("root entity id {0} not available for entity {1}", id, entityType.getSimpleName());
-        }
-        if (!root.entityId().equals(id)) {
-            throw new DomainEventException("invalid id {0} for root entity {1}", id, root.getBRN());
-        }
+        T root = (T) this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
+                .orElseThrow(() -> new DomainEventException("root entity id {0} not available for entity {1}", id, entityType.getSimpleName()));
 
+        EntityIdHelper.validateId(id, root);
+        EntityIdHelper.validateId(_id, root);
+        
         EntityDeleted event = new EntityDeleted(entityType, entityType, root.entityId(), root.entityId());
         event.setId(_id);
         event.setRootId(_id);
@@ -127,68 +120,54 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     public T rename(String id, String newId) {
         EntityIdHelper.validateEntityId(id);
         EntityIdHelper.validateEntityId(newId);
- 
+
         if (_id == null) {
             throw new DomainEventException("root tid not available for entity {0}", entityType.getSimpleName());
         }
 
-        T root = (T) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType, this._id, getTenantId())));
-        if (root == null) {
-            throw new DomainEventException("root entity id {0} not available for entity {1}", id, entityType.getSimpleName());
-        }
-        if (!root.entityId().equals(id)) {
-            throw new DomainEventException("invalid id {0} for root entity {1}", id, root.getBRN());
-        }
-       
+        T root = (T) this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
+                .orElseThrow(() -> new DomainEventException("root entity id {0} not available for entity {1}", id, entityType.getSimpleName()));
+
+        EntityIdHelper.validateId(id, root);
+        EntityIdHelper.validateId(_id, root);
+        
         EntityRenamed event = new EntityRenamed(entityType, entityType, newId, id, newId);
         event.setTenantId(getTenantId());
         event.setId(_id);
         event.setRootId(_id);
         event.setAction(Event.Action.RENAME);
         addEvent(event);
+        T old = root;
         root = root.rename(newId);
-        crudOperations.rename(id, root);
+        crudOperations.rename(old, root);
         eventPublisher.accept(event);
         return root;
     }
 
     @Override
-    public  ChildEntityContext asChildContext() {
+    public ChildEntityContext asChildContext() {
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }
-    
+
     @Override
-    public Optional<T> getByEntityId(String id)
-    {
-        T root = (T) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeRN(entityType, id, getTenantId())));
-        return Optional.ofNullable(root);
+    public Optional<T> getEntityById(String id) {
+        return this.<T>getQueryOperations().getRootById(entityType, id, getTenantId());
     }
-    
+
     @Override
-    public Optional<T> getById(String id)
-    {
-        T root = (T) entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType, id, getTenantId())));
-        return Optional.ofNullable(root);
+    public <C extends ChildEntity<T>> Optional<C> getChildEntityById(Class<C> childType, String id) {
+        EntityIdHelper.validateTechnicalId(_id);
+        return this.<T>getQueryOperations().getChildById(entityType, _id, childType, id, getTenantId());
     }
-    
-    public <C extends ChildEntity<T>>  Optional<C> getChildByEntityId(Class<C> childType,String id)
-    {
-        return queryOperation.getChildById(resourceHelper.getFQBrn(ChildEntity.makeRN(entityType,_id,childType,id, getTenantId())));
-    }
-    
-    public <C extends ChildEntity<T>>  Optional<C> getChildById(Class<C> childType,String id)
-    {
-       return queryOperation.getChildById(resourceHelper.getFQTrn(ChildEntity.makeTRN(entityType,_id,childType,id, getTenantId())));
-    }
-     
-    public <C extends ChildEntity<T>> Collection<C> getAllChildsByType(Class<C> childType)
-    {
-        return queryOperation.getAllChildByType(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType,_id,getTenantId())),childType);
+
+    @Override
+    public <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType) {
+        return this.<T>getQueryOperations().getAllChildByType(entityType, _id, childType, getTenantId());
     }
 
     @Override
     public RootEntityQueryContext<T> asRootQueryContext() {
-       return this;
+        return this;
     }
 
     @Override
@@ -197,9 +176,10 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
-    public Optional<T> getRoot() {
-        if(this._id == null)
+    public Optional<T> getEntity() {
+        if (this._id == null) {
             return Optional.empty();
-        return Optional.ofNullable((T)entitySupplier.apply(resourceHelper.getFQTrn(RootEntity.makeTRN(entityType, this._id, getTenantId()))));
+        }
+        return getEntityById(_id);
     }
 }

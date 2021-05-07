@@ -29,6 +29,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.http.ResponseEntity.created;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 /**
  *
@@ -70,7 +71,6 @@ public class Controller {
     private Mono<String> createChildEntity(@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity,@RequestHeader("Content-Type") String contentType, @RequestBody String body) {
 
         SpringServiceDescriptor serviceDesc = getServiceDescriptor(version, rootEntity);
-        String rootType = serviceDesc.getRootType();
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElse("Create"+child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(),cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
@@ -83,7 +83,6 @@ public class Controller {
     private Mono<String> updateChildEntity(@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @PathVariable String childId,@RequestHeader("Content-Type") String contentType, @RequestBody String body) {
 
         SpringServiceDescriptor serviceDesc = getServiceDescriptor(version, rootEntity);
-        String rootType = serviceDesc.getRootType();
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseThrow(()->new BadRequestException("missing domain model"));
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(),cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
@@ -109,7 +108,6 @@ public class Controller {
     private Mono<String> getChildEntity(@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @PathVariable String childId,@RequestHeader("Content-Type") String contentType) {
 
         SpringServiceDescriptor serviceDesc = getServiceDescriptor(version, rootEntity);
-        String rootType = serviceDesc.getRootType();
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElse("Get"+child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(),cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
@@ -122,12 +120,23 @@ public class Controller {
     private Mono<String> listChildEntity(@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity,@RequestHeader("Content-Type") String contentType) {
 
         SpringServiceDescriptor serviceDesc = getServiceDescriptor(version, rootEntity);
-        String rootType = serviceDesc.getRootType();
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElse("List"+child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(),cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withRootId(rootId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request);
+    }
+    
+    @DeleteMapping(value = "api/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}", consumes = {APPLICATION_JSON_VALUE})
+    private Mono<String> deleteChildEntity(@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @PathVariable String childId,@RequestHeader("Content-Type") String contentType) {
+
+        SpringServiceDescriptor serviceDesc = getServiceDescriptor(version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElse("Delete"+child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(),cmd).orElseThrow(() -> new NotImplementedException("resource {0} creation not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withRootId(rootId).withId(childId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request);
     }
     

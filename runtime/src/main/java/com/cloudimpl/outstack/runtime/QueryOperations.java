@@ -13,10 +13,11 @@ import java.util.Optional;
 /**
  *
  * @author nuwan
+ * @param <R>
  */
-public interface QueryOperations {
-    <T extends RootEntity> Optional<T> getRootById(String rn);
-    <R extends RootEntity,T extends ChildEntity<R>> Optional<T> getChildById(String rn);
-    <R extends RootEntity,T extends ChildEntity<R>> Collection<T> getAllChildByType(String rootTrn,Class<T> childType);
+public interface QueryOperations<R extends RootEntity>{
+    Optional<R> getRootById(Class<R> rootType,String id,String tenantId);
+    <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType,String id,Class<T> childType, String childId,String tenantId);
+    <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType,String id,Class<T> childType,String tenantId);
     
 }

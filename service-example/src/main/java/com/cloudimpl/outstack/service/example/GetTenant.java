@@ -19,7 +19,7 @@ public class GetTenant extends EntityQueryHandler<Tenant,QueryByIdRequest, Tenan
 
     @Override
     protected Tenant execute(EntityQueryContext<Tenant> context, QueryByIdRequest query) {
-        return context.getById(query.id()).orElseThrow();
+        return context.getEntityById(query.id()).orElseThrow();
     }
     
 }

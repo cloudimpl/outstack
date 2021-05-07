@@ -20,8 +20,8 @@ import java.util.function.Supplier;
  */
 public class AyncEntityContext<T extends RootEntity> extends RootEntityContext<T>{
     
-    public AyncEntityContext(Class<T> entityType, String tid, String tenantId, Function<String, ? extends Entity> entitySupplier, Supplier<String> idGenerator, ResourceHelper resourceHelper, CRUDOperations crudOperations, QueryOperations queryOperation, Consumer<Event> eventPublisher) {
-        super(entityType, tid, tenantId, entitySupplier, idGenerator, resourceHelper, crudOperations, queryOperation, eventPublisher);
+    public AyncEntityContext(Class<T> entityType, String tid, String tenantId, EntityProvider<T> entitySupplier, Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations queryOperation, Consumer<Event> eventPublisher) {
+        super(entityType, tid, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher);
     }
     
     

@@ -17,11 +17,9 @@ import java.util.Optional;
  */
 public interface RootEntityQueryContext<T extends RootEntity> extends EntityQueryContext<T> {
 
-    <C extends ChildEntity<T>> Optional<C> getChildByEntityId(Class<C> childType, String id);
+    <C extends ChildEntity<T>> Optional<C> getChildEntityById(Class<C> childType, String id);
 
-    <C extends ChildEntity<T>> Optional<C> getChildById(Class<C> childType, String id);
-
-    <C extends ChildEntity<T>> Collection<C> getAllChildsByType(Class<C> childType);
+    <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType);
     
-    Optional<T> getRoot();
+    Optional<T> getEntity();
 }

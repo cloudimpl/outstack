@@ -26,20 +26,18 @@ public abstract class EntityContext<T extends Entity> implements Context {
     private final String tenantId;
     protected final Class<T> entityType;
     private final List<Event> events;
-    protected final Function<String, ? extends Entity> entitySupplier;
+    private final EntityProvider<?> entitySupplier;
     protected final Supplier<String> idGenerator;
-    protected final ResourceHelper resourceHelper;
     protected final CRUDOperations crudOperations;
-    protected final QueryOperations queryOperation;
+    private final QueryOperations<?> queryOperation;
     protected final Consumer<Event> eventPublisher;
     protected EntityContextProvider.Transaction tx;
-    public EntityContext(Class<T> entityType, String tenantId, Function<String, ? extends Entity> entitySupplier,Supplier<String> idGenerator,ResourceHelper resourceHelper,CRUDOperations crudOperations,QueryOperations queryOperation,Consumer<Event> eventPublisher) {
+    public EntityContext(Class<T> entityType, String tenantId, EntityProvider<?> entitySupplier,Supplier<String> idGenerator,CRUDOperations crudOperations,QueryOperations<?> queryOperation,Consumer<Event> eventPublisher) {
         this.tenantId = tenantId;
         this.events = new LinkedList<>();
         this.entityType = entityType;
         this.entitySupplier = entitySupplier;
         this.idGenerator = idGenerator;
-        this.resourceHelper = resourceHelper;
         this.crudOperations = crudOperations;
         this.eventPublisher = eventPublisher;
         this.queryOperation = queryOperation;
@@ -50,6 +48,16 @@ public abstract class EntityContext<T extends Entity> implements Context {
         return this.tx;
     }
 
+    protected <R extends RootEntity> EntityProvider<R> getEntityProvider()
+    {
+        return (EntityProvider<R>) entitySupplier;
+    }
+    
+    protected <R extends RootEntity> QueryOperations<R> getQueryOperations()
+    {
+        return (QueryOperations<R>) queryOperation;
+    }
+    
     public void setTx(EntityContextProvider.Transaction tx) {
         this.tx = tx;
     }

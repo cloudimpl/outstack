@@ -61,8 +61,8 @@ public class Cluster {
     @PostConstruct
     public void init() {
         serviceVersionDescriptorMan = new ServiceDescriptorVersionManager();
-        EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory();
         ResourceHelper resourceHelper = new ResourceHelper("cloudimpl", "exampleProduct");
+        EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);      
         AppConfig appConfig = AppConfig.builder().withGossipPort(gossipPort).withSeedName(seedName).withServicePort(servicePort).build();
         Injector injector = new Injector();
         injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);

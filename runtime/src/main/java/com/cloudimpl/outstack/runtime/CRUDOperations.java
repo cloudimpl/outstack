@@ -15,6 +15,6 @@ public interface CRUDOperations {
     void create(Entity entity);
     void update(Entity entity);
     void delete(Entity entity);
-    void rename(String oldId,Entity entity);
+    void rename(Entity oldEntity,Entity newEntity);
    
 }

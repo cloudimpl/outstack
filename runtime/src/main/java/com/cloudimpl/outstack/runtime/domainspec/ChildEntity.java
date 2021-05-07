@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime.domainspec;
 
 import java.text.MessageFormat;
+import java.util.Objects;
 
 /**
  *
@@ -29,6 +30,7 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
     @Override
     public String getTRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
+            Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", ITenant.class.cast(this).getTenantId(), rootType().getSimpleName(), rootId(), getClass().getSimpleName(), id());
         } else {
             return MessageFormat.format("{0}/{1}/{2}/{3}", rootType().getSimpleName(), rootId(), getClass().getSimpleName(), id());
@@ -38,6 +40,7 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
     @Override
     public String getBRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
+            Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}", ITenant.class.cast(this).getTenantId(), rootType().getSimpleName(),rootId(), getClass().getSimpleName(), entityId());
         } else {
             return MessageFormat.format("{0}/{1}/{2}/{3}", rootType().getSimpleName(), rootId(), getClass().getSimpleName(), entityId());

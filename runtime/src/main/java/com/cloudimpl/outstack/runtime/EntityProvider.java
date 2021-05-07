@@ -13,15 +13,8 @@ import java.util.Optional;
 /**
  *
  * @author nuwan
- * @param <T>
+ * @param <R>
  */
-public interface EntityQueryContext<T extends Entity>{
-    
-    Optional<T> getEntityById(String id);
-    
-    <R extends RootEntity> RootEntityQueryContext<R> asRootQueryContext();
-
-
-    <R extends RootEntity,K extends ChildEntity<R>> ChildEntityQueryContext<R,K> asChildQueryContext() ;
-    
+public interface EntityProvider<R extends RootEntity>{
+    public <K extends Entity,C extends ChildEntity<R>> Optional<K> loadEntity(Class<R> rootType,String id,Class<C> childType,String childId,String tenantId);
 }

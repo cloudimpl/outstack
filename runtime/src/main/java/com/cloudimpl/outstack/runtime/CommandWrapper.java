@@ -19,6 +19,7 @@ public class CommandWrapper implements ICommand {
 
     private final String command;
     private final String rootId;
+    private final String id;
     private final String tenantId;
     private final String payload;
 
@@ -26,23 +27,25 @@ public class CommandWrapper implements ICommand {
         this.command = builder.command;
         this.rootId = builder.rootId;
         this.tenantId = builder.tenantId;
-        this.payload = builder.payload;
+        this.payload = builder.payload == null?"{}":builder.payload;
+        this.id = builder.id;
     }
 
     @Override
-    public <T extends Command> T unwrap(Class<T> type) {
+    public final <T extends Command> T unwrap(Class<T> type) {
         T cmd = GsonCodec.decode(type, payload);
         CommandHelper.withRootId(cmd, rootId);
         CommandHelper.withTenantId(cmd, tenantId);
+        CommandHelper.withId(cmd, id);
         return cmd;
     }
 
     @Override
-    public String commandName() {
+    public final String commandName() {
         return command;
     }
 
-    public Optional<String> getRootId() {
+    public final Optional<String> getRootId() {
         return Optional.ofNullable(rootId);
     }
 
@@ -55,12 +58,19 @@ public class CommandWrapper implements ICommand {
 
         private  String command;
         private  String rootId;
+        private  String id;
         private  String tenantId;
         private  String payload;
         
         public Builder withCommand(String command)
         {
             this.command = command;
+            return this;
+        }
+        
+        public Builder withId(String id)
+        {
+            this.id = id;
             return this;
         }
         

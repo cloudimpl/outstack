@@ -36,11 +36,11 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
+    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, resourceHelper, eventRepository);
+        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {

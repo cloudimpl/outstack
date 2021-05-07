@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import java.util.Objects;
 
 /**
@@ -20,7 +21,16 @@ public class EntityIdHelper {
         Objects.requireNonNull(id);
         if(id.startsWith(EventRepositoy.TID_PREFIX))
         {
-            throw new DomainEventException("invalid entity format.{0}", id);
+            throw new DomainEventException("invalid entity id format.{0}", id);
+        }
+    }
+    
+    public static void validateTechnicalId(String id)
+    {
+        Objects.requireNonNull(id);
+        if(!id.startsWith(EventRepositoy.TID_PREFIX))
+        {
+            throw new DomainEventException("invalid entity technical id format.{0}", id);
         }
     }
     
@@ -46,7 +56,7 @@ public class EntityIdHelper {
         Objects.requireNonNull(entity);
         if(isTechnicalId(id))
         {
-            if(!id.endsWith(entity.id()))
+            if(!id.equals(entity.id()))
             {
                 throw new DomainEventException("invalid technical id {0} in entity. {1}", id,entity.getTRN());
             }
@@ -55,6 +65,25 @@ public class EntityIdHelper {
             if(!id.equals(entity.entityId()))
             {
                 throw new DomainEventException("invalid entity id {0} in entity. {1}", id,entity.getBRN());
+            }
+        }
+    }
+    
+     public static void validateId(String id,Event event)
+    {
+        Objects.requireNonNull(id);
+        Objects.requireNonNull(event);
+        if(isTechnicalId(id))
+        {
+            if(!id.equals(event.id()))
+            {
+                throw new DomainEventException("invalid technical id {0} in event. {1}", id,event.getTRN());
+            }
+        }else
+        {
+            if(!id.equals(event.entityId()))
+            {
+                throw new DomainEventException("invalid entity id {0} in event. {1}", id,event.getBRN());
             }
         }
     }

@@ -10,16 +10,10 @@ package com.cloudimpl.outstack.runtime.domainspec;
  * @author nuwan
  */
 public class DeleteCommand extends Command{
-    private final String id;
+    
     public DeleteCommand(Builder builder) {
         super(builder);
-        this.id = builder.id;
     }
-
-    public String getId() {
-        return id;
-    }
-    
     
     public static Builder builder()
     {
@@ -28,14 +22,6 @@ public class DeleteCommand extends Command{
     
     public static final class Builder extends Command.Builder
     {
-        private String id;
-        
-        public Builder withId(String id)
-        {
-            this.id = id;
-            return this;
-        }
-        
         @Override
         public DeleteCommand build()
         {

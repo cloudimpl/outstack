@@ -5,55 +5,66 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
-import java.util.Objects;
-
 /**
  *
  * @author nuwansa
  */
 public abstract class Command implements Input,ICommand {
 
-    private  String rootId;
-    private  String tenantId;
+    private  String _rootId;
+    private String _id;
+    private  String _tenantId;
 
     public Command(Builder builder) {
-        this.rootId = builder.rootId;
-        this.tenantId = builder.tenantId;
+        this._rootId = builder.rootId;
+        this._tenantId = builder.tenantId;
+        this._id = builder.id;
     }
 
-    public String rootId() {
-        return rootId;
+    public final String rootId() {
+        return _rootId;
     }
 
     protected void setRootId(String rootId)
     {
-        this.rootId = rootId;
+        this._rootId = rootId;
+    }
+    
+    protected void setId(String id)
+    {
+        this._id = id;
+    }
+    
+    public final String id()
+    {
+        return this._id;
     }
     
     protected void setTenantId(String tenantId)
     {
-        this.tenantId = tenantId;
+        this._tenantId = tenantId;
     }
     
     @Override
-    public String commandName() {
+    public final String commandName() {
         return this.getClass().getSimpleName();
     }
 
     @Override
-    public <T extends Command> T unwrap(Class<T> type)
+    public final <T extends Command> T unwrap(Class<T> type)
     {
         return (T) this;
     }
     
     @Override
-    public String tenantId() {
-        return tenantId;
+    public final String tenantId() {
+        return _tenantId;
     }
 
     public static  class Builder {
 
         protected String rootId;
+        protected String id;
         protected String tenantId;
 
         public Builder withRootId(String rootId) {
@@ -61,6 +72,12 @@ public abstract class Command implements Input,ICommand {
             return this;
         }
 
+        public Builder withId(String id)
+        {
+            this.id = id;
+            return this;
+        }
+        
         public Builder withTenantId(String tenantId) {
             this.tenantId = tenantId;
             return this;

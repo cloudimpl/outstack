@@ -26,7 +26,9 @@ public class OrganizationService extends SpringService<Organization>{
         $(GetOrganization.class);
         $(GetTenant.class);
         $(ListTenant.class);
+        $(DeleteTenant.class);
     }
+    
     public OrganizationService(EventRepositoryFactory eventRepoFactory, ResourceHelper resourceHelper) {
         super(eventRepoFactory, resourceHelper);
     }
