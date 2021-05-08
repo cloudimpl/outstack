@@ -76,7 +76,8 @@ public class SpringUtil {
         });
 
         handlers.stream().filter(h -> EntityEventHandler.class.isAssignableFrom(h)).forEach(h -> {
-            Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityCommandHandler.class, 0);
+            System.out.println("load: "+h.getName());
+            Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityEventHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(), eMeta.plural());
             if (eType == rootType) {
