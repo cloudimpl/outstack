@@ -5,17 +5,25 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import static com.cloudimpl.outstack.runtime.ServiceQueryProvider.validateHandler;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
+import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
+import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
+import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -24,7 +32,7 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  * @param <T>
  */
-public  class ServiceProvider<T extends RootEntity, R> implements Function<Command, Publisher<?>> {
+public class ServiceProvider<T extends RootEntity, R> implements Function<Object, Publisher<?>> {
 
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
@@ -32,19 +40,26 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(Class<T> rootType,EventRepositoy<T> eventRepository, ResourceHelper resourceHelper) {
+    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, resourceHelper);
+        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
+
         validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityCommandHandler.class, 0));
-        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(),Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
         if (exist != null) {
             throw new ServiceProviderException("commad handler {0} already exist ", handlerType.getSimpleName());
         }
+    }
+
+    public void registerDefaultCmdHandlersForEntity(Class<? extends Entity> entityType) {
+        validateHandler("defaultCommandHandlers", rootType, entityType);
+        mapCmdHandlers.computeIfAbsent(("Delete" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultDeleteCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        mapCmdHandlers.computeIfAbsent(("Rename" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultRenameCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
     }
 
     public void registerEventHandler(Class<? extends EntityEventHandler> handlerType) {
@@ -54,7 +69,7 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
     public Optional<EntityCommandHandler> getCmdHandler(String name) {
         return Optional.ofNullable(mapCmdHandlers.get(name.toLowerCase()));
     }
-
+    
     public static void validateHandler(String name, Class<? extends RootEntity> rootType, Class<? extends Entity> type) {
         if (RootEntity.isMyType(type)) {
             if (type != rootType) {
@@ -66,21 +81,36 @@ public  class ServiceProvider<T extends RootEntity, R> implements Function<Comma
                 throw new ServiceProviderException("handler {0} root entity type {1} not matched with service provider type {2}", name, root.getName(), rootType.getName());
             }
         }
+
     }
 
     @Override
-    public Publisher apply(Command cmd) {
+    public Publisher apply(Object input) {
 
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(cmd.rootId(),cmd.tenantId());
-        return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(tx, cmd))
-                .doOnNext(ct -> this.evtHandlerManager.emit(tx, ct.getEvents()))
-                .doOnNext(ct->eventRepository.saveTx(tx))
-                .map(ct -> tx.getReply());
+        if (ICommand.class.isInstance(input)) {
+            return applyCommand((ICommand) input);
+        }else {
+            return Mono.error(() -> new CommandException("invalid input received. {0}", input));
+        }
+
     }
 
-    public void applyEvent(Event event){
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(),event.tenantId());
+    private Publisher applyCommand(ICommand cmd) {
+        return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
+                .doOnNext(ct -> this.evtHandlerManager.emit(ct.getTx(), ct.getEvents()))
+                .doOnNext(ct -> eventRepository.saveTx(ct.getTx()))
+                .map(ct -> ct.getTx().getReply());
+    }
+
+    public void applyEvent(Event event) {
+        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(), event.tenantId());
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
-    } 
+    }
+
+    public void validate(Predicate<String> pred, String name, String error) {
+        if (pred.test(name)) {
+            throw new ServiceProviderException(error);
+        }
+    }
 }

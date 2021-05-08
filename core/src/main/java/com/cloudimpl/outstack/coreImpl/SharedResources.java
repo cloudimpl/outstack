@@ -21,4 +21,5 @@ public class SharedResources {
   public <T> void register(Class<T> clsType, T instance) {
     this.injector.bind(clsType).to(instance);
   }
+  
 }

@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.repo.RepositoryException;
@@ -17,14 +18,17 @@ import java.util.UUID;
  * @author nuwan
  * @param <T>
  */
-public abstract class EventRepositoy<T extends RootEntity> {
+public abstract class EventRepositoy<T extends RootEntity> implements QueryOperations<T>{
 
+    public static final String TID_PREFIX = "id-";
     private final Class<T> rootType;
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<TxCheckpoint> mapTxCheckpoints;
-    public EventRepositoy( Class<T> rootType, EventStream eventStream) {
+    protected final ResourceHelper resourceHelper;
+    public EventRepositoy( Class<T> rootType,ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
+        this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
         this.mapTxCheckpoints = new ResourceCache<>(1000,Duration.ofHours(1));
         this.eventStream = eventStream;
@@ -35,26 +39,24 @@ public abstract class EventRepositoy<T extends RootEntity> {
 //        txList.getEvents().forEach(this::publish);
 //    }
     public String generateTid() {
-        return UUID.randomUUID().toString();
+        return TID_PREFIX+UUID.randomUUID().toString();
     }
 
     public abstract void saveTx(EntityContextProvider.Transaction transaction);
     
-    public <K extends Entity> K loadEntityWithClone(String resourceName) {
-         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);
-    }
+//    public <K extends Entity> K loadEntityWithClone(String resourceName) {
+//         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);
+//    }
     
-    private <K extends Entity> Optional<K> loadEntity(String resourceName) {
-        if (resourceName.startsWith("brn:")) {
-            return mapStableCache.<K>get(resourceName).or(()->loadEntityByBrn(resourceName));
-        } else if (resourceName.startsWith("trn:")) {
-            return mapStableCache.<K>get(resourceName).or(()->loadEntityByTrn(resourceName));
-        } else {
-            throw new RepositoryException("uknown resource name {0}", resourceName);
+    public <K extends Entity,C extends ChildEntity<T>> Optional<K> loadEntityWithClone(Class<T> rootType,String id,Class<C> childType,String childId,String tenantId)
+    {
+        if(childType == null)
+        {
+            return getRootById(rootType, id, tenantId).map(e->e.cloneEntity());
+        }
+        else
+        {
+            return getChildById(rootType, id, childType, childId, tenantId).map(e->e.cloneEntity());
         }
     }
-
-    protected abstract <K extends Entity> Optional<K> loadEntityByBrn(String resourceName);
-
-    protected abstract <K extends Entity> Optional<K> loadEntityByTrn(String resourceName);
 }

@@ -5,15 +5,14 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
+ * @param <T>
  */
-public interface CRUDOpertations {
-    void create(Entity entity);
-    void update(Entity entity);
-    void delete(Entity entity);
-    void rename(String oldId,Entity entity);
+public class EntityAsyncHandler<T extends RootEntity> implements Handler<T>{
+    
 }

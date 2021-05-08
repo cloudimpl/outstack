@@ -58,15 +58,15 @@ public abstract class Event<T extends Entity> implements IResource ,Input{
     }
 
     @Override
-    public String tenantId() {
+    public final String tenantId() {
         return _tenantId;
     }
 
-    public String id() {
+    public final String id() {
         return _id;
     }
 
-    public String rootId() {
+    public final String rootId() {
         return _rootId;
     }
 
@@ -156,10 +156,10 @@ public abstract class Event<T extends Entity> implements IResource ,Input{
         } else {
             if (tenantId() != null) {
                 return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}",
-                        tenantId(), getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId());
+                        tenantId(), getRootOwner().getSimpleName(), rootId(), getOwner().getSimpleName(), entityId());
             } else {
                 return MessageFormat.format("{0}/{1}/{2}/{3}",
-                        getRootOwner().getSimpleName(), rootEntityId(), getOwner().getSimpleName(), entityId());
+                        getRootOwner().getSimpleName(), rootId(), getOwner().getSimpleName(), entityId());
             }
         }
     }

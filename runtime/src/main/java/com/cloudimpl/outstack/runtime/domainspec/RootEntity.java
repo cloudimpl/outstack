@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime.domainspec;
 
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.text.MessageFormat;
+import java.util.Objects;
 
 /**
  *
@@ -17,6 +18,7 @@ public abstract class RootEntity extends Entity {
     @Override
     public String getBRN() {
         if (hasTenant()) { //tenant/1234/User/1/Device/12"
+            Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             return makeRN(this.getClass(), entityId(),ITenant.class.cast(this).getTenantId());
         } else {
             return makeRN(this.getClass(), entityId(), null);
@@ -26,6 +28,7 @@ public abstract class RootEntity extends Entity {
     @Override
     public String getTRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
+            Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             return makeTRN(this.getClass(), id(), ITenant.class.cast(this).getTenantId());
         } else {
             return makeTRN(this.getClass(),id(),null);

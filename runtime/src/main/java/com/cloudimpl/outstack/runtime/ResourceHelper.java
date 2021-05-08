@@ -13,31 +13,45 @@ import java.text.MessageFormat;
  * @author nuwan
  */
 public class ResourceHelper {
-    private final String productOwner;
-    private final String product;
+    private final String resourceOwner;
+    private final String resourceContext;
 
-    public ResourceHelper(String productOwner, String product) {
-        this.productOwner = productOwner;
-        this.product = product;
+    public ResourceHelper(String resourceOwner, String resourceContext) {
+        this.resourceOwner = resourceOwner;
+        this.resourceContext = resourceContext;
     }
     
     public  String getFQBrn(IResource resource)
     {
-        return MessageFormat.format("brn:{0}:{1}:{2}", productOwner,product,resource.getBRN());
+        return MessageFormat.format("brn:{0}:{1}:{2}", resourceOwner,resourceContext,resource.getBRN());
     }
     
     public  String getFQTrn(IResource resource)
     {
-        return MessageFormat.format("trn:{0}:{1}:{2}", productOwner,product,resource.getTRN());
+        return MessageFormat.format("trn:{0}:{1}:{2}", resourceOwner,resourceContext,resource.getTRN());
     }
     
     public  String getFQBrn(String rn)
     {
-        return MessageFormat.format("brn:{0}:{1}:{2}", productOwner,product,rn);
+        return MessageFormat.format("brn:{0}:{1}:{2}", resourceOwner,resourceContext,rn);
     }
     
     public  String getFQTrn(String trn)
     {
-        return MessageFormat.format("trn:{0}:{1}:{2}", productOwner,product,trn);
+        return MessageFormat.format("trn:{0}:{1}:{2}", resourceOwner,resourceContext,trn);
+    }
+
+    public String getResourceContext() {
+        return resourceContext;
+    }
+
+    public String getResourceOwner() {
+        return resourceOwner;
+    }
+    
+    @Override
+    public String toString()
+    {
+        return MessageFormat.format("{0}:{1}",resourceOwner, resourceContext);
     }
 }

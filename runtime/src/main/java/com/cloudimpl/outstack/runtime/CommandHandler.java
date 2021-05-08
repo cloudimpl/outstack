@@ -5,15 +5,13 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Command;
-import java.util.function.BiFunction;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 
 /**
  *
- * @author nuwansa
- * @param <C>
+ * @author nuwan
  * @param <T>
  */
-public interface CommandHandler<C extends Context,T extends Command, R> extends BiFunction<C, T, R>{
-
+public interface CommandHandler<T extends Entity> extends Handler<T>{
+    
 }

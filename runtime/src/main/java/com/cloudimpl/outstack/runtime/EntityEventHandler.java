@@ -15,7 +15,7 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <T>
  * @param <E>
  */
-public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> implements Handler<T>, EventHandler<EntityContext<T>, E> {
+public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> implements CommandHandler<T>{
 
     private final Class<T> enityType;
     private final Class<E> eventType;
@@ -28,7 +28,6 @@ public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> i
         return Entity.hasTenant(enityType);
     }
 
-    @Override
     public void accept(EntityContext<T> context, E event) {
         validateInput(event);
         execute(context, event);

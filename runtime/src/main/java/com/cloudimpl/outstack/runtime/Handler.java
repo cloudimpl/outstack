@@ -5,10 +5,12 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+
 /**
  *
  * @author nuwan
  */
-public interface Handler<T>{
+public interface Handler<T extends Entity>{
 
 }

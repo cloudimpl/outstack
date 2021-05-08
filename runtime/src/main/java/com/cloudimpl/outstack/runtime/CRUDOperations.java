@@ -5,15 +5,16 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Input;
-import java.util.function.BiConsumer;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 
 /**
  *
  * @author nuwan
- * @param <C>
- * @param <I>
  */
-public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>{
-    
+public interface CRUDOperations {
+    void create(Entity entity);
+    void update(Entity entity);
+    void delete(Entity entity);
+    void rename(Entity oldEntity,Entity newEntity);
+   
 }

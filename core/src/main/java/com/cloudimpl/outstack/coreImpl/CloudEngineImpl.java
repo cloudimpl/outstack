@@ -111,6 +111,7 @@ public class CloudEngineImpl implements CloudEngine {
                 .withRouterDescriptor(cloudFunc.getRouterDesc())
                 .withServiceId(cloudFunc.getId().isEmpty()?idGen.nextCid():idGen.getId(cloudFunc.getId()))
                 .withServicePort(config.getNodePort())
+                .withAttr(cloudFunc.getAttr())
                 .withHostAddress(CloudUtil.getHostIpAddr())
                 .build();                                                                                                                                                                                                                                                        
         if(cloudFunc.getRouterDesc().getRouterType() == LeaderRouter.class)

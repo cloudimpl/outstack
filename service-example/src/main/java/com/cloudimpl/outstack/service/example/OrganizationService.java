@@ -5,21 +5,29 @@
  */
 package com.cloudimpl.outstack.service.example;
 
+import com.cloudimpl.outstack.common.RouterType;
+import com.cloudimpl.outstack.core.annon.CloudFunction;
+import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.domain.example.Organization;
-import com.cloudimpl.outstack.runtime.EventRepositoy;
-import com.cloudimpl.outstack.runtime.ResourceHelper;
+import com.cloudimpl.outstack.domain.example.Tenant;
+import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.spring.component.SpringService;
 
 /**
  *
  * @author nuwan
  */
+@CloudFunction(name = "OrganizationService")
+@Router(routerType = RouterType.ROUND_ROBIN)
 public class OrganizationService extends SpringService<Organization>{
     static{
         $(CreateOrganization.class);
+        $(CreateTenant.class);
+        $$(Tenant.class); // auto bind for DeleteTenant and RenameTenant command handlers
     }
-    public OrganizationService(EventRepositoy<Organization> eventRepository, ResourceHelper resourceHelper) {
-        super(eventRepository, resourceHelper);
+    
+    public OrganizationService(EventRepositoryFactory eventRepoFactory) {
+        super(eventRepoFactory);
     }
     
 }
