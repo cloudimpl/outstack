@@ -6,11 +6,9 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**

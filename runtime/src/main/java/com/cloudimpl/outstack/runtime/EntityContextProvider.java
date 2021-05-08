@@ -17,10 +17,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 
 /**
  *
@@ -32,17 +37,28 @@ public class EntityContextProvider<T extends RootEntity> {
     private final EntityProvider entityProvider;
     private final QueryOperations<T> queryOperation;
     private final Supplier<String> idGenerator;
-
+    private final ValidatorFactory factory;
+    private final Validator validator;
     public EntityContextProvider(EntityProvider entityProvider, Supplier<String> idGenerator, QueryOperations<T> queryOperation) {
         this.entityProvider = entityProvider;
         this.idGenerator = idGenerator;
         this.queryOperation = queryOperation;
+        this.factory = Validation.buildDefaultValidatorFactory();
+        this.validator = this.factory.getValidator();
     }
 
     public Transaction createTransaction(String rootTid, String tenantId) {
-        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation);
+        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation,this::validateObject);
     }
 
+    private <T> void validateObject(T target)
+    {
+        Set<ConstraintViolation<T>> violations = this.validator.validate(target);
+        if(!violations.isEmpty())
+        {
+            //TODO throw error here
+        }          
+    }
     public static final class Transaction< R extends RootEntity> implements CRUDOperations, QueryOperations<R> {
 
         private final TreeMap<String, Entity> mapEntities;
@@ -53,8 +69,8 @@ public class EntityContextProvider<T extends RootEntity> {
         private String rootTid;
         private Object reply;
         private final List<Event> eventList;
-
-        public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid, String tenantId, QueryOperations<R> queryOperation) {
+        private final Consumer<Object> validator;
+        public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid, String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator) {
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.idGenerator = idGenerator;
@@ -62,6 +78,7 @@ public class EntityContextProvider<T extends RootEntity> {
             this.tenantId = tenantId;
             this.queryOperation = queryOperation;
             this.eventList = new LinkedList<>();
+            this.validator = validator;
         }
 
         public String getTenantId() {
