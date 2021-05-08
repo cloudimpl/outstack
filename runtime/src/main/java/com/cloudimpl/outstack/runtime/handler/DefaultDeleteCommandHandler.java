@@ -3,22 +3,26 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.cloudimpl.outstack.service.example;
+package com.cloudimpl.outstack.runtime.handler;
 
-import com.cloudimpl.outstack.domain.example.Tenant;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
 import com.cloudimpl.outstack.runtime.domainspec.DeleteCommand;
-
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 
 /**
  *
  * @author nuwan
  */
-public class DeleteTenant extends EntityCommandHandler<Tenant, DeleteCommand,Tenant>{
+public class DefaultDeleteCommandHandler<T extends Entity> extends EntityCommandHandler<T, DeleteCommand,T>{
 
+    public DefaultDeleteCommandHandler(Class<T> type) {
+        super(type);
+    }
+
+    
     @Override
-    protected Tenant execute(EntityContext<Tenant> context, DeleteCommand command) {
+    protected T execute(EntityContext<T> context, DeleteCommand command) {
          return context.delete(command.id());
     }
  

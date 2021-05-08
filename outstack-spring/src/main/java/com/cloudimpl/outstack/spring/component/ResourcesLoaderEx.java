@@ -23,6 +23,10 @@ public class ResourcesLoaderEx extends ResourcesLoader{
         {
             return SpringUtil.serviceProviderMeta((Class<? extends SpringService>) serviceType);
         }
+        else if(SpringQueryService.class.isAssignableFrom(serviceType))
+        {
+            return SpringUtil.serviceQueryProviderMeta((Class<? extends SpringQueryService>) serviceType);
+        }
         return SrvUtil.serviceMeta(serviceType);
     }
 }

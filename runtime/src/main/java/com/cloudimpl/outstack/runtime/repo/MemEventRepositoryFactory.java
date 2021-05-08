@@ -9,6 +9,8 @@ import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -17,14 +19,14 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 public class MemEventRepositoryFactory implements EventRepositoryFactory {
 
     private final ResourceHelper helper;
-
+    private final Map<Class<? extends RootEntity>,EventRepositoy<? extends RootEntity>> mapRepos = new ConcurrentHashMap<>();
     public MemEventRepositoryFactory(ResourceHelper helper) {
         this.helper = helper;
     }
 
     @Override
     public <T extends RootEntity> EventRepositoy<T> createRepository(Class<T> rootType) {
-        return new MemEventRepository<>(rootType,this.helper, null);
+        return (EventRepositoy<T>) mapRepos.computeIfAbsent(rootType,type->new MemEventRepository<>((Class<T>)type,this.helper, null));
     }
 
 }

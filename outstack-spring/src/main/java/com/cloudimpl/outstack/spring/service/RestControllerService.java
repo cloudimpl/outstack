@@ -17,9 +17,7 @@ import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import reactor.core.publisher.Flux;
 
@@ -33,6 +31,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
     private Flux<FluxMap.Event<String, CloudService>> serviceFlux;
     private ServiceDescriptorVersionManager serviceManager;
+     private ServiceDescriptorVersionManager serviceQieryManager;
     private ILogger logger;
     @Inject
     public RestControllerService( @Named("@serviceFlux")Flux<FluxMap.Event<String, CloudService>> serviceFlux,ServiceDescriptorVersionManager serviceManager,ILogger logger) {
@@ -43,14 +42,22 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
                 .map(s->getSpringDescriptor(s.getValue().getDescriptor()))
                 .filter(d->d.isPresent())
                 .map(d->d.get())
-                .doOnNext(this::addDescriptor)
+                .doOnNext(this::addCmdDescriptor)
+                .doOnError(err->logger.exception(err, "rest controller service error:"))
+                .subscribe();
+        
+        this.serviceFlux.filter(s->s.getType() == FluxMap.Event.Type.ADD)
+                .map(s->getSpringQueryDescriptor(s.getValue().getDescriptor()))
+                .filter(d->d.isPresent())
+                .map(d->d.get())
+                .doOnNext(this::addQueryDescriptor)
                 .doOnError(err->logger.exception(err, "rest controller service error:"))
                 .subscribe();
     }
     
     private Optional<SpringServiceDescriptor> getSpringDescriptor(CloudServiceDescriptor serviceDescriptor)
     {
-        String str = serviceDescriptor.getAttr().get("seviceMeta");
+        String str = serviceDescriptor.getAttr().get("serviceMeta");
         if(str != null)
         {
             SpringServiceDescriptor serviceDesc = GsonCodec.decode(SpringServiceDescriptor.class, str);
@@ -59,9 +66,25 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
         return Optional.empty();
     }
     
-    private void addDescriptor(SpringServiceDescriptor desc)
+    private Optional<SpringServiceDescriptor> getSpringQueryDescriptor(CloudServiceDescriptor serviceDescriptor)
     {
-        this.serviceManager.put(desc);
+        String str = serviceDescriptor.getAttr().get("serviceQueryMeta");
+        if(str != null)
+        {
+            SpringServiceDescriptor serviceDesc = GsonCodec.decode(SpringServiceDescriptor.class, str);
+            return Optional.of(serviceDesc);
+        }
+        return Optional.empty();
+    }
+    
+    private void addCmdDescriptor(SpringServiceDescriptor desc)
+    {
+        this.serviceManager.putCmd(desc);
+    }
+    
+    private void addQueryDescriptor(SpringServiceDescriptor desc)
+    {
+        this.serviceManager.putQuery(desc);
     }
     
     @Override

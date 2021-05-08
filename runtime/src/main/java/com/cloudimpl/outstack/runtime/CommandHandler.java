@@ -5,15 +5,13 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Input;
-import java.util.function.BiConsumer;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
 
 /**
  *
  * @author nuwan
- * @param <C>
- * @param <I>
+ * @param <T>
  */
-public interface EventHandler <C extends Context,I extends Input> extends BiConsumer<C, I>{
+public interface CommandHandler<T extends Entity> extends Handler<T>{
     
 }

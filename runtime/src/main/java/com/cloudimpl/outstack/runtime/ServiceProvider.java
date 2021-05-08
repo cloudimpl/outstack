@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import static com.cloudimpl.outstack.runtime.ServiceQueryProvider.validateHandler;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
@@ -12,6 +13,9 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
+import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
+import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +34,6 @@ import reactor.core.publisher.Mono;
 public class ServiceProvider<T extends RootEntity, R> implements Function<Object, Publisher<?>> {
 
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
-    private final Map<String, EntityQueryHandler> mapQueryHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
     private final Class<? extends RootEntity> rootType;
     private final EventRepositoy<T> eventRepository;
@@ -50,16 +53,12 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
         if (exist != null) {
             throw new ServiceProviderException("commad handler {0} already exist ", handlerType.getSimpleName());
         }
-        validate(s -> mapQueryHandlers.get(s) != null, handlerType.getSimpleName().toLowerCase(), "handler name " + handlerType.getSimpleName() + " already exist");
     }
 
-    public void registerQueryHandler(Class<? extends EntityQueryHandler> handlerType) {
-        validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityQueryHandler.class, 0));
-        EntityQueryHandler exist = mapQueryHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
-        if (exist != null) {
-            throw new ServiceProviderException("query handler {0} already exist ", handlerType.getSimpleName());
-        }
-        validate(s -> mapCmdHandlers.get(s) != null, handlerType.getSimpleName().toLowerCase(), "handler name " + handlerType.getSimpleName() + " already exist");
+    public void registerDefaultCmdHandlersForEntity(Class<? extends Entity> entityType) {
+        validateHandler("defaultCommandHandlers", rootType, entityType);
+        mapCmdHandlers.computeIfAbsent(("Delete" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultDeleteCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        //mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
     }
 
     public void registerEventHandler(Class<? extends EntityEventHandler> handlerType) {
@@ -70,10 +69,6 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
         return Optional.ofNullable(mapCmdHandlers.get(name.toLowerCase()));
     }
     
-    public Optional<EntityQueryHandler> getQueryHandler(String name) {
-        return Optional.ofNullable(mapQueryHandlers.get(name.toLowerCase()));
-    }
-
     public static void validateHandler(String name, Class<? extends RootEntity> rootType, Class<? extends Entity> type) {
         if (RootEntity.isMyType(type)) {
             if (type != rootType) {
@@ -93,9 +88,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
         if (ICommand.class.isInstance(input)) {
             return applyCommand((ICommand) input);
-        } else if (IQuery.class.isInstance(input)) {
-            return applyQuery((IQuery) input);
-        } else {
+        }else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
 
@@ -108,11 +101,6 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
                 .map(ct -> ct.getTx().getReply());
     }
 
-    private Publisher applyQuery(IQuery query) {
-        return Mono.just(getQueryHandler(query.queryName()).orElseThrow(() -> new QueryException("query {0} not found", query.queryName().toLowerCase())).emit(contextProvider, query))
-                .map(ct -> ct.getTx().getReply());
-    }
-    
     public void applyEvent(Event event) {
         EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(), event.tenantId());
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));

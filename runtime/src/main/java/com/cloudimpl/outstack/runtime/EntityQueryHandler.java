@@ -5,9 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.cloudimpl.outstack.runtime.domainspec.ICommand;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -20,11 +18,16 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <R>
  */
 public abstract class EntityQueryHandler<T extends Entity,I extends Query,R> implements Handler<T>{
-    private final Class<T> entityType;
+    protected final Class<T> entityType;
     private final Class<I> queryType;
 
     public EntityQueryHandler() {
         this.entityType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 0);
+        this.queryType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 1);
+    }
+    
+    public EntityQueryHandler(Class<T> entityType) {
+        this.entityType = entityType;
         this.queryType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 1);
     }
     

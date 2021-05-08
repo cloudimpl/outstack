@@ -15,25 +15,43 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author nuwan
  */
 public class ServiceDescriptorVersionManager {
-    private final Map<String,ServiceDescriptorManager> map;
+    private final Map<String,ServiceDescriptorManager> mapCmd;
+    private final Map<String,ServiceDescriptorManager> mapQuery ;
 
     public ServiceDescriptorVersionManager() {
-        this.map = new ConcurrentHashMap<>();
+        this.mapCmd = new ConcurrentHashMap<>();
+        this.mapQuery = new ConcurrentHashMap<>();
     }
     
-    protected void put(SpringServiceDescriptor serviceDesc)
+    protected void putCmd(SpringServiceDescriptor serviceDesc)
     {
-        ServiceDescriptorManager man = map.get(serviceDesc.getVersion());
+        ServiceDescriptorManager man = mapCmd.get(serviceDesc.getVersion());
         if(man == null)
         {
             man = new ServiceDescriptorManager();
-            map.put(serviceDesc.getVersion(), man);
+            mapCmd.put(serviceDesc.getVersion(), man);
         }
         man.putByPlural(serviceDesc);
     }
     
-    public Optional<ServiceDescriptorManager> getVersion(String version)
+    protected void putQuery(SpringServiceDescriptor serviceDesc)
     {
-        return Optional.ofNullable(map.get(version));
+        ServiceDescriptorManager man = mapQuery.get(serviceDesc.getVersion());
+        if(man == null)
+        {
+            man = new ServiceDescriptorManager();
+            mapQuery.put(serviceDesc.getVersion(), man);
+        }
+        man.putByPlural(serviceDesc);
+    }
+    
+    public Optional<ServiceDescriptorManager> getVersionForCmd(String version)
+    {
+        return Optional.ofNullable(mapCmd.get(version));
+    }
+    
+     public Optional<ServiceDescriptorManager> getVersionForQuery(String version)
+    {
+        return Optional.ofNullable(mapQuery.get(version));
     }
 }
