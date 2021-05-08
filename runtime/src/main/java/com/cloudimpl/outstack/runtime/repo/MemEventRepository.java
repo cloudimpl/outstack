@@ -99,7 +99,16 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     private Entity renamEntity(EntityRenamed event) {
-        Entity e = mapEntites.get(RootEntity.makeRN(event.getOwner(), event.getOldEntityId(), event.tenantId()));
+        String rn;
+        if(event.isRootEvent())
+        {
+            rn = RootEntity.makeTRN(event.getOwner(),event.id(),event.tenantId());
+        }
+        else
+        {
+            rn = ChildEntity.makeTRN(event.getRootOwner(),event.rootId(),event.getOwner(),event.id(),event.tenantId());
+        }
+        Entity e = mapEntites.get(resourceHelper.getFQTrn(rn));
         mapEntites.remove(resourceHelper.getFQBrn(e));
         e = e.rename(event.entityId());
 

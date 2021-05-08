@@ -25,23 +25,13 @@ public class ServiceDescriptorVersionManager {
     
     protected void putCmd(SpringServiceDescriptor serviceDesc)
     {
-        ServiceDescriptorManager man = mapCmd.get(serviceDesc.getVersion());
-        if(man == null)
-        {
-            man = new ServiceDescriptorManager();
-            mapCmd.put(serviceDesc.getVersion(), man);
-        }
+        ServiceDescriptorManager man = mapCmd.computeIfAbsent(serviceDesc.getVersion(),n-> new ServiceDescriptorManager());
         man.putByPlural(serviceDesc);
     }
     
     protected void putQuery(SpringServiceDescriptor serviceDesc)
     {
-        ServiceDescriptorManager man = mapQuery.get(serviceDesc.getVersion());
-        if(man == null)
-        {
-            man = new ServiceDescriptorManager();
-            mapQuery.put(serviceDesc.getVersion(), man);
-        }
+        ServiceDescriptorManager man = mapQuery.computeIfAbsent(serviceDesc.getVersion(),n-> new ServiceDescriptorManager());
         man.putByPlural(serviceDesc);
     }
     

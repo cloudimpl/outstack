@@ -40,6 +40,14 @@ public class ResourceHelper {
     {
         return MessageFormat.format("trn:{0}:{1}:{2}", resourceOwner,resourceContext,trn);
     }
+
+    public String getResourceContext() {
+        return resourceContext;
+    }
+
+    public String getResourceOwner() {
+        return resourceOwner;
+    }
     
     @Override
     public String toString()

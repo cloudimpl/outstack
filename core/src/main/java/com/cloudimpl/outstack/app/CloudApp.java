@@ -44,6 +44,7 @@ public class CloudApp {
         injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
         injector.nameBind("leaderOptions",CollectionOptions.builder().withOption("TableName", "Test").build());
         ResourcesLoader serviceLoader = new ResourcesLoader();
+        serviceLoader.preload();
         appConfig.getNodeConfigBuilder().doOnNext(c->c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C->C.build())
                 .doOnNext(c -> {
             CloudNode node = new CloudNode(injector, c);

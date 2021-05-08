@@ -30,11 +30,11 @@ import reactor.core.publisher.Flux;
 public class RestControllerService implements Function<CloudMessage, CloudMessage>{
 
     private Flux<FluxMap.Event<String, CloudService>> serviceFlux;
-    private ServiceDescriptorVersionManager serviceManager;
+    private ServiceDescriptorContextManager serviceManager;
      private ServiceDescriptorVersionManager serviceQieryManager;
     private ILogger logger;
     @Inject
-    public RestControllerService( @Named("@serviceFlux")Flux<FluxMap.Event<String, CloudService>> serviceFlux,ServiceDescriptorVersionManager serviceManager,ILogger logger) {
+    public RestControllerService( @Named("@serviceFlux")Flux<FluxMap.Event<String, CloudService>> serviceFlux,ServiceDescriptorContextManager serviceManager,ILogger logger) {
         this.logger = logger.createSubLogger(RestControllerService.class);
         this.serviceFlux = serviceFlux;
         this.serviceManager = serviceManager;
@@ -79,12 +79,12 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     
     private void addCmdDescriptor(SpringServiceDescriptor desc)
     {
-        this.serviceManager.putCmd(desc);
+        this.serviceManager.putCmdContext(desc.getAppContext(),desc.getVersion(),desc);
     }
     
     private void addQueryDescriptor(SpringServiceDescriptor desc)
     {
-        this.serviceManager.putQuery(desc);
+        this.serviceManager.putQueryContext(desc.getAppContext(),desc.getVersion(),desc);
     }
     
     @Override

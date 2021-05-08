@@ -36,16 +36,20 @@ import org.reactivestreams.Publisher;
  */
 public class ResourcesLoader {
 
-    private final List<ServiceMeta> metaList;
-    private final List<Class<? extends ServiceEndpointPlugin>> endpoints;
+    private  List<ServiceMeta> metaList;
+    private  List<Class<? extends ServiceEndpointPlugin>> endpoints;
     public ResourcesLoader() {
+        
+    }
+    
+    public void preload()
+    {
         ScanResult rs = new ClassGraph().enableAnnotationInfo().enableClassInfo().scan();
         ClassInfoList list = rs.getClassesWithAnnotation(CloudFunction.class.getName());
         metaList = list.loadClasses().stream().map(this::toServiceMeta).collect(Collectors.toList());
         list = rs.getClassesImplementing(ServiceEndpointPlugin.class.getName());
         endpoints = list.loadClasses().stream().map(s->s.asSubclass(ServiceEndpointPlugin.class)).collect(Collectors.toList());
     }
-    
     protected ServiceMeta toServiceMeta(Class<?> serviceType)
     {
         return SrvUtil.serviceMeta(serviceType);

@@ -23,6 +23,7 @@ import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
+import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorVersionManager;
 import java.util.Optional;
 import javax.annotation.PostConstruct;
@@ -51,27 +52,31 @@ public class Cluster {
 
     @Value("${com.cloudimpl.outstack.cluster.servicePort:10000}")
     private int servicePort;
+    
+    @Value("${com.cloudimpl.outstack.cluster.appContext:api}")
+    private String appContext;
 
     private CloudNode node;
 
-    private ServiceDescriptorVersionManager serviceVersionDescriptorMan;
+    private ServiceDescriptorContextManager serviceDescriptorContextMan;
     public Cluster() {
     }
 
     @PostConstruct
     public void init() {
-        serviceVersionDescriptorMan = new ServiceDescriptorVersionManager();
-        ResourceHelper resourceHelper = new ResourceHelper("cloudimpl", "exampleProduct");
+        serviceDescriptorContextMan = new ServiceDescriptorContextManager();
+        ResourceHelper resourceHelper = new ResourceHelper("cloudimpl", appContext);
         EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);      
         AppConfig appConfig = AppConfig.builder().withGossipPort(gossipPort).withSeedName(seedName).withServicePort(servicePort).build();
         Injector injector = new Injector();
         injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
         injector.bind(ResourceHelper.class).to(resourceHelper);
-        injector.bind(ServiceDescriptorVersionManager.class).to(serviceVersionDescriptorMan);
+        injector.bind(ServiceDescriptorContextManager.class).to(serviceDescriptorContextMan);
         injector.bind(LogWriter.class).to(new ConsoleLogWriter());
         injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
         injector.nameBind("leaderOptions", CollectionOptions.builder().withOption("TableName", "Test").build());
-        ResourcesLoader serviceLoader = new ResourcesLoaderEx();
+        ResourcesLoader serviceLoader = new ResourcesLoaderEx(resourceHelper);
+        serviceLoader.preload();
         appConfig.getNodeConfigBuilder().doOnNext(c -> c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C -> C.build())
                 .doOnNext(c -> {
                     node = new CloudNode(injector, c);
@@ -89,9 +94,9 @@ public class Cluster {
         System.exit(-1);
     }
 
-    public ServiceDescriptorVersionManager getServiceDescriptorManager()
+    public ServiceDescriptorContextManager getServiceDescriptorContextManager()
     {
-        return serviceVersionDescriptorMan;
+        return serviceDescriptorContextMan;
     }
     
     public <T> Mono<T> requestReply(String serviceName, Object msg) {

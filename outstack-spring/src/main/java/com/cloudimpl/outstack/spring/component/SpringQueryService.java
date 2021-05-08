@@ -87,13 +87,4 @@ public class SpringQueryService<T extends RootEntity> implements Function<CloudM
         return QUERY_ENTITIES.stream().filter(h -> filterEntity(rootType, h)).collect(Collectors.toList());
     }
 
-//    public static boolean isCommandHandler(Class<? extends Handler<?>> handlerType)
-//    {
-//        return EntityCommandHandler.class.isAssignableFrom(handlerType);
-//    }
-//    
-//    public static boolean isEventHandler(Class<? extends Handler<?>> eventType)
-//    {
-//        return EntityEventHandler.class.isAssignableFrom(eventType);
-//    }
 }

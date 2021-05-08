@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime.handler;
 
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.RenameCommand;
 
@@ -24,6 +25,7 @@ public class DefaultRenameCommandHandler<T extends Entity> extends EntityCommand
     
     @Override
     protected T execute(EntityContext<T> context, RenameCommand command) {
+         EntityIdHelper.validateEntityId(command.getEntityId());
          return context.rename(command.id(),command.getEntityId());
     }
  

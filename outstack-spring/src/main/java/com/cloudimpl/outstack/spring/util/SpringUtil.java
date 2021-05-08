@@ -13,6 +13,7 @@ import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityEventHandler;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.Handler;
+import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
@@ -33,35 +34,35 @@ import java.util.Objects;
  */
 public class SpringUtil {
 
-    public static ServiceMeta serviceProviderMeta(Class<? extends SpringService> funcType) {
+    public static ServiceMeta serviceProviderMeta(ResourceHelper resourceHelper,Class<? extends SpringService> funcType) {
         CloudFunction func = funcType.getAnnotation(CloudFunction.class);
         Objects.requireNonNull(func);
         Router router = funcType.getAnnotation(Router.class);
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        attr.put("serviceMeta", GsonCodec.encode(getServiceDescription(func.name(),funcType)));
+        attr.put("serviceMeta", GsonCodec.encode(getServiceDescription(resourceHelper.getResourceContext(),func.name(),funcType)));
         //attr.put("plural", value)
         return new ServiceMeta(funcType, func, router, attr);
     }
     
-    public static ServiceMeta serviceQueryProviderMeta(Class<? extends SpringQueryService> funcType) {
+    public static ServiceMeta serviceQueryProviderMeta(ResourceHelper resourceHelper,Class<? extends SpringQueryService> funcType) {
         CloudFunction func = funcType.getAnnotation(CloudFunction.class);
         Objects.requireNonNull(func);
         Router router = funcType.getAnnotation(Router.class);
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        attr.put("serviceQueryMeta", GsonCodec.encode(getQueryServiceDescription(func.name(),funcType)));
+        attr.put("serviceQueryMeta", GsonCodec.encode(getQueryServiceDescription(resourceHelper.getResourceContext(),func.name(),funcType)));
         //attr.put("plural", value)
         return new ServiceMeta(funcType, func, router, attr);
     }
 
-    public static SpringServiceDescriptor getServiceDescription(String serviceName,Class<? extends SpringService> serviceType) {
+    public static SpringServiceDescriptor getServiceDescription(String appContext,String serviceName,Class<? extends SpringService> serviceType) {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends CommandHandler<?>>> handlers = SpringService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
         handlers.stream().filter(h -> EntityCommandHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityCommandHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
@@ -100,11 +101,11 @@ public class SpringUtil {
         return desc;
     }
 
-    public static SpringServiceDescriptor getQueryServiceDescription(String serviceName,Class<? extends SpringQueryService> serviceType) {
+    public static SpringServiceDescriptor getQueryServiceDescription(String appContext,String serviceName,Class<? extends SpringQueryService> serviceType) {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringQueryService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends Handler<?>>> handlers = SpringQueryService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
         handlers.stream().filter(h -> EntityQueryHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityQueryHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);

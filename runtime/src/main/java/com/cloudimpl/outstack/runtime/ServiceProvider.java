@@ -16,6 +16,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
+import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     public void registerDefaultCmdHandlersForEntity(Class<? extends Entity> entityType) {
         validateHandler("defaultCommandHandlers", rootType, entityType);
         mapCmdHandlers.computeIfAbsent(("Delete" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultDeleteCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
-        //mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        mapCmdHandlers.computeIfAbsent(("Rename" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultRenameCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
     }
 
     public void registerEventHandler(Class<? extends EntityEventHandler> handlerType) {
