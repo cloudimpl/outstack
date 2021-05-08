@@ -139,6 +139,18 @@ public class Controller {
         return cluster.requestReply(serviceDesc.getServiceName(), request);
     }
 
+    @DeleteMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
+    private Mono<String> deleteRootEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId) {
+
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context,version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String cmd = DomainModelDecoder.decode(contentType).orElse("Delete" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource {0} creation not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request);
+    }
+    
     @GetMapping("/stream")
     private Flux<String> stream() {
         return Flux.interval(Duration.ofSeconds(1)).map(i -> "tick" + i + "\n");
