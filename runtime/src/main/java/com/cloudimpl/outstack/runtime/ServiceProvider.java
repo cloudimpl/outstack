@@ -99,6 +99,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
                 .map(ct -> ct.getTx().getReply());
         }catch(Throwable thr)
         {
+            thr.printStackTrace();
             return Mono.error(thr);
         }
         

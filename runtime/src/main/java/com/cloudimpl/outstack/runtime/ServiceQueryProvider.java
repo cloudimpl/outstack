@@ -33,10 +33,10 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository,queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
     }
 
     public void registerQueryHandler(Class<? extends EntityQueryHandler> handlerType) {
@@ -47,13 +47,12 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
         }
     }
 
-    public void registerDefaultQueryHandlersForEntity(Class<? extends Entity> entityType)
-    {
+    public void registerDefaultQueryHandlersForEntity(Class<? extends Entity> entityType) {
         validateHandler("defaultQueryHandlers", rootType, entityType);
-        mapQueryHandlers.computeIfAbsent(("Get"+entityType.getSimpleName()).toLowerCase(), s->Util.createObject(DefaultGetQueryHandler.class, new Util.VarArg<>(entityType.getClass()),new Util.VarArg<>(entityType)));   
-         mapQueryHandlers.computeIfAbsent(("List"+entityType.getSimpleName()).toLowerCase(), s->Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()),new Util.VarArg<>(entityType)));   
+        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultGetQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
     }
-    
+
     public Optional<EntityQueryHandler> getQueryHandler(String name) {
         return Optional.ofNullable(mapQueryHandlers.get(name.toLowerCase()));
     }
@@ -74,14 +73,20 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
 
     @Override
     public Publisher apply(Object input) {
-        if (IQuery.class.isInstance(input)) {
-            return applyQuery((IQuery) input);
-        } else {
-            return Mono.error(() -> new CommandException("invalid input received. {0}", input));
+        try {
+            if (IQuery.class.isInstance(input)) {
+                return applyQuery((IQuery) input);
+            } else {
+                return Mono.error(() -> new CommandException("invalid input received. {0}", input));
+            }
+        }catch(Throwable thr)
+        {
+            thr.printStackTrace();
+            return Mono.error(thr);
         }
 
     }
-    
+
     private Publisher applyQuery(IQuery query) {
         return Mono.just(getQueryHandler(query.queryName()).orElseThrow(() -> new QueryException("query {0} not found", query.queryName().toLowerCase())).emit(contextProvider, query))
                 .map(ct -> ct.getTx().getReply());
