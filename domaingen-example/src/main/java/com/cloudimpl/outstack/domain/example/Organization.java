@@ -50,7 +50,7 @@ public class Organization extends RootEntity {
                 break ;
             }
             default : {
-                throw new DomainEventException("unhandled event:"+event.getClass().getName()) ;
+                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT,"unhandled event:"+event.getClass().getName()) ;
             }
         }
     }

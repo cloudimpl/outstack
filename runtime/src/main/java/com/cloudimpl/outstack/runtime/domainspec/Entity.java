@@ -38,7 +38,7 @@ public abstract class Entity implements IResource {
 
     public void applyEvent(Event event) {
         if (event.getOwner() != this.getClass()) {
-            throw new DomainEventException("invalid domain event: " + event.getClass().getName());
+            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_DOMAIN_EVENT,"invalid domain event: " + event.getClass().getName());
         }
         apply(event);
     }
@@ -58,9 +58,9 @@ public abstract class Entity implements IResource {
 
     public static void checkTenantEligibility(Class<? extends Entity> type, String tenantId) {
         if (EntityHelper.hasTenant(type) && tenantId == null) {
-            throw new DomainEventException("tenantId is null for entity creation");
+            throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_AVAILABLE,"tenantId is null for entity creation");
         } else if (!EntityHelper.hasTenant(type) && tenantId != null) {
-            throw new DomainEventException("tenantId is not applicable for entity creation");
+            throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_APPLICABLE,"tenantId is not applicable for entity creation");
         }
     }
 

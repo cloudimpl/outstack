@@ -53,7 +53,7 @@ public class EntityHelper {
 
     public static <T extends RootEntity> T createRootEntity(Class<T> type, String entityId,String tenantId) {
         if (!EntityHelper.isRootEntity(type)) {
-            throw new DomainEventException("type {0} not a root entity", type.getClass().getName());
+            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_ENTITY_TYPE,"type {0} not a root entity", type.getClass().getName());
         }
 
         if (tenantId != null) {

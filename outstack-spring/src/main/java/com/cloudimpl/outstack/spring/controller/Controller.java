@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.spring.controller;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ValidationErrorException;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.spring.component.Cluster;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
@@ -66,7 +67,7 @@ public class Controller {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context,version, rootEntity);
         String rootType = serviceDesc.getRootType();
-        String cmd = DomainModelDecoder.decode(contentType).orElseThrow(() -> new BadRequestException("missing domain model"));
+        String cmd = DomainModelDecoder.decode(contentType).orElse("Update" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withPayload(body).withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
@@ -92,7 +93,7 @@ public class Controller {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context,version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-        String cmd = DomainModelDecoder.decode(contentType).orElseThrow(() -> new BadRequestException("missing domain model"));
+        String cmd = DomainModelDecoder.decode(contentType).orElse("Update"+child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withPayload(body).withId(childId).withRootId(rootId).withTenantId(tenantId).build();
@@ -195,6 +196,25 @@ public class Controller {
         if(ValidationErrorException.class.isInstance(thr))
         {
             return new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,thr.getMessage());
+        }
+        else if(DomainEventException.class.isInstance(thr))
+        {
+            DomainEventException de = (DomainEventException)thr;
+            switch(de.getErrCode())
+            {
+                case ENTITY_NOT_FOUND:
+                {
+                    return new ResponseStatusException(HttpStatus.NOT_FOUND,thr.getMessage());
+                }
+                case ENTITY_EXIST:
+                {
+                    return new ResponseStatusException(HttpStatus.CONFLICT,thr.getMessage());
+                }
+                default:
+                {
+                    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,thr.getMessage());
+                }
+            }
         }
         return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,thr.getMessage());
     }

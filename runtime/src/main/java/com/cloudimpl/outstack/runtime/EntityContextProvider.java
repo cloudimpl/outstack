@@ -27,6 +27,7 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
+import reactor.core.publisher.Flux;
 
 /**
  *
@@ -219,6 +220,11 @@ public class EntityContextProvider<T extends RootEntity> {
             Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
             mapEntities.headMap(RootEntity.makeTRN(rootType, id, tenantId)).entrySet().forEach(p -> map.put(p.getKey(), (T) p.getValue()));
             return map.values();
+        }
+
+        @Override
+        public Flux<R> getAllByRootType(Class<R> rootType) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
 }

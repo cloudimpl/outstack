@@ -25,7 +25,7 @@ public class DefaultGetQueryHandler<T extends Entity> extends EntityQueryHandler
     @Override
     protected T execute(EntityQueryContext<T> context, QueryByIdRequest query) {
         return context.getEntityById(query.id())
-                .orElseThrow(()->new DomainEventException("entity {0}:{1} not found", entityType.getSimpleName(),query.id()));
+                .orElseThrow(()->new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"entity {0}:{1} not found", entityType.getSimpleName(),query.id()));
     }
     
 }
