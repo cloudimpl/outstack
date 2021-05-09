@@ -25,6 +25,21 @@ public class EntityHelper {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
+    public static void setCreatedDate(Entity e,long millis)
+    {
+        e.getMeta().setCreatedDate(millis);
+    }
+    
+    public static void setUpdatedDate(Entity e ,long millis)
+    {
+        e.getMeta().setUpdatedDate(millis);
+    }
+    
+    public static void setCreatedDate(Event e,long millis)
+    {
+        e.getMeta().setCreatedDate(millis);
+    }
+    
     public static <T extends Entity> boolean isRootEntity(Class<T> entityType) {
         return RootEntity.isMyType(entityType);
     }

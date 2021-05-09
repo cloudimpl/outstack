@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.runtime;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
+import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -55,6 +56,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         if (!event.entityId().equals(id)) {
             throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"event id and given id not equal. {0} , {1}", id, event.entityId());
         }
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         T root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
 
         event.setTenantId(getTenantId());
@@ -62,6 +64,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(root.id());
         event.setAction(Event.Action.CREATE);
         root.applyEvent(event);
+        EntityHelper.setCreatedDate(root, event.getMeta().createdDate());
+        EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
         validator.accept(root);
         addEvent(event);
         this._id = root.id();
@@ -79,16 +83,19 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"root tid not available for entity {0}", entityType.getSimpleName());
         }
         T root = (T)this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity not available for entity {0}", entityType.getSimpleName()));     
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity not available for entity {0}", entityType.getSimpleName()));   
+        
         EntityIdHelper.validateId(id, root);
         EntityIdHelper.validateId(_id, root);
         EntityIdHelper.validateId(id, event);
         
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         event.setTenantId(getTenantId());
         event.setId(_id);
         event.setRootId(_id);
         event.setAction(Event.Action.UPDATE);
         root.applyEvent(event);
+        EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
         validator.accept(root);
         addEvent(event);
         crudOperations.update(root);
@@ -114,6 +121,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(_id);
         event.setTenantId(getTenantId());
         event.setAction(Event.Action.DELETE);
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         validator.accept(event);
         addEvent(event);
         crudOperations.delete(root);
@@ -141,11 +149,13 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setId(_id);
         event.setRootId(_id);
         event.setAction(Event.Action.RENAME);
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         validator.accept(event);
         addEvent(event);
         T old = root;
         root = root.rename(newId);
         validator.accept(root);
+        EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
         crudOperations.rename(old, root);
         eventPublisher.accept(event);
         return root;

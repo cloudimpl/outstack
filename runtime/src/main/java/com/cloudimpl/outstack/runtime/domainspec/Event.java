@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime.domainspec;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.util.TimeUtils;
 import java.text.MessageFormat;
 
 /**
@@ -23,7 +24,7 @@ public abstract class Event<T extends Entity> implements IResource ,Input{
     private String _id;
     private String _rootId;
     private Action _action;
-
+    private Meta _meta = new Meta();
     public void setTenantId(String tenantId) {
         this._tenantId = tenantId;
     }
@@ -42,6 +43,10 @@ public abstract class Event<T extends Entity> implements IResource ,Input{
 
     public Action getAction() {
         return _action;
+    }
+
+    public Meta getMeta() {
+        return _meta;
     }
 
     public boolean isConsumed()
@@ -192,5 +197,23 @@ public abstract class Event<T extends Entity> implements IResource ,Input{
     public String toString()
     {
         return GsonCodec.encode(this);
+    }
+    
+    public static final class Meta {
+
+        private long createdDate;
+
+        protected void setCreatedDate(long createdDate) {
+            this.createdDate = createdDate;
+        }
+       
+        public String getCreatedDate() {
+            return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(createdDate));
+        }
+
+        public long createdDate()
+        {
+            return createdDate;
+        }
     }
 }
