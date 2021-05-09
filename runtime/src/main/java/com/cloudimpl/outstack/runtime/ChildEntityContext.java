@@ -7,7 +7,6 @@ package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -16,7 +15,6 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -30,8 +28,9 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     private final Class<R> rootType;
     private final String rootId;
 
-    public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, EntityProvider<R> entitySupplier, Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations<R> queryOperation, Consumer<Event> eventPublisher) {
-        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher);
+    public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, EntityProvider<R> entitySupplier,
+            Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations<R> queryOperation, Consumer<Event> eventPublisher,Consumer<Object> validator) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator);
         this.rootType = rootType;
         this.rootId = rootId;
         Objects.requireNonNull(this.rootId);
@@ -41,6 +40,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public T create(String id, Event<T> event) {
         EntityIdHelper.validateEntityId(id);
         EntityIdHelper.validateTechnicalId(rootId);
+        validator.accept(event); //validate event
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
                 .orElseThrow(() -> new DomainEventException("root entity {0} is not exist", event.getRootEntityRN()));
 
@@ -61,6 +61,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setAction(Event.Action.CREATE);
         child.applyEvent(event);
         addEvent(event);
+        validator.accept(child);
         crudOperations.create(child);
         eventPublisher.accept(event);
         return child;
@@ -69,6 +70,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     @Override
     public T update(String id, Event<T> event) {
         EntityIdHelper.validateTechnicalId(rootId);
+        validator.accept(event); //validate event
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
                 .orElseThrow(() -> new DomainEventException("root entity {0} is not exist", event.getRootEntityRN()));
 
@@ -88,6 +90,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setId(child.id());
         event.setAction(Event.Action.UPDATE);
         child.applyEvent(event);
+        validator.accept(child);
         addEvent(event);
         crudOperations.update(child);
         eventPublisher.accept(event);
@@ -110,6 +113,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         event.setAction(Event.Action.DELETE);
+        validator.accept(event); //validate event
         addEvent(event);
         crudOperations.delete(child);
         eventPublisher.accept(event);
@@ -132,9 +136,11 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         event.setAction(Event.Action.RENAME);
+        validator.accept(event); //validate event
         addEvent(event);
         T old = child;
         child = child.rename(newId);
+        validator.accept(child); 
         crudOperations.rename(old, child);
         eventPublisher.accept(event);
         return child;

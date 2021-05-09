@@ -1,15 +1,19 @@
 package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import javax.validation.constraints.NotBlank;
 import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.domain.example.TenantCreated;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import javax.validation.constraints.NotEmpty;
 
 @EntityMeta(plural="tenants",version="V1")
 public class Tenant extends ChildEntity<Organization> {
     private String endpoint ;
+    @NotEmpty(message = "tenantName field cannot be empty or null in Tenant entity")
+    @NotBlank(message = "tenantName field cannot be blank in Tenant entity")
     private final String tenantName ;
 
     public Tenant(String tenantName) {

@@ -91,10 +91,17 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     }
 
     private Publisher applyCommand(ICommand cmd) {
-        return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
+        try
+        {
+            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
                 .doOnNext(ct -> this.evtHandlerManager.emit(ct.getTx(), ct.getEvents()))
                 .doOnNext(ct -> eventRepository.saveTx(ct.getTx()))
                 .map(ct -> ct.getTx().getReply());
+        }catch(Throwable thr)
+        {
+            return Mono.error(thr);
+        }
+        
     }
 
     public void applyEvent(Event event) {

@@ -56,9 +56,11 @@ public class EntityContextProvider<T extends RootEntity> {
         Set<ConstraintViolation<T>> violations = this.validator.validate(target);
         if(!violations.isEmpty())
         {
-            //TODO throw error here
+            ValidationErrorException error = new ValidationErrorException(violations.stream().findFirst().get().getMessage());
+            throw error;
         }          
     }
+    
     public static final class Transaction< R extends RootEntity> implements CRUDOperations, QueryOperations<R> {
 
         private final TreeMap<String, Entity> mapEntities;
@@ -108,12 +110,12 @@ public class EntityContextProvider<T extends RootEntity> {
         public <C extends ChildEntity<R>, K extends Entity> EntityContext<?> getContext(Class<K> entityType) {
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
-                return new RootEntityContext<>(rootType, rootTid, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent);
+                return new RootEntityContext<>(rootType, rootTid, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator);
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent);
+                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator);
             }
         }
 
