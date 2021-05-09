@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -29,8 +30,9 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     private final String rootId;
 
     public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, EntityProvider<R> entitySupplier,
-            Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations<R> queryOperation, Consumer<Event> eventPublisher,Consumer<Object> validator) {
-        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator);
+            Supplier<String> idGenerator, CRUDOperations crudOperations,
+            QueryOperations<R> queryOperation, Consumer<Event> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
         this.rootType = rootType;
         this.rootId = rootId;
         Objects.requireNonNull(this.rootId);

@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -27,8 +28,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     private String _id;
 
     public RootEntityContext(Class<T> entityType, String tid, String tenantId, EntityProvider<T> entitySupplier,
-            Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations queryOperation, Consumer<Event> eventPublisher,Consumer<Object> validator) {
-        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator);
+            Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations<T> queryOperation,
+            Consumer<Event> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
         this._id = tid;
     }
 

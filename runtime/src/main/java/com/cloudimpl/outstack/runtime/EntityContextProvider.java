@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
@@ -39,16 +40,18 @@ public class EntityContextProvider<T extends RootEntity> {
     private final Supplier<String> idGenerator;
     private final ValidatorFactory factory;
     private final Validator validator;
-    public EntityContextProvider(EntityProvider entityProvider, Supplier<String> idGenerator, QueryOperations<T> queryOperation) {
+    private final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
+    public EntityContextProvider(EntityProvider entityProvider, Supplier<String> idGenerator, QueryOperations<T> queryOperation,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
         this.entityProvider = entityProvider;
         this.idGenerator = idGenerator;
         this.queryOperation = queryOperation;
         this.factory = Validation.buildDefaultValidatorFactory();
         this.validator = this.factory.getValidator();
+        this.queryOperationSelector = queryOperationSelector;
     }
 
     public Transaction createTransaction(String rootTid, String tenantId) {
-        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation,this::validateObject);
+        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector);
     }
 
     private <T> void validateObject(T target)
@@ -72,7 +75,9 @@ public class EntityContextProvider<T extends RootEntity> {
         private Object reply;
         private final List<Event> eventList;
         private final Consumer<Object> validator;
-        public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid, String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator) {
+        Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
+        public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid,
+                String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.idGenerator = idGenerator;
@@ -81,6 +86,7 @@ public class EntityContextProvider<T extends RootEntity> {
             this.queryOperation = queryOperation;
             this.eventList = new LinkedList<>();
             this.validator = validator;
+            this.queryOperationSelector = queryOperationSelector;
         }
 
         public String getTenantId() {
@@ -110,12 +116,12 @@ public class EntityContextProvider<T extends RootEntity> {
         public <C extends ChildEntity<R>, K extends Entity> EntityContext<?> getContext(Class<K> entityType) {
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
-                return new RootEntityContext<>(rootType, rootTid, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator);
+                return new RootEntityContext<>(rootType, rootTid, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator,this.queryOperationSelector);
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator);
+                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator,this.queryOperationSelector);
             }
         }
 

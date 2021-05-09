@@ -24,4 +24,6 @@ public interface EntityQueryContext<T extends Entity>{
 
     <R extends RootEntity,K extends ChildEntity<R>> ChildEntityQueryContext<R,K> asChildQueryContext() ;
     
+    <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String id);
+    
 }
