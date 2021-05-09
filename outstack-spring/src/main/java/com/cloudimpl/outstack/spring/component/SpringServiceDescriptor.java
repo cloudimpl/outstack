@@ -45,7 +45,7 @@ public class SpringServiceDescriptor {
    
     public void putChildAction(EntityDescriptor child,ActionDescriptor action)
     {
-       this.mapDescriptors.put(child.getPlural(), child);
+       this.mapDescriptors.put(child.getPlural().toLowerCase(), child);
        Map<String,ActionDescriptor> map = childActions.get(child.getName());
        if(map == null)
        {
@@ -62,12 +62,12 @@ public class SpringServiceDescriptor {
     
     public Optional<EntityDescriptor> getEntityDescriptorByPlural(String plural)
     {
-        return Optional.ofNullable(mapDescriptors.get(plural));
+        return Optional.ofNullable(mapDescriptors.get(plural.toLowerCase()));
     }
     
     public String getPlural()
     {
-        return rootDesc.getPlural();
+        return rootDesc.getPlural().toLowerCase();
     }
     
     public String getVersion()
