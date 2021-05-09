@@ -5,6 +5,9 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  *
  * @author nuwan
@@ -89,5 +92,60 @@ public abstract class Query implements IQuery{
         
         public abstract <T extends Query> T build();
         
+    }
+    
+    public static class PagingRequest
+    {
+        private final int pageNum;
+        private final int pageSize;
+        private final List<Order> orders;
+
+        public PagingRequest(int pageNum, int pageSize,List<Order> orders) {
+            this.pageNum = pageNum;
+            this.pageSize = pageSize;
+            this.orders = Collections.unmodifiableList(orders);
+        }
+        
+        public List<Order> orders()
+        {
+            return this.orders;
+        }
+        
+        public int pageNum()
+        {
+            return this.pageNum;
+        }
+        
+        public int pageSize()
+        {
+            return this.pageSize;
+        }
+    }
+    
+    public static class Order
+    {
+        private final String name;
+        private final Direction direction;
+
+        public Order(String name, Direction direction) {
+            this.name = name;
+            this.direction = direction;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Direction getDirection() {
+            return direction;
+        }
+        
+        
+    }
+    
+    public static enum Direction
+    {
+        ASC,
+        DESC;
     }
 }
