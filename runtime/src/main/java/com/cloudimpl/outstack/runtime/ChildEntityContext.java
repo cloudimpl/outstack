@@ -86,7 +86,6 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityIdHelper.validateId(id, child);
         EntityIdHelper.validateId(id, event);
        
-        child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
         event.setId(child.id());
