@@ -19,11 +19,11 @@ public class ServiceDescriptorManager {
     
     protected void putByPlural(SpringServiceDescriptor serviceDescriptor)
     {
-        this.map.put(serviceDescriptor.getPlural(), serviceDescriptor);
+        this.map.put(serviceDescriptor.getPlural().toLowerCase(), serviceDescriptor);
     }
     
     public Optional<SpringServiceDescriptor> getServiceDescriptorByPlural(String rootTypePlural)
     {
-        return Optional.ofNullable(map.get(rootTypePlural));
+        return Optional.ofNullable(map.get(rootTypePlural.toLowerCase()));
     }
 }
