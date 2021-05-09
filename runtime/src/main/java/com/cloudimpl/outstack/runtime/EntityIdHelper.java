@@ -21,7 +21,7 @@ public class EntityIdHelper {
         Objects.requireNonNull(id);
         if(id.startsWith(EventRepositoy.TID_PREFIX))
         {
-            throw new DomainEventException("invalid entity id format.{0}", id);
+            throw new DomainEventException(DomainEventException.ErrorCode.EXPECT_ENTITY_ID,"invalid entity id format.{0}", id);
         }
     }
     
@@ -30,7 +30,7 @@ public class EntityIdHelper {
         Objects.requireNonNull(id);
         if(!id.startsWith(EventRepositoy.TID_PREFIX))
         {
-            throw new DomainEventException("invalid entity technical id format.{0}", id);
+            throw new DomainEventException(DomainEventException.ErrorCode.EXPECT_TECHNICAL_ID,"invalid entity technical id format.{0}", id);
         }
     }
     
@@ -45,7 +45,7 @@ public class EntityIdHelper {
         int index = id.indexOf(EventRepositoy.TID_PREFIX);
         if(index == -1)
         {
-            throw new DomainEventException("invalid technical id {0} ,must starts with 'id-'", id);
+            throw new DomainEventException(DomainEventException.ErrorCode.EXPECT_TECHNICAL_ID,"invalid technical id {0} ,must starts with 'id-'", id);
         }
         return id.substring(index + EventRepositoy.TID_PREFIX.length());
     }
@@ -58,13 +58,13 @@ public class EntityIdHelper {
         {
             if(!id.equals(entity.id()))
             {
-                throw new DomainEventException("invalid technical id {0} in entity. {1}", id,entity.getTRN());
+                throw new DomainEventException(DomainEventException.ErrorCode.TECHNICAL_ID_MISMATCHED,"invalid technical id {0} in entity. {1}", id,entity.getTRN());
             }
         }else
         {
             if(!id.equals(entity.entityId()))
             {
-                throw new DomainEventException("invalid entity id {0} in entity. {1}", id,entity.getBRN());
+                throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED,"invalid entity id {0} in entity. {1}", id,entity.getBRN());
             }
         }
     }
@@ -77,13 +77,13 @@ public class EntityIdHelper {
         {
             if(!id.equals(event.id()))
             {
-                throw new DomainEventException("invalid technical id {0} in event. {1}", id,event.getTRN());
+                throw new DomainEventException(DomainEventException.ErrorCode.TECHNICAL_ID_MISMATCHED,"invalid technical id {0} in event. {1}", id,event.getTRN());
             }
         }else
         {
             if(!id.equals(event.entityId()))
             {
-                throw new DomainEventException("invalid entity id {0} in event. {1}", id,event.getBRN());
+                throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED,"invalid entity id {0} in event. {1}", id,event.getBRN());
             }
         }
     }

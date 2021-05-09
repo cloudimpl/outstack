@@ -18,12 +18,11 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import reactor.core.publisher.Flux;
 
 /**
  *
@@ -148,6 +147,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         {
             return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, id,childType,childId, tenantId))));
         }
+    }
+
+    @Override
+    public Flux<T> getAllByRootType(Class<T> rootType) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

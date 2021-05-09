@@ -8,7 +8,6 @@ package com.cloudimpl.outstack.runtime;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import com.cloudimpl.outstack.runtime.repo.RepositoryException;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;

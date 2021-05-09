@@ -44,16 +44,16 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityIdHelper.validateTechnicalId(rootId);
         validator.accept(event); //validate event
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException("root entity {0} is not exist", event.getRootEntityRN()));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} is not exist", event.getRootEntityRN()));
 
         this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId()).ifPresent(e -> {
-            throw new DomainEventException("child entity {0} is already exist", e.getBRN());
+            throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EXIST,"child entity {0} is already exist", e.getBRN());
         });
         if (!event.entityId().equals(id)) {
-            throw new DomainEventException("event id and given id not equal. {0} , {1}", id, event.entityId());
+            throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"event id and given id not equal. {0} , {1}", id, event.entityId());
         }
         if (!root.entityId().equals(event.rootEntityId())) {
-            throw new DomainEventException("root entity Id and event root id not equal. {0} , {1}", root.entityId(), event.rootEntityId());
+            throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"root entity Id and event root id not equal. {0} , {1}", root.entityId(), event.rootEntityId());
         }
 
         T child = root.createChildEntity(entityType, id, idGenerator.get());
@@ -74,13 +74,13 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityIdHelper.validateTechnicalId(rootId);
         validator.accept(event); //validate event
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException("root entity {0} is not exist", event.getRootEntityRN()));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} is not exist", event.getRootEntityRN()));
 
         T child = (T) this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId())
-                .orElseThrow(() -> new DomainEventException("child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
 
         if (!event.rootEntityId().equals(root.entityId())) {
-            throw new DomainEventException("invalid root entity id {0} in the event faor root entity {1}", event.rootEntityId(), root.entityId());
+            throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"invalid root entity id {0} in the event faor root entity {1}", event.rootEntityId(), root.entityId());
         }
         
         EntityIdHelper.validateId(id, child);
@@ -103,10 +103,10 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public T delete(String id) {
         EntityIdHelper.validateTechnicalId(rootId);
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException("root entity {0}:{1} is not exist", rootType.getSimpleName(), rootId));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0}:{1} is not exist", rootType.getSimpleName(), rootId));
 
         T child = (T) this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId())
-                .orElseThrow(() -> new DomainEventException("child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
         
         EntityIdHelper.validateId(id, child);
 
@@ -126,10 +126,10 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public T rename(String id, String newId) {
         EntityIdHelper.validateTechnicalId(rootId);
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException("root entity {0}:{1} is not exist", rootType.getSimpleName(), rootId));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0}:{1} is not exist", rootType.getSimpleName(), rootId));
 
         T child = (T) this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId())
-                .orElseThrow(() -> new DomainEventException("child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
         
         EntityIdHelper.validateId(id, child);
   
@@ -166,7 +166,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
 
     @Override
     public R getRoot() {
-        return (R) this.<R>getQueryOperations().getRootById(rootType, rootId, getTenantId()).orElseThrow(() -> new DomainEventException("root entity {0} not found for id {1}", rootType, rootId));
+        return (R) this.<R>getQueryOperations().getRootById(rootType, rootId, getTenantId()).orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} not found for id {1}", rootType, rootId));
     }
 
     @Override
