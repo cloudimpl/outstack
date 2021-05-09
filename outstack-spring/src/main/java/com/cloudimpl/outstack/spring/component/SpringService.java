@@ -9,10 +9,7 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.runtime.CommandHandler;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityEventHandler;
-import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.EventRepositoy;
-import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -22,7 +19,6 @@ import org.reactivestreams.Publisher;
 import com.cloudimpl.outstack.runtime.Handler;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import static com.cloudimpl.outstack.spring.component.SpringQueryService.filterEntity;
 import java.util.Collection;
 import java.util.function.Function;
@@ -40,7 +36,7 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     private final ServiceProvider<T,CloudMessage> serviceProvider;
     public SpringService(EventRepositoryFactory factory) {
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
-        serviceProvider = new ServiceProvider<>(root,factory.createRepository(root));
+        serviceProvider = new ServiceProvider<>(root,factory.createRepository(root),factory::createRepository);
         HANDLERS.stream()
                 .filter(h->SpringService.filter(root, h))
                 .filter(h->EntityCommandHandler.class.isAssignableFrom(h))

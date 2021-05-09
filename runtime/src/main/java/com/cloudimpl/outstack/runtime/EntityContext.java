@@ -9,9 +9,11 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -31,7 +33,9 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected final Consumer<Event> eventPublisher;
     protected EntityContextProvider.Transaction tx;
     protected final Consumer<Object> validator;
-    public EntityContext(Class<T> entityType, String tenantId, EntityProvider<?> entitySupplier,Supplier<String> idGenerator,CRUDOperations crudOperations,QueryOperations<?> queryOperation,Consumer<Event> eventPublisher,Consumer<Object> validator) {
+    protected final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
+    public EntityContext(Class<T> entityType, String tenantId, EntityProvider<?> entitySupplier,Supplier<String> idGenerator,CRUDOperations crudOperations,
+            QueryOperations<?> queryOperation,Consumer<Event> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
         this.tenantId = tenantId;
         this.events = new LinkedList<>();
         this.entityType = entityType;
@@ -41,6 +45,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.eventPublisher = eventPublisher;
         this.queryOperation = queryOperation;
         this.validator = validator;
+        this.queryOperationSelector = queryOperationSelector;
     }
 
     protected EntityContextProvider.Transaction getTx()
@@ -83,4 +88,9 @@ public abstract class EntityContext<T extends Entity> implements Context {
 
 
     public abstract <R extends RootEntity,K extends ChildEntity<R>> ChildEntityContext<R,K> asChildContext() ;
+    
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String id)
+    {
+        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType),rootType,id,getTenantId());
+    }
 }

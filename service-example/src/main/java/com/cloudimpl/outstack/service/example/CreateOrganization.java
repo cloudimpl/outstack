@@ -7,11 +7,9 @@ package com.cloudimpl.outstack.service.example;
 
 import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.domain.example.OrganizationCreated;
-import com.cloudimpl.outstack.domain.example.Tenant;
 import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
-import java.util.Optional;
 
 
 /**
