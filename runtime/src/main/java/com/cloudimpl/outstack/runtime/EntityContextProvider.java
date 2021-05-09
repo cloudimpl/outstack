@@ -9,6 +9,7 @@ import static com.cloudimpl.outstack.runtime.EventRepositoy.TID_PREFIX;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collection;
@@ -27,7 +28,6 @@ import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
-import reactor.core.publisher.Flux;
 
 /**
  *
@@ -223,7 +223,7 @@ public class EntityContextProvider<T extends RootEntity> {
         }
 
         @Override
-        public Flux<R> getAllByRootType(Class<R> rootType) {
+        public Collection<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
