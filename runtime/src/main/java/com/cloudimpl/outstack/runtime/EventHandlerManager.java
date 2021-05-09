@@ -9,12 +9,10 @@ import static com.cloudimpl.outstack.runtime.ServiceProvider.validateHandler;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
-import com.google.common.collect.Multimaps;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  *

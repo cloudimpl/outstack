@@ -7,7 +7,6 @@ package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -16,7 +15,6 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -28,8 +26,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     private String _id;
 
-    public RootEntityContext(Class<T> entityType, String tid, String tenantId, EntityProvider<T> entitySupplier, Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations queryOperation, Consumer<Event> eventPublisher) {
-        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher);
+    public RootEntityContext(Class<T> entityType, String tid, String tenantId, EntityProvider<T> entitySupplier,
+            Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations queryOperation, Consumer<Event> eventPublisher,Consumer<Object> validator) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator);
         this._id = tid;
     }
 
@@ -42,7 +41,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     public T create(String id, Event<T> event) {
         EntityIdHelper.validateEntityId(id);
         Objects.requireNonNull(event);
-
+        validator.accept(event);
         if (_id != null) {
             throw new DomainEventException("rootId violation.");
         }
@@ -61,6 +60,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(root.id());
         event.setAction(Event.Action.CREATE);
         root.applyEvent(event);
+        validator.accept(root);
         addEvent(event);
         this._id = root.id();
         crudOperations.create(root);
@@ -72,6 +72,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     public T update(String id, Event<T> event) {
         Objects.requireNonNull(id);
         Objects.requireNonNull(event);
+        validator.accept(event);
         if (_id == null) {
             throw new DomainEventException("root tid not available for entity {0}", entityType.getSimpleName());
         }
@@ -86,6 +87,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(_id);
         event.setAction(Event.Action.UPDATE);
         root.applyEvent(event);
+        validator.accept(root);
         addEvent(event);
         crudOperations.update(root);
         eventPublisher.accept(event);
@@ -110,6 +112,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(_id);
         event.setTenantId(getTenantId());
         event.setAction(Event.Action.DELETE);
+        validator.accept(event);
         addEvent(event);
         crudOperations.delete(root);
         eventPublisher.accept(event);
@@ -136,9 +139,11 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setId(_id);
         event.setRootId(_id);
         event.setAction(Event.Action.RENAME);
+        validator.accept(event);
         addEvent(event);
         T old = root;
         root = root.rename(newId);
+        validator.accept(root);
         crudOperations.rename(old, root);
         eventPublisher.accept(event);
         return root;

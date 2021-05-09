@@ -5,17 +5,12 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import static com.cloudimpl.outstack.runtime.ServiceQueryProvider.validateHandler;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
-import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
-import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
-import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
-import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collections;
@@ -96,10 +91,17 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     }
 
     private Publisher applyCommand(ICommand cmd) {
-        return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
+        try
+        {
+            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
                 .doOnNext(ct -> this.evtHandlerManager.emit(ct.getTx(), ct.getEvents()))
                 .doOnNext(ct -> eventRepository.saveTx(ct.getTx()))
                 .map(ct -> ct.getTx().getReply());
+        }catch(Throwable thr)
+        {
+            return Mono.error(thr);
+        }
+        
     }
 
     public void applyEvent(Event event) {
