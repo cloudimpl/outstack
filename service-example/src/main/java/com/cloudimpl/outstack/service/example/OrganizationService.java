@@ -22,6 +22,7 @@ import com.cloudimpl.outstack.spring.component.SpringService;
 public class OrganizationService extends SpringService<Organization>{
     static{
         $(CreateOrganization.class);
+        $(UpdateOrganization.class);
         $(CreateTenant.class);
         $$(Tenant.class); // auto bind for DeleteTenant and RenameTenant command handlers
     }

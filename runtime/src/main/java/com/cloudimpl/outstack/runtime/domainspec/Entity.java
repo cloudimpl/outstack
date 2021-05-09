@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime.domainspec;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.util.TimeUtils;
 import com.google.gson.JsonObject;
 
 /**
@@ -15,6 +16,7 @@ import com.google.gson.JsonObject;
 public abstract class Entity implements IResource {
 
     private String _id;
+    private Meta _meta = new Meta();
 
     final void setTid(String id) {
         this._id = id;
@@ -38,7 +40,7 @@ public abstract class Entity implements IResource {
 
     public void applyEvent(Event event) {
         if (event.getOwner() != this.getClass()) {
-            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_DOMAIN_EVENT,"invalid domain event: " + event.getClass().getName());
+            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_DOMAIN_EVENT, "invalid domain event: " + event.getClass().getName());
         }
         apply(event);
     }
@@ -58,9 +60,9 @@ public abstract class Entity implements IResource {
 
     public static void checkTenantEligibility(Class<? extends Entity> type, String tenantId) {
         if (EntityHelper.hasTenant(type) && tenantId == null) {
-            throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_AVAILABLE,"tenantId is null for entity creation");
+            throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_AVAILABLE, "tenantId is null for entity creation");
         } else if (!EntityHelper.hasTenant(type) && tenantId != null) {
-            throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_APPLICABLE,"tenantId is not applicable for entity creation");
+            throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_APPLICABLE, "tenantId is not applicable for entity creation");
         }
     }
 
@@ -68,8 +70,45 @@ public abstract class Entity implements IResource {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
+    public Meta getMeta() {
+        return _meta;
+    }
+
     @Override
     public String toString() {
         return GsonCodec.encode(this);
+    }
+
+    public static final class Meta {
+
+        private long createdDate;
+        private long updatedDate;
+
+        protected void setCreatedDate(long createdDate) {
+            this.createdDate = createdDate;
+        }
+
+        protected void setUpdatedDate(long updatedDate) {
+            this.updatedDate = updatedDate;
+        }
+
+        
+        public String getCreatedDate() {
+            return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(createdDate));
+        }
+
+        public String getUpdatedDate() {
+            return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(updatedDate));
+        }
+
+        public long createdDate()
+        {
+            return this.createdDate;
+        }
+        
+        public long updatedDate()
+        {
+            return this.updatedDate;
+        }
     }
 }

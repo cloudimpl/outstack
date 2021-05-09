@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.runtime;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
+import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -55,13 +56,16 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         if (!root.entityId().equals(event.rootEntityId())) {
             throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"root entity Id and event root id not equal. {0} , {1}", root.entityId(), event.rootEntityId());
         }
-
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         T child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
         event.setId(child.id());
         event.setAction(Event.Action.CREATE);
+    
         child.applyEvent(event);
+        EntityHelper.setCreatedDate(child, event.getMeta().createdDate());
+        EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
         addEvent(event);
         validator.accept(child);
         crudOperations.create(child);
@@ -86,11 +90,14 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityIdHelper.validateId(id, child);
         EntityIdHelper.validateId(id, event);
        
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
         event.setId(child.id());
         event.setAction(Event.Action.UPDATE);
         child.applyEvent(event);
+        EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
         validator.accept(child);
         addEvent(event);
         crudOperations.update(child);
@@ -113,6 +120,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
         event.setId(child.id());
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         event.setAction(Event.Action.DELETE);
         validator.accept(event); //validate event
         addEvent(event);
@@ -136,11 +144,13 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
         event.setId(child.id());
+        EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         event.setAction(Event.Action.RENAME);
         validator.accept(event); //validate event
         addEvent(event);
         T old = child;
         child = child.rename(newId);
+        EntityHelper.setUpdatedDate(child,event.getMeta().createdDate());
         validator.accept(child); 
         crudOperations.rename(old, child);
         eventPublisher.accept(event);
