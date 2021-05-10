@@ -142,7 +142,6 @@ public class Controller {
     @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> listRootEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId,Pageable pageable) {
-        pageable.getSort().get().forEach(o->System.out.println(o.getDirection()+":"+o.getProperty()));
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize()
                 ,pageable.getSort().get().map(o->new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC?Query.Direction.ASC:Query.Direction.DESC)).collect(Collectors.toList()));
         
