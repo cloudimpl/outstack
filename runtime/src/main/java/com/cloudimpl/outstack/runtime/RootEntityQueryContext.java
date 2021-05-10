@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
 import java.util.Optional;
@@ -22,4 +23,8 @@ public interface RootEntityQueryContext<T extends RootEntity> extends EntityQuer
     <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType);
     
     Optional<T> getEntity();
+    
+    <T extends RootEntity> Collection<T> getAll(Query.PagingRequest pagingRequest);
+    
+   // <E extends RootEntity> getQueryProvider(Class<E> rootType);
 }
