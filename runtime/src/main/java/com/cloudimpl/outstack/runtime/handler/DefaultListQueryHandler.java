@@ -38,7 +38,7 @@ public class DefaultListQueryHandler<T extends Entity> extends EntityQueryHandle
             return rootContext
                     .getAll(query.getPagingReq());
         }
-        return context.asChildQueryContext().getAllByEntityType((Class<ChildEntity<RootEntity>>)entityType).stream().map(e->(T)e).collect(Collectors.toList());
+        return context.asChildQueryContext().getAllByEntityType((Class<ChildEntity<RootEntity>>)entityType,query.getPagingReq()).stream().map(e->(T)e).collect(Collectors.toList());
     }
     
 }
