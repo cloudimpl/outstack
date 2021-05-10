@@ -11,6 +11,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
 import java.util.Objects;
@@ -28,9 +29,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     private String _id;
 
-    public RootEntityContext(Class<T> entityType, String tid, String tenantId, EntityProvider<T> entitySupplier,
-            Supplier<String> idGenerator, CRUDOperations crudOperations, QueryOperations<T> queryOperation,
-            Consumer<Event> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
+    public RootEntityContext(Class<T> entityType, String tid, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier,
+            Supplier<String> idGenerator, Optional<CRUDOperations> crudOperations, QueryOperations<T> queryOperation,
+            Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
         super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
         this._id = tid;
     }
@@ -69,8 +70,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         validator.accept(root);
         addEvent(event);
         this._id = root.id();
-        crudOperations.create(root);
-        eventPublisher.accept(event);
+        getCrudOperations().create(root);
+        getEventPublisher().accept(event);
         return root;
     }
 
@@ -98,8 +99,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
         validator.accept(root);
         addEvent(event);
-        crudOperations.update(root);
-        eventPublisher.accept(event);
+        getCrudOperations().update(root);
+        getEventPublisher().accept(event);
         return root;
     }
 
@@ -124,8 +125,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         validator.accept(event);
         addEvent(event);
-        crudOperations.delete(root);
-        eventPublisher.accept(event);
+        getCrudOperations().delete(root);
+        getEventPublisher().accept(event);
         return root;
     }
 
@@ -156,8 +157,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         root = root.rename(newId);
         validator.accept(root);
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
-        crudOperations.rename(old, root);
-        eventPublisher.accept(event);
+        getCrudOperations().rename(old, root);
+        getEventPublisher().accept(event);
         return root;
     }
 
@@ -198,5 +199,10 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
             return Optional.empty();
         }
         return getEntityById(_id);
+    }
+
+    @Override
+    public Collection<T> getAll(Query.PagingRequest pagingRequest) {
+        return this.<T>getQueryOperations().getAllByRootType(entityType, getTenantId(), pagingRequest);
     }
 }

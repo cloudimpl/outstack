@@ -12,6 +12,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -26,16 +27,16 @@ public abstract class EntityContext<T extends Entity> implements Context {
     private final String tenantId;
     protected final Class<T> entityType;
     private final List<Event> events;
-    private final EntityProvider<?> entitySupplier;
+    private final Optional<EntityProvider<? extends RootEntity>> entitySupplier;
     protected final Supplier<String> idGenerator;
-    protected final CRUDOperations crudOperations;
+    protected final Optional<CRUDOperations> crudOperations;
     private final QueryOperations<?> queryOperation;
-    protected final Consumer<Event> eventPublisher;
-    protected EntityContextProvider.Transaction tx;
+    protected final Optional<Consumer<Event>> eventPublisher;
+    protected EntityContextProvider.ReadOnlyTransaction tx;
     protected final Consumer<Object> validator;
     protected final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
-    public EntityContext(Class<T> entityType, String tenantId, EntityProvider<?> entitySupplier,Supplier<String> idGenerator,CRUDOperations crudOperations,
-            QueryOperations<?> queryOperation,Consumer<Event> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    public EntityContext(Class<T> entityType, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier,Supplier<String> idGenerator,Optional<CRUDOperations> crudOperations,
+            QueryOperations<?> queryOperation,Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
         this.tenantId = tenantId;
         this.events = new LinkedList<>();
         this.entityType = entityType;
@@ -48,14 +49,14 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.queryOperationSelector = queryOperationSelector;
     }
 
-    protected EntityContextProvider.Transaction getTx()
+    protected EntityContextProvider.ReadOnlyTransaction getTx()
     {
         return this.tx;
     }
 
     protected <R extends RootEntity> EntityProvider<R> getEntityProvider()
     {
-        return (EntityProvider<R>) entitySupplier;
+        return (EntityProvider<R>) entitySupplier.get();
     }
     
     protected <R extends RootEntity> QueryOperations<R> getQueryOperations()
@@ -63,10 +64,15 @@ public abstract class EntityContext<T extends Entity> implements Context {
         return (QueryOperations<R>) queryOperation;
     }
     
-    public void setTx(EntityContextProvider.Transaction tx) {
+    public void setTx(EntityContextProvider.ReadOnlyTransaction tx) {
         this.tx = tx;
     }
    
+    public Consumer<Event> getEventPublisher()
+    {
+        return this.eventPublisher.get();
+    }
+    
     public String getTenantId() {
         return tenantId;
     }
@@ -75,6 +81,11 @@ public abstract class EntityContext<T extends Entity> implements Context {
         return this.events;
     }
 
+    protected CRUDOperations getCrudOperations()
+    {
+        return crudOperations.get();
+    }
+    
     protected void addEvent(Event<T> event)
     {
         this.events.add(event);

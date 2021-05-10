@@ -30,9 +30,9 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     private final Class<R> rootType;
     private final String rootId;
 
-    public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, EntityProvider<R> entitySupplier,
-            Supplier<String> idGenerator, CRUDOperations crudOperations,
-            QueryOperations<R> queryOperation, Consumer<Event> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
+    public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier,
+            Supplier<String> idGenerator, Optional<CRUDOperations> crudOperations,
+            QueryOperations<R> queryOperation, Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
         super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
         this.rootType = rootType;
         this.rootId = rootId;
@@ -68,8 +68,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
         addEvent(event);
         validator.accept(child);
-        crudOperations.create(child);
-        eventPublisher.accept(event);
+        getCrudOperations().create(child);
+        getEventPublisher().accept(event);
         return child;
     }
 
@@ -100,8 +100,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
         validator.accept(child);
         addEvent(event);
-        crudOperations.update(child);
-        eventPublisher.accept(event);
+        getCrudOperations().update(child);
+        getEventPublisher().accept(event);
         return child;
     }
 
@@ -124,8 +124,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setAction(Event.Action.DELETE);
         validator.accept(event); //validate event
         addEvent(event);
-        crudOperations.delete(child);
-        eventPublisher.accept(event);
+        getCrudOperations().delete(child);
+        getEventPublisher().accept(event);
         return child;
     }
 
@@ -152,8 +152,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         child = child.rename(newId);
         EntityHelper.setUpdatedDate(child,event.getMeta().createdDate());
         validator.accept(child); 
-        crudOperations.rename(old, child);
-        eventPublisher.accept(event);
+        getCrudOperations().rename(old, child);
+        getEventPublisher().accept(event);
         return child;
     }
 

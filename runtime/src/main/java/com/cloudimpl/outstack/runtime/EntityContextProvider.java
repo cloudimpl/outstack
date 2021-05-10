@@ -34,24 +34,15 @@ import javax.validation.ValidatorFactory;
  * @author nuwan
  * @param <T>
  */
-public class EntityContextProvider<T extends RootEntity> {
+public class EntityContextProvider<T extends RootEntity> extends EntityQueryContextProvider<T>{
 
     private final EntityProvider entityProvider;
-    private final QueryOperations<T> queryOperation;
-    private final Supplier<String> idGenerator;
-    private final ValidatorFactory factory;
-    private final Validator validator;
-    private final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
     public EntityContextProvider(EntityProvider entityProvider, Supplier<String> idGenerator, QueryOperations<T> queryOperation,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+        super(idGenerator, queryOperation, queryOperationSelector);
         this.entityProvider = entityProvider;
-        this.idGenerator = idGenerator;
-        this.queryOperation = queryOperation;
-        this.factory = Validation.buildDefaultValidatorFactory();
-        this.validator = this.factory.getValidator();
-        this.queryOperationSelector = queryOperationSelector;
     }
 
-    public Transaction createTransaction(String rootTid, String tenantId) {
+    public Transaction<T> createWritableTransaction(String rootTid, String tenantId) {
         return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector);
     }
 
@@ -65,37 +56,18 @@ public class EntityContextProvider<T extends RootEntity> {
         }          
     }
     
-    public static final class Transaction< R extends RootEntity> implements CRUDOperations, QueryOperations<R> {
+    public static final class Transaction< R extends RootEntity> extends ReadOnlyTransaction<R> implements CRUDOperations{
 
         private final TreeMap<String, Entity> mapEntities;
         private final EntityProvider entityProvider;
-        private final QueryOperations<R> queryOperation;
-        private final String tenantId;
-        private final Supplier<String> idGenerator;
-        private String rootTid;
         private Object reply;
         private final List<Event> eventList;
-        private final Consumer<Object> validator;
-        Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
         public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector);
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
-            this.idGenerator = idGenerator;
-            this.rootTid = rootTid;
-            this.tenantId = tenantId;
-            this.queryOperation = queryOperation;
             this.eventList = new LinkedList<>();
-            this.validator = validator;
-            this.queryOperationSelector = queryOperationSelector;
-        }
-
-        public String getTenantId() {
-            return tenantId;
-        }
-
-        public String getRootTid() {
-            return rootTid;
         }
 
         public void setReply(Object reply) {
@@ -114,15 +86,26 @@ public class EntityContextProvider<T extends RootEntity> {
             this.eventList.add(event);
         }
 
+        @Override
         public <C extends ChildEntity<R>, K extends Entity> EntityContext<?> getContext(Class<K> entityType) {
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
-                return new RootEntityContext<>(rootType, rootTid, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator,this.queryOperationSelector);
+                return new RootEntityContext(rootType,
+                        rootTid, tenantId,
+                        Optional.of((EntityProvider)this::loadEntity),
+                        idGenerator, Optional.of((CRUDOperations)this),
+                        this, 
+                        Optional.of((Consumer<Event>)this::publishEvent),
+                        validator,this.queryOperationSelector);
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, this::loadEntity, idGenerator, this, this, this::publishEvent,validator,this.queryOperationSelector);
+                return new ChildEntityContext<R,C>(
+                        rootType,
+                        rootTid, childType, tenantId,
+                        Optional.of((EntityProvider)this::loadEntity), idGenerator, Optional.of((CRUDOperations)this),
+                        this, Optional.of((Consumer<Event>)this::publishEvent),validator,this.queryOperationSelector);
             }
         }
 
@@ -224,7 +207,7 @@ public class EntityContextProvider<T extends RootEntity> {
 
         @Override
         public Collection<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
         }
     }
 }

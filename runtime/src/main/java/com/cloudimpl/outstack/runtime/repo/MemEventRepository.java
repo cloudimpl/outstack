@@ -155,8 +155,18 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     @Override
     public Collection<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
+        String trn = null;
+        if(Entity.hasTenant(rootType))
+        {
+            trn = resourcePrefix("trn") + ":tenant/" + tenantId + "/" + rootType.getSimpleName()+"/";
+        }
+        else
+        {
+           trn = resourcePrefix("trn") + ":" + rootType.getSimpleName()+"/"; 
+        }
+        String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()
-                .filter(e -> e.getKey().startsWith(resourcePrefix("trn") + ":tenant/" + tenantId + "/" + rootType.getSimpleName()))
+                .filter(e -> e.getKey().startsWith(fqtrn))
                 .map(e -> (T) e.getValue()).collect(Collectors.toList());
         Comparator<T> comparator = null;
         for (Query.Order order : paging.orders()) {
@@ -168,8 +178,13 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         }
         int offset = paging.pageNum() * paging.pageSize();
         int min = Math.min(filterCollection.size() - offset, paging.pageSize());
-        filterCollection.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
-        return null;
+        if (comparator != null) {
+            return filterCollection.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
+        }
+        else
+        {
+            return filterCollection.stream().skip(offset).limit(min).collect(Collectors.toList());
+        }
     }
 
     private int compare(String name, T left, T right) {
