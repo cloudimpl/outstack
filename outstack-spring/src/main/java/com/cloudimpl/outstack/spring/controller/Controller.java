@@ -9,14 +9,17 @@ import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.spring.component.Cluster;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
 import java.time.Duration;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -138,14 +141,17 @@ public class Controller {
     
     @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
-    private Mono<Object> listRootEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId) {
-
+    private Mono<Object> listRootEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId,Pageable pageable) {
+        pageable.getSort().get().forEach(o->System.out.println(o.getDirection()+":"+o.getProperty()));
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize()
+                ,pageable.getSort().get().map(o->new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC?Query.Direction.ASC:Query.Direction.DESC)).collect(Collectors.toList()));
+        
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context,version, rootEntity);
          String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElse("List" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withTenantId(tenantId).build();
+        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withTenantId(tenantId).withPageRequest(pagingReq).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 

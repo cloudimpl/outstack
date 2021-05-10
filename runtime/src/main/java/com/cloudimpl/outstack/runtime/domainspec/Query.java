@@ -12,118 +12,120 @@ import java.util.List;
  *
  * @author nuwan
  */
-public abstract class Query implements IQuery{
-    private  String _rootId;
-    private  String _tenantId;
-    private  String _id;
-    public Query(Builder builder)
-    {
+public abstract class Query implements IQuery {
+
+    private String _rootId;
+    private String _tenantId;
+    private String _id;
+    private PagingRequest pagingReq;
+
+    public Query(Builder builder) {
         this._rootId = builder.rootId;
         this._tenantId = builder.tenantId;
         this._id = builder.id;
+        this.pagingReq = builder.pagingReq;
     }
-    
-    public final String tenantId()
-    {
+
+    public final String tenantId() {
         return _tenantId;
     }
-    
-    
-    protected void setRootId(String rootId)
-    {
+
+    protected void setRootId(String rootId) {
         this._rootId = rootId;
     }
-    
-    protected void setTenantId(String tenantId)
-    {
+
+    protected void setTenantId(String tenantId) {
         this._tenantId = tenantId;
     }
-    
-    protected void setId(String id)
-    {
+
+    protected void setPageable(PagingRequest pageable) {
+        this.pagingReq = pageable;
+    }
+
+    protected void setId(String id) {
         this._id = id;
     }
-    
-     @Override
-    public <T extends Query> T unwrap(Class<T> type)
-    {
+
+    @Override
+    public <T extends Query> T unwrap(Class<T> type) {
         return (T) this;
     }
-    
+
     @Override
-    public String queryName()
-    {
+    public String queryName() {
         return this.getClass().getSimpleName();
     }
-    
-    public final String rootId()
-    {
+
+    public final String rootId() {
         return this._rootId;
     }
-    
-    public final String id()
-    {
+
+    public final String id() {
         return this._id;
     }
-    
-    public abstract static  class Builder
-    {
+
+    public PagingRequest getPagingReq() {
+        return pagingReq;
+    }
+
+    public abstract static class Builder {
+
         private String rootId;
         private String tenantId;
         private String id;
-        
-        public Builder withRootId(String rootId)
-        {
+        private PagingRequest pagingReq;
+
+        public Builder withRootId(String rootId) {
             this.rootId = rootId;
             return this;
         }
-        
-        public Builder withTenantId(String tenatId)
-        {
+
+        public Builder withTenantId(String tenatId) {
             this.tenantId = tenatId;
             return this;
         }
-        
-        public Builder withId(String id)
-        {
+
+        public Builder withId(String id) {
             this.id = id;
             return this;
         }
-        
+
+        public Builder withPagingReq(PagingRequest pagingReq) {
+            this.pagingReq = pagingReq;
+            return this;
+        }
+
         public abstract <T extends Query> T build();
-        
+
     }
-    
-    public static class PagingRequest
-    {
+
+    public static class PagingRequest {
+
         private final int pageNum;
         private final int pageSize;
         private final List<Order> orders;
 
-        public PagingRequest(int pageNum, int pageSize,List<Order> orders) {
+        public PagingRequest(int pageNum, int pageSize, List<Order> orders) {
             this.pageNum = pageNum;
             this.pageSize = pageSize;
             this.orders = Collections.unmodifiableList(orders);
         }
-        
-        public List<Order> orders()
-        {
+
+        public List<Order> orders() {
             return this.orders;
         }
-        
-        public int pageNum()
-        {
+
+        public int pageNum() {
             return this.pageNum;
         }
-        
-        public int pageSize()
-        {
+
+        public int pageSize() {
             return this.pageSize;
         }
     }
-    
-    public static class Order
-    {
+
+    public static class Order {
+
         private final String name;
         private final Direction direction;
 
@@ -139,12 +141,10 @@ public abstract class Query implements IQuery{
         public Direction getDirection() {
             return direction;
         }
-        
-        
+
     }
-    
-    public static enum Direction
-    {
+
+    public static enum Direction {
         ASC,
         DESC;
     }

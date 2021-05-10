@@ -6,9 +6,6 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
-import com.cloudimpl.outstack.runtime.domainspec.Command;
-import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
-import com.cloudimpl.outstack.runtime.domainspec.ICommand;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryHelper;
@@ -25,13 +22,14 @@ public class QueryWrapper implements IQuery {
     private final String id;
     private final String tenantId;
     private final String payload;
-
+    private final Query.PagingRequest pagingRequest;
     public QueryWrapper(Builder builder) {
         this.query = builder.query;
         this.rootId = builder.rootId;
         this.id = builder.id;
         this.tenantId = builder.tenantId;
         this.payload = builder.payload == null?"{}":builder.payload;
+        this.pagingRequest = builder.pageRequest;
     }
 
     @Override
@@ -40,6 +38,7 @@ public class QueryWrapper implements IQuery {
         QueryHelper.withRootId(query, rootId);
         QueryHelper.withId(query, id);
         QueryHelper.withTenantId(query, tenantId);
+        QueryHelper.withPageable(query, this.pagingRequest);
         return query;
     }
 
@@ -69,6 +68,7 @@ public class QueryWrapper implements IQuery {
         private  String id;
         private  String tenantId;
         private  String payload;
+        private Query.PagingRequest pageRequest;
         
         public Builder withQuery(String query)
         {
@@ -100,6 +100,11 @@ public class QueryWrapper implements IQuery {
             return this;
         }
         
+        public Builder withPageRequest(Query.PagingRequest pagingRequest)
+        {
+            this.pageRequest = pagingRequest;
+            return this;
+        }
         public QueryWrapper build()
         {
             return new QueryWrapper(this);
