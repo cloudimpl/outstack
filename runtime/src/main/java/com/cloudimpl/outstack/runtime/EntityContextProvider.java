@@ -198,9 +198,9 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         }
 
         @Override
-        public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId) {
+        public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
 
-            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
+            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
             mapEntities.headMap(RootEntity.makeTRN(rootType, id, tenantId)).entrySet().forEach(p -> map.put(p.getKey(), (T) p.getValue()));
             return map.values();
         }

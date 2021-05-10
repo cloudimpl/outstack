@@ -11,6 +11,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityDeleted;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
 import java.util.Objects;
@@ -179,8 +180,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     }
 
     @Override
-    public Collection<T> getAllByEntityType(Class<T> type) {
-        return this.<R>getQueryOperations().getAllChildByType(rootType, rootId, type, getTenantId());
+    public Collection<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq) {
+        return this.<R>getQueryOperations().getAllChildByType(rootType, rootId, type, getTenantId(),pageReq);
     }
 
     @Override

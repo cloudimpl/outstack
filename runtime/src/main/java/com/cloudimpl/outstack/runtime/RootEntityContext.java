@@ -179,8 +179,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
-    public <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType) {
-        return this.<T>getQueryOperations().getAllChildByType(entityType, _id, childType, getTenantId());
+    public <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType,Query.PagingRequest pageable) {
+        return this.<T>getQueryOperations().getAllChildByType(entityType, _id, childType, getTenantId(),pageable);
     }
 
     @Override

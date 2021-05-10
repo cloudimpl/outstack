@@ -20,7 +20,12 @@ public interface RootEntityQueryContext<T extends RootEntity> extends EntityQuer
 
     <C extends ChildEntity<T>> Optional<C> getChildEntityById(Class<C> childType, String id);
 
-    <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType);
+    <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType,Query.PagingRequest pageRequest);
+    
+    default <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType)
+    {
+        return getAllChildEntitiesByType(childType, null);
+    }
     
     Optional<T> getEntity();
     
