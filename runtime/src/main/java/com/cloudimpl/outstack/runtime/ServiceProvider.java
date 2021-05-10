@@ -94,8 +94,8 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
         try
         {
             return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
-                .doOnNext(ct -> this.evtHandlerManager.emit(ct.getTx(), ct.getEvents()))
-                .doOnNext(ct -> eventRepository.saveTx(ct.getTx()))
+                .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction)ct.getTx(), ct.getEvents()))
+                .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction)ct.getTx()))
                 .map(ct -> ct.getTx().getReply());
         }catch(Throwable thr)
         {
@@ -106,7 +106,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     }
 
     public void applyEvent(Event event) {
-        EntityContextProvider.Transaction<T> tx = contextProvider.createTransaction(event.rootId(), event.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createWritableTransaction(event.rootId(), event.tenantId());
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
     }

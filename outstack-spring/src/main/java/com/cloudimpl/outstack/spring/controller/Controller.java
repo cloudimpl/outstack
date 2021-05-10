@@ -135,6 +135,19 @@ public class Controller {
         QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
+    
+    @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
+    @SuppressWarnings("unused")
+    private Mono<Object> listRootEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId) {
+
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context,version, rootEntity);
+         String rootType = serviceDesc.getRootType();
+        String query = DomainModelDecoder.decode(contentType).orElse("List" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+    }
 
     @DeleteMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")

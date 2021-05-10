@@ -52,11 +52,11 @@ public abstract class EntityQueryHandler<T extends Entity,I extends Query,R> imp
         }
     }
     
-     public EntityContext<T>  emit(EntityContextProvider contextProvider,IQuery input)
+     public EntityContext<T>  emit(EntityQueryContextProvider contextProvider,IQuery input)
     {
         I query = input.unwrap(this.queryType);
         validateInput(query);
-        EntityContextProvider.Transaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId());
+        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId());
         EntityContext<T> context = tx.getContext(this.entityType);
         context.setTx(tx);
         R reply = apply((EntityQueryContext<T>) context, query);
