@@ -127,11 +127,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public <K extends ChildEntity<T>> Collection<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId) {
+    public <K extends ChildEntity<T>> Collection<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
-        return map.values().stream().map(e -> (K) e).collect(Collectors.toList());
+        Collection<K> result = map.values().stream().map(e -> (K) e).collect(Collectors.toList());
+        return onPageable(result, paging);
     }
 
     @Override
@@ -156,38 +157,19 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public Collection<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
-        if(Entity.hasTenant(rootType))
-        {
-            trn = resourcePrefix("trn") + ":tenant/" + tenantId + "/" + rootType.getSimpleName()+"/";
-        }
-        else
-        {
-           trn = resourcePrefix("trn") + ":" + rootType.getSimpleName()+"/"; 
+        if (Entity.hasTenant(rootType)) {
+            trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + rootType.getSimpleName() + "/";
+        } else {
+            trn = resourcePrefix("brn") + ":" + rootType.getSimpleName() + "/";
         }
         String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()
                 .filter(e -> e.getKey().startsWith(fqtrn))
                 .map(e -> (T) e.getValue()).collect(Collectors.toList());
-        Comparator<T> comparator = null;
-        for (Query.Order order : paging.orders()) {
-            Comparator<T> comp = (left, right) -> compare(order.getName(), left, right);
-            if (order.getDirection() == Query.Direction.DESC) {
-                comp = comp.reversed();
-            }
-            comparator = (comparator == null) ? comp : comparator.thenComparing(comp);
-        }
-        int offset = paging.pageNum() * paging.pageSize();
-        int min = Math.min(filterCollection.size() - offset, paging.pageSize());
-        if (comparator != null) {
-            return filterCollection.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
-        }
-        else
-        {
-            return filterCollection.stream().skip(offset).limit(min).collect(Collectors.toList());
-        }
+        return onPageable(filterCollection, paging);
     }
 
-    private int compare(String name, T left, T right) {
+    private int compare(String name, Object left, Object right) {
         JsonObject leftJson = GsonCodec.encodeToJson(left).getAsJsonObject();
         JsonObject rightJson = GsonCodec.encodeToJson(right).getAsJsonObject();
         JsonElement leftEl = leftJson.get(name);
@@ -206,5 +188,27 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             return leftPrim.getAsString().compareTo(rightPrim.getAsString());
         }
         throw new RepositoryException("unsupported data type for sorting . {0} : {1} ", leftJson, rightJson);
+    }
+
+    private <T> Collection<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
+        if (paging == null) {
+            return result;
+        }
+
+        Comparator<T> comparator = null;
+        for (Query.Order order : paging.orders()) {
+            Comparator<T> comp = (left, right) -> compare(order.getName(), left, right);
+            if (order.getDirection() == Query.Direction.DESC) {
+                comp = comp.reversed();
+            }
+            comparator = (comparator == null) ? comp : comparator.thenComparing(comp);
+        }
+        int offset = paging.pageNum() * paging.pageSize();
+        int min = Math.min(result.size() - offset, paging.pageSize());
+        if (comparator != null) {
+            return result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
+        } else {
+            return result.stream().skip(offset).limit(min).collect(Collectors.toList());
+        }
     }
 }

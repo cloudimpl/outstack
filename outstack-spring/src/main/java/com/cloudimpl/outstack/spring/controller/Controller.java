@@ -18,7 +18,6 @@ import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundExcept
 import java.time.Duration;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
@@ -128,14 +127,16 @@ public class Controller {
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
-    private Mono<Object> listChildEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId) {
-
+    private Mono<Object> listChildEntity(@PathVariable String context,@PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType,@RequestHeader(name = "X-TenantId",required = false) String tenantId,Pageable pageable) {
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize()
+                ,pageable.getSort().get().map(o->new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC?Query.Direction.ASC:Query.Direction.DESC)).collect(Collectors.toList()));
+         
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context,version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElse("List" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withRootId(rootId).withTenantId(tenantId).build();
+        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withRootId(rootId).withTenantId(tenantId).withPageRequest(pagingReq).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
     
@@ -174,7 +175,7 @@ public class Controller {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context,version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElse("Delete" + rootType);
-        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource {0} creation not implemented", rootType));
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource {0} deletion not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);

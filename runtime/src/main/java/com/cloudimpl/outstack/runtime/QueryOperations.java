@@ -20,6 +20,6 @@ public interface QueryOperations<R extends RootEntity>{
     Collection<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging);
     Optional<R> getRootById(Class<R> rootType,String id,String tenantId);
     <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType,String id,Class<T> childType, String childId,String tenantId);
-    <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType,String id,Class<T> childType,String tenantId);
+    <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType,String id,Class<T> childType,String tenantId,Query.PagingRequest paging);
     
 }
