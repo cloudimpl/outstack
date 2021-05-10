@@ -27,4 +27,10 @@ public class QueryHelper {
         query.setId(id);
         return query;
     }
+    
+    public static Query withPageable(Query query, Query.PagingRequest pageable)
+    {
+        query.setPageable(pageable);
+        return query;
+    }
 }
