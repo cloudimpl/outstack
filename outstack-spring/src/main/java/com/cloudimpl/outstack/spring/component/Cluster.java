@@ -5,7 +5,6 @@
  */
 package com.cloudimpl.outstack.spring.component;
 
-import com.cloudimpl.outstack.spring.service.ServiceDescriptorManager;
 import com.cloudimpl.outstack.app.AppConfig;
 import com.cloudimpl.outstack.app.ResourcesLoader;
 import com.cloudimpl.outstack.collection.AwsCollectionProvider;
@@ -15,7 +14,6 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
 import com.cloudimpl.outstack.core.Injector;
-import com.cloudimpl.outstack.coreImpl.SharedResources;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
@@ -24,8 +22,6 @@ import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
-import com.cloudimpl.outstack.spring.service.ServiceDescriptorVersionManager;
-import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;

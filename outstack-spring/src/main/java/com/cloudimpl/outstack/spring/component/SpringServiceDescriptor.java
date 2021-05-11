@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.spring.component;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -32,6 +34,21 @@ public class SpringServiceDescriptor {
         this.rootActions = new HashMap<>();
         this.childActions = new HashMap<>();
         this.mapDescriptors = new HashMap<>();
+    }
+    
+    public Collection<ActionDescriptor> getRootActions()
+    {
+        return rootActions.values();
+    }
+    
+    public Collection<ActionDescriptor> getChildActions(String childEntity)
+    {
+        return childActions.getOrDefault(childEntity,Collections.EMPTY_MAP).values();
+    }
+    
+    public Collection<EntityDescriptor> entityDescriptors()
+    {
+        return mapDescriptors.values();
     }
     
     public void putRootAction(ActionDescriptor action)
