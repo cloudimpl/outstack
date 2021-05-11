@@ -52,27 +52,34 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         for (Event event : events) {
             System.out.println("tx: " + event);
             Entity e = null;
-            switch (event.getAction()) {
-                case CREATE: {
-                    e = createEntity(event);
-                    break;
-                }
-                case UPDATE: {
-                    e = updateEntity(event);
-                    break;
-                }
-                case DELETE: {
-                    e = deleteEntity(event);
-                    break;
-                }
-                case RENAME: {
-                    EntityRenamed renamedEvent = (EntityRenamed) event;
-                    renamEntity(renamedEvent);
-                    break;
-                }
-            }
+            applyEvent(event);
             System.out.println("entity: " + e);
         }
+    }
+
+    @Override
+    public synchronized void applyEvent(Event event) {
+        Entity e = null;
+        switch (event.getAction()) {
+            case CREATE: {
+                e = createEntity(event);
+                break;
+            }
+            case UPDATE: {
+                e = updateEntity(event);
+                break;
+            }
+            case DELETE: {
+                e = deleteEntity(event);
+                break;
+            }
+            case RENAME: {
+                EntityRenamed renamedEvent = (EntityRenamed) event;
+                renamEntity(renamedEvent);
+                break;
+            }
+        }
+        System.out.println("entity: " + e);
     }
 
     private Entity createEntity(Event event) {
@@ -165,6 +172,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()
                 .filter(e -> e.getKey().startsWith(fqtrn))
+                .filter(e->e.getValue().getClass() == rootType)
                 .map(e -> (T) e.getValue()).collect(Collectors.toList());
         return onPageable(filterCollection, paging);
     }

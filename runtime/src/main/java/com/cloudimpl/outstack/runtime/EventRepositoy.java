@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.time.Duration;
 import java.util.Optional;
@@ -46,6 +47,8 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //    public <K extends Entity> K loadEntityWithClone(String resourceName) {
 //         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);
 //    }
+    
+    public abstract void applyEvent(Event event);
     
     public <K extends Entity,C extends ChildEntity<T>> Optional<K> loadEntityWithClone(Class<T> rootType,String id,Class<C> childType,String childId,String tenantId)
     {
