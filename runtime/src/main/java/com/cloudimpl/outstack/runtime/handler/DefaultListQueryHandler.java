@@ -7,15 +7,12 @@ package com.cloudimpl.outstack.runtime.handler;
 
 import com.cloudimpl.outstack.runtime.EntityQueryContext;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
-import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.RootEntityQueryContext;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryByIdRequest;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 /**
