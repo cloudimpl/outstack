@@ -58,7 +58,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public synchronized void applyEvent(Event event) {
+    public synchronized <T extends Entity> T applyEvent(Event event) {
         Entity e = null;
         switch (event.getAction()) {
             case CREATE: {
@@ -75,11 +75,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             }
             case RENAME: {
                 EntityRenamed renamedEvent = (EntityRenamed) event;
-                renamEntity(renamedEvent);
+                e = renamEntity(renamedEvent);
                 break;
             }
         }
         System.out.println("entity: " + e);
+        return (T) e;
     }
 
     private Entity createEntity(Event event) {
@@ -138,8 +139,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         EntityIdHelper.validateTechnicalId(id);
         String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
-        Collection<K> result = map.values().stream().map(e -> (K) e).collect(Collectors.toList());
-        return onPageable(result, paging);
+        Collection<K> result = map.values().stream().filter(e->e.getClass() == childType).map(e -> (K) e).collect(Collectors.toList());
+        Collection<K> col = onPageable(result, paging);
+        return col;
     }
 
     @Override

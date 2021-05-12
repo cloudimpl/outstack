@@ -24,14 +24,14 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  * @author nuwan
  */
 public class CommandHandlerRegistered extends Event<CommandHandlerEntity>{
-    private final String serviceName;
     private final String handlerName;
     private final String entityName;
+    private final String rootEntity;
 
-    public CommandHandlerRegistered(String serviceName,String handlerName, String entityName) {
-        this.serviceName = serviceName;
+    public CommandHandlerRegistered(String handlerName, String entityName,String rootEntity) {
         this.handlerName = handlerName;
         this.entityName = entityName;
+        this.rootEntity = rootEntity;
     }
 
     public String getHandlerName() {
@@ -42,8 +42,8 @@ public class CommandHandlerRegistered extends Event<CommandHandlerEntity>{
         return entityName;
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public String getRootEntity() {
+        return rootEntity;
     }
 
     @Override
@@ -58,12 +58,12 @@ public class CommandHandlerRegistered extends Event<CommandHandlerEntity>{
 
     @Override
     public String entityId() {
-        return serviceName;
+        return handlerName;
     }
 
     @Override
     public String rootEntityId() {
-        return serviceName;
+        return rootEntity;
     }
     
 }

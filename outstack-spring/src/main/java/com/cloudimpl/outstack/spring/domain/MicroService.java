@@ -17,12 +17,14 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 @EntityMeta(plural = "MicroServices",version = "v1")
 public class MicroService extends RootEntity {
 
-    private final String serviceName;
+    private final String rootEntity;
+    private  String serviceName;
     private String version;
     private boolean tenantService;
+    private String apiContext;
 
-    public MicroService(String serviceName) {
-        this.serviceName = serviceName;
+    public MicroService(String rootEntity) {
+        this.rootEntity = rootEntity;
     }
 
     public String getServiceName() {
@@ -37,14 +39,24 @@ public class MicroService extends RootEntity {
         return this.tenantService;
     }
 
+    public String getApiContext() {
+        return apiContext;
+    }
+
+    public String getRootEntity() {
+        return rootEntity;
+    }
+
     @Override
     public String entityId() {
-        return serviceName;
+        return rootEntity;
     }
 
     private void applyEvent(MicroServiceProvisioned microServiceProvisioned) {
+        this.serviceName = microServiceProvisioned.getServiceName();
         this.version = microServiceProvisioned.getVersion();
         this.tenantService = microServiceProvisioned.isTenantService();
+        this.apiContext = microServiceProvisioned.getApiContext();
     }
 
     @Override
@@ -62,7 +74,7 @@ public class MicroService extends RootEntity {
 
     @Override
     public String idField() {
-        return "serviceName";
+        return "rootEntity";
     }
 
 }

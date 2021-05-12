@@ -8,21 +8,15 @@ package com.cloudimpl.outstack.runtime;
 import static com.cloudimpl.outstack.runtime.EventRepositoy.TID_PREFIX;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
 import javax.validation.Validator;
@@ -138,8 +132,8 @@ public class EntityQueryContextProvider<T extends RootEntity> {
 
         @Override
         public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
-            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
-            return map.values();
+            return queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable);
+            
         }
 
         @Override

@@ -24,9 +24,9 @@ public class SpringServiceDescriptor {
     private final String version;
     private final boolean isTenant;
     private final String  serviceName;
-    private final String appContext;
-    public SpringServiceDescriptor(String appContext,String serviceName,String rootType,String version,String plural,boolean isTenant) {
-        this.appContext = appContext;
+    private final String apiContext;
+    public SpringServiceDescriptor(String apiContext,String serviceName,String rootType,String version,String plural,boolean isTenant) {
+        this.apiContext = apiContext;
         this.serviceName = serviceName;
         this.rootDesc = new EntityDescriptor(rootType, plural);
         this.version = version;
@@ -56,8 +56,8 @@ public class SpringServiceDescriptor {
         this.rootActions.put(action.getName(),action);
     }
 
-    public String getAppContext() {
-        return appContext;
+    public String getApiContext() {
+        return apiContext;
     }
    
     public void putChildAction(EntityDescriptor child,ActionDescriptor action)

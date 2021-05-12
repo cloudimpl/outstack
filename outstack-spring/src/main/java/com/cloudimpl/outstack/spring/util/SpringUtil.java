@@ -42,7 +42,7 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        attr.put("serviceMeta", GsonCodec.encode(getServiceDescription(resourceHelper.getResourceContext(), func.name(), funcType)));
+        attr.put("serviceMeta", GsonCodec.encode(getServiceDescription(resourceHelper.getApiContext(), func.name(), funcType)));
         //attr.put("plural", value)
         return new ServiceMeta(funcType, func, router, attr);
     }
@@ -54,7 +54,7 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        attr.put("serviceQueryMeta", GsonCodec.encode(getQueryServiceDescription(resourceHelper.getResourceContext(), func.name(), funcType)));
+        attr.put("serviceQueryMeta", GsonCodec.encode(getQueryServiceDescription(resourceHelper.getApiContext(), func.name(), funcType)));
         //attr.put("plural", value)
         return new ServiceMeta(funcType, func, router, attr);
     }

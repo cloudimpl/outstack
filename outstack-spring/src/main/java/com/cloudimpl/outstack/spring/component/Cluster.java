@@ -48,21 +48,28 @@ public class Cluster {
 
     @Value("${com.cloudimpl.outstack.cluster.servicePort:10000}")
     private int servicePort;
-    
-    @Value("${com.cloudimpl.outstack.cluster.appContext:api}")
-    private String appContext;
+
+    @Value("${com.cloudimpl.outstack.cluster.domainOwner:cloudimpl}")
+    private String domainOwner;
+
+    @Value("${com.cloudimpl.outstack.cluster.domainContext:example}")
+    private String domainContext;
+
+    @Value("${com.cloudimpl.outstack.cluster.apiContext:api}")
+    private String apiContext;
 
     private CloudNode node;
 
     private ServiceDescriptorContextManager serviceDescriptorContextMan;
+
     public Cluster() {
     }
 
     @PostConstruct
     public void init() {
         serviceDescriptorContextMan = new ServiceDescriptorContextManager();
-        ResourceHelper resourceHelper = new ResourceHelper("cloudimpl", appContext);
-        EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);      
+        ResourceHelper resourceHelper = new ResourceHelper(domainOwner, domainContext, apiContext);
+        EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(gossipPort).withSeedName(seedName).withServicePort(servicePort).build();
         Injector injector = new Injector();
         injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
@@ -90,11 +97,10 @@ public class Cluster {
         System.exit(-1);
     }
 
-    public ServiceDescriptorContextManager getServiceDescriptorContextManager()
-    {
+    public ServiceDescriptorContextManager getServiceDescriptorContextManager() {
         return serviceDescriptorContextMan;
     }
-    
+
     public <T> Mono<T> requestReply(String serviceName, Object msg) {
         return this.node.requestReply(serviceName, msg);
     }

@@ -27,6 +27,7 @@ import com.cloudimpl.outstack.spring.domain.MicroService;
 import com.cloudimpl.outstack.spring.domain.MicroServiceProvisioned;
 import com.cloudimpl.outstack.spring.domain.QueryHandlerRegistered;
 import com.cloudimpl.outstack.spring.util.SpringUtil;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 import reactor.core.publisher.Flux;
@@ -91,12 +92,12 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     }
 
     private void addCmdDescriptor(SpringServiceDescriptor desc) {
-        this.serviceManager.putCmdContext(desc.getAppContext(), desc.getVersion(), desc);
+        this.serviceManager.putCmdContext(desc.getApiContext(), desc.getVersion(), desc);
         addEntities(desc);
     }
 
     private void addQueryDescriptor(SpringServiceDescriptor desc) {
-        this.serviceManager.putQueryContext(desc.getAppContext(), desc.getVersion(), desc);
+        this.serviceManager.putQueryContext(desc.getApiContext(), desc.getVersion(), desc);
         addEntities(desc);
     }
 
@@ -106,36 +107,47 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     }
 
     private void addEntities(SpringServiceDescriptor desc) {
-        String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getServiceName());
-        MicroServiceProvisioned provisioned = new MicroServiceProvisioned(desc.getServiceName(), desc.getVersion(), desc.isTenantService());
+
+        MicroService service = eventRepo.getRootById(MicroService.class, desc.getRootType(), null).orElse(createMicroService(desc));
+        addActions(service.id(), desc.getRootType(), desc, desc.getRootActions());
+        desc.entityDescriptors().forEach(ed -> {
+            addActions(service.id(), ed.getName(), desc, desc.getChildActions(ed.getName()));
+        });
+    }
+
+    private MicroService createMicroService(SpringServiceDescriptor desc) {
+        String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getRootType());
+        MicroServiceProvisioned provisioned = new MicroServiceProvisioned(desc.getServiceName(), desc.getRootType(), desc.getVersion(), desc.getApiContext(), desc.isTenantService());
         provisioned.setId(id);
         provisioned.setRootId(id);
         provisioned.setAction(Event.Action.CREATE);
-        eventRepo.applyEvent(provisioned);
+        return eventRepo.applyEvent(provisioned);
+    }
 
-        desc.getRootActions().stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER).forEach(action -> {
-            CommandHandlerRegistered event = new CommandHandlerRegistered(desc.getServiceName(), action.getName(), desc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getServiceName() + ":cmd:" + action.getName());
+    private void addActions(String rootId, String targetEntity, SpringServiceDescriptor serviceDesc, Collection<SpringServiceDescriptor.ActionDescriptor> actions) {
+        actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER).forEach(action -> {
+            CommandHandlerRegistered event = new CommandHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType()+ ":cmd:" + action.getName());
             event.setId(childId);
-            event.setRootId(id);
+            event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
             eventRepo.applyEvent(event);
         });
-        
-        desc.getRootActions().stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER).forEach(action -> {
-            EventHandlerRegistered event = new EventHandlerRegistered(desc.getServiceName(), action.getName(), desc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getServiceName() + ":cmd:" + action.getName());
+
+        actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER).forEach(action -> {
+            EventHandlerRegistered event = new EventHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":evt:" + action.getName());
             event.setId(childId);
-            event.setRootId(id);
+            event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
             eventRepo.applyEvent(event);
         });
-        
-        desc.getRootActions().stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
-            QueryHandlerRegistered event = new QueryHandlerRegistered(desc.getServiceName(), action.getName(), desc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getServiceName() + ":query:" + action.getName());
+
+        actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
+            QueryHandlerRegistered event = new QueryHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
             event.setId(childId);
-            event.setRootId(id);
+            event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
             eventRepo.applyEvent(event);
         });

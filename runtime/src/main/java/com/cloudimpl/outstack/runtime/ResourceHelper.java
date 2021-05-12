@@ -13,45 +13,51 @@ import java.text.MessageFormat;
  * @author nuwan
  */
 public class ResourceHelper {
-    private final String resourceOwner;
-    private final String resourceContext;
-
-    public ResourceHelper(String resourceOwner, String resourceContext) {
-        this.resourceOwner = resourceOwner;
-        this.resourceContext = resourceContext;
+    private final String domainOwner;
+    private final String domainContext;
+    private final String apiContext;
+    public ResourceHelper(String domainOwner, String domainContext, String apiContext) {
+        this.domainOwner = domainOwner;
+        this.domainContext = domainContext;
+        this.apiContext = apiContext;
     }
     
     public  String getFQBrn(IResource resource)
     {
-        return MessageFormat.format("brn:{0}:{1}:{2}", resourceOwner,resourceContext,resource.getBRN());
+        return MessageFormat.format("brn:{0}:{1}:{2}", domainOwner,domainContext,resource.getBRN());
     }
     
     public  String getFQTrn(IResource resource)
     {
-        return MessageFormat.format("trn:{0}:{1}:{2}", resourceOwner,resourceContext,resource.getTRN());
+        return MessageFormat.format("trn:{0}:{1}:{2}", domainOwner,domainContext,resource.getTRN());
     }
     
     public  String getFQBrn(String rn)
     {
-        return MessageFormat.format("brn:{0}:{1}:{2}", resourceOwner,resourceContext,rn);
+        return MessageFormat.format("brn:{0}:{1}:{2}", domainOwner,domainContext,rn);
     }
     
     public  String getFQTrn(String trn)
     {
-        return MessageFormat.format("trn:{0}:{1}:{2}", resourceOwner,resourceContext,trn);
+        return MessageFormat.format("trn:{0}:{1}:{2}", domainOwner,domainContext,trn);
     }
 
-    public String getResourceContext() {
-        return resourceContext;
+    public String getDomainContext() {
+        return domainContext;
     }
 
-    public String getResourceOwner() {
-        return resourceOwner;
+    public String getDomainOwner() {
+        return domainOwner;
     }
+
+    public String getApiContext() {
+        return apiContext;
+    }
+    
     
     @Override
     public String toString()
     {
-        return MessageFormat.format("{0}:{1}",resourceOwner, resourceContext);
+        return MessageFormat.format("{0}:{1}",domainOwner, domainContext);
     }
 }

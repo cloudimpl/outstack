@@ -48,7 +48,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);
 //    }
     
-    public abstract void applyEvent(Event event);
+    public abstract <T extends Entity> T applyEvent(Event event);
     
     public <K extends Entity,C extends ChildEntity<T>> Optional<K> loadEntityWithClone(Class<T> rootType,String id,Class<C> childType,String childId,String tenantId)
     {
