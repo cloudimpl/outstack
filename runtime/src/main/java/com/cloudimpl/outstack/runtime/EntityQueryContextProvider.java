@@ -138,8 +138,8 @@ public class EntityQueryContextProvider<T extends RootEntity> {
 
         @Override
         public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
-            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
-            return map.values();
+            return queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable);
+            
         }
 
         @Override

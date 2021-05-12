@@ -24,13 +24,17 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  * @author nuwan
  */
 public class MicroServiceProvisioned extends Event<MicroService>{
-    private final String serviceName;
-    private final String version;
+    private final String  serviceName;
+    private final String rootEntity;
+    private final String  version;
+    private final String  apiContext;
     private final boolean tenantService;
 
-    public MicroServiceProvisioned(String serviceName, String version, boolean tenantService) {
+    public MicroServiceProvisioned(String serviceName,String rootEntity, String version,String apiContext, boolean tenantService) {
         this.serviceName = serviceName;
+        this.rootEntity = rootEntity;
         this.version = version;
+        this.apiContext = apiContext;
         this.tenantService = tenantService;
     }
 
@@ -38,8 +42,16 @@ public class MicroServiceProvisioned extends Event<MicroService>{
         return serviceName;
     }
 
+    public String getRootEntity() {
+        return rootEntity;
+    }
+
     public String getVersion() {
         return version;
+    }
+
+    public String getApiContext() {
+        return apiContext;
     }
 
     public boolean isTenantService() {
@@ -59,12 +71,12 @@ public class MicroServiceProvisioned extends Event<MicroService>{
 
     @Override
     public String entityId() {
-        return this.serviceName;
+        return this.rootEntity;
     }
 
     @Override
     public String rootEntityId() {
-        return this.serviceName;
+        return this.rootEntity;
     }
     
 }

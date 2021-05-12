@@ -38,7 +38,7 @@ public abstract class Entity implements IResource {
 
     protected abstract void apply(Event event);
 
-    public void applyEvent(Event event) {
+    public final void applyEvent(Event event) {
         if (event.getOwner() != this.getClass()) {
             throw new DomainEventException(DomainEventException.ErrorCode.INVALID_DOMAIN_EVENT, "invalid domain event: " + event.getClass().getName());
         }
@@ -70,7 +70,7 @@ public abstract class Entity implements IResource {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
-    public Meta getMeta() {
+    public final Meta getMeta() {
         return _meta;
     }
 

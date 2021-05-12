@@ -16,7 +16,7 @@ import java.util.Objects;
 public abstract class RootEntity extends Entity {
     
     @Override
-    public String getBRN() {
+    public final String getBRN() {
         if (hasTenant()) { //tenant/1234/User/1/Device/12"
             Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             return makeRN(this.getClass(), entityId(),ITenant.class.cast(this).getTenantId());
@@ -26,7 +26,7 @@ public abstract class RootEntity extends Entity {
     }
     
     @Override
-    public String getTRN() {
+    public final String getTRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
             Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             return makeTRN(this.getClass(), id(), ITenant.class.cast(this).getTenantId());
