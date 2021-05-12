@@ -49,10 +49,10 @@ public class Cluster {
     @Value("${com.cloudimpl.outstack.cluster.servicePort:10000}")
     private int servicePort;
 
-    @Value("${com.cloudimpl.outstack.cluster.domainOwner}")
+    @Value("${com.cloudimpl.outstack.cluster.domainOwner:cloudimpl}")
     private String domainOwner;
 
-    @Value("${com.cloudimpl.outstack.cluster.domainContext}")
+    @Value("${com.cloudimpl.outstack.cluster.domainContext:example}")
     private String domainContext;
 
     @Value("${com.cloudimpl.outstack.cluster.apiContext:api}")
