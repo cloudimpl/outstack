@@ -23,7 +23,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "QueryHandlerEntities",version = "v1")
+@EntityMeta(plural = "QueryHandlers",version = "v1")
 public class QueryHandlerEntity extends ChildEntity<MicroService>{
     private String handlerName;
     private String entityName;

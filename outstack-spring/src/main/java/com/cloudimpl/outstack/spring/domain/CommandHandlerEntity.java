@@ -23,7 +23,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "CommandHandlerEntities",version = "v1")
+@EntityMeta(plural = "CommandHandlers",version = "v1")
 public class CommandHandlerEntity extends ChildEntity<MicroService>{
     private String handlerName;
     private String entityName;
