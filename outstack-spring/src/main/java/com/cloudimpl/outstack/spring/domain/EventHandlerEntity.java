@@ -16,12 +16,14 @@
 package com.cloudimpl.outstack.spring.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 
 /**
  *
  * @author nuwan
  */
+@EntityMeta(plural = "EventHandlers",version = "v1")
 public class EventHandlerEntity extends ChildEntity<MicroService>{
     private String handlerName;
     private String entityName;
