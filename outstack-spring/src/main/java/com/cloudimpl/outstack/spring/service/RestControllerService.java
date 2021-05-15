@@ -19,6 +19,8 @@ import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.domain.CommandHandlerRegistered;
@@ -121,16 +123,18 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
         provisioned.setId(id);
         provisioned.setRootId(id);
         provisioned.setAction(Event.Action.CREATE);
+         EntityHelper.setVersion(provisioned, Entity.getVersion(MicroService.class));
         return eventRepo.applyEvent(provisioned);
     }
 
     private void addActions(String rootId, String targetEntity, SpringServiceDescriptor serviceDesc, Collection<SpringServiceDescriptor.ActionDescriptor> actions) {
         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER).forEach(action -> {
             CommandHandlerRegistered event = new CommandHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType()+ ":cmd:" + action.getName());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":cmd:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
+            EntityHelper.setVersion(event, Entity.getVersion(MicroService.class));
             eventRepo.applyEvent(event);
         });
 
@@ -140,6 +144,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
+            EntityHelper.setVersion(event, Entity.getVersion(MicroService.class));
             eventRepo.applyEvent(event);
         });
 
@@ -149,6 +154,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
+             EntityHelper.setVersion(event, Entity.getVersion(MicroService.class));
             eventRepo.applyEvent(event);
         });
     }

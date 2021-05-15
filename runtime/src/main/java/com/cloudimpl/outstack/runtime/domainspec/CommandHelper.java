@@ -27,4 +27,10 @@ public class CommandHelper {
         cmd.setId(id);
         return cmd;
     }
+    
+     public static Command withVersion(Command cmd,String version)
+    {
+        cmd.setVersion(version);
+        return cmd;
+    }
 }

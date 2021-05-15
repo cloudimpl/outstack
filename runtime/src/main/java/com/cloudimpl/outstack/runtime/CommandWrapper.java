@@ -22,13 +22,14 @@ public class CommandWrapper implements ICommand {
     private final String id;
     private final String tenantId;
     private final String payload;
-
+    private final String version;
     public CommandWrapper(Builder builder) {
         this.command = builder.command;
         this.rootId = builder.rootId;
         this.tenantId = builder.tenantId;
         this.payload = builder.payload == null?"{}":builder.payload;
         this.id = builder.id;
+        this.version = builder.version;
     }
 
     @Override
@@ -37,6 +38,7 @@ public class CommandWrapper implements ICommand {
         CommandHelper.withRootId(cmd, rootId);
         CommandHelper.withTenantId(cmd, tenantId);
         CommandHelper.withId(cmd, id);
+        CommandHelper.withVersion(cmd, version);
         return cmd;
     }
 
@@ -44,7 +46,12 @@ public class CommandWrapper implements ICommand {
     public final String commandName() {
         return command;
     }
-
+    
+    @Override
+    public final String version(){
+        return version;
+    }
+    
     public final Optional<String> getRootId() {
         return Optional.ofNullable(rootId);
     }
@@ -61,6 +68,7 @@ public class CommandWrapper implements ICommand {
         private  String id;
         private  String tenantId;
         private  String payload;
+        private String version;
         
         public Builder withCommand(String command)
         {
@@ -71,6 +79,12 @@ public class CommandWrapper implements ICommand {
         public Builder withId(String id)
         {
             this.id = id;
+            return this;
+        }
+        
+        public Builder withVersion(String version)
+        {
+            this.version = version;
             return this;
         }
         

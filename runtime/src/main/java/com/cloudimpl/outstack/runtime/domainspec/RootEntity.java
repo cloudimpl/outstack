@@ -19,9 +19,9 @@ public abstract class RootEntity extends Entity {
     public final String getBRN() {
         if (hasTenant()) { //tenant/1234/User/1/Device/12"
             Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
-            return makeRN(this.getClass(), entityId(),ITenant.class.cast(this).getTenantId());
+            return makeRN(this.getClass(),getMeta().getVersion(), entityId(),ITenant.class.cast(this).getTenantId());
         } else {
-            return makeRN(this.getClass(), entityId(), null);
+            return makeRN(this.getClass(),getMeta().getVersion(), entityId(), null);
         }
     }
     
@@ -29,9 +29,9 @@ public abstract class RootEntity extends Entity {
     public final String getTRN() {
         if (hasTenant()) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
             Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
-            return makeTRN(this.getClass(), id(), ITenant.class.cast(this).getTenantId());
+            return makeTRN(this.getClass(),getMeta().getVersion(), id(), ITenant.class.cast(this).getTenantId());
         } else {
-            return makeTRN(this.getClass(),id(),null);
+            return makeTRN(this.getClass(),getMeta().getVersion(),id(),null);
         }
     }
     
@@ -64,36 +64,36 @@ public abstract class RootEntity extends Entity {
         return RootEntity.class.isAssignableFrom(type);
     }
     
-    public static String makeRN(Class<? extends RootEntity> type, String entityId, String tenantId) {
+    public static String makeRN(Class<? extends RootEntity> type,String version, String entityId, String tenantId) {
         if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}", tenantId, type.getSimpleName(), entityId);
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}", tenantId,version, type.getSimpleName(), entityId);
         } else {
-            return MessageFormat.format("{0}/{1}", type.getSimpleName(), entityId);
+            return MessageFormat.format("{0}/{1}/{2}",version, type.getSimpleName(), entityId);
         }
     }
     
-    public static String makeTRN(Class<? extends RootEntity> type, String id, String tenantId) {
+    public static String makeTRN(Class<? extends RootEntity> type,String version, String id, String tenantId) {
         if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}", tenantId, type.getSimpleName(), id);
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}", tenantId,version, type.getSimpleName(), id);
         } else {
-            return MessageFormat.format("{0}/{1}", type.getSimpleName(), id);
+            return MessageFormat.format("{0}/{1}/{2}",version, type.getSimpleName(), id);
         }
     }
     
-    public static final RootEntity DELETED = new RootEntity() {
-        @Override
-        public String entityId() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        protected void apply(Event event) {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public String idField() {
-            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-    };
+//    public static final RootEntity DELETED = new RootEntity() {
+//        @Override
+//        public String entityId() {
+//            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//        }
+//
+//        @Override
+//        protected void apply(Event event) {
+//            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//        }
+//
+//        @Override
+//        public String idField() {
+//            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+//        }
+//    };
 }

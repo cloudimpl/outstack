@@ -31,7 +31,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
-    private final Class<? extends RootEntity> rootType;
+    private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
@@ -39,7 +39,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository,queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(rootType,this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository,queryOperationSelector);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {

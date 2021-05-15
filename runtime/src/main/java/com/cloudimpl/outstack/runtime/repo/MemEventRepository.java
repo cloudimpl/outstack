@@ -29,8 +29,6 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import reactor.core.publisher.Flux;
 
 /**
  *
@@ -51,8 +49,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
         for (Event event : events) {
             System.out.println("tx: " + event);
-            Entity e = null;
-            applyEvent(event);
+            Entity e = applyEvent(event);
             System.out.println("entity: " + e);
         }
     }
@@ -121,9 +118,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     private Entity renamEntity(EntityRenamed event) {
         String rn;
         if (event.isRootEvent()) {
-            rn = RootEntity.makeTRN(event.getOwner(), event.id(), event.tenantId());
+            rn = RootEntity.makeTRN(event.getOwner(),event.getMeta().getVersion(), event.id(), event.tenantId());
         } else {
-            rn = ChildEntity.makeTRN(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
+            rn = ChildEntity.makeTRN(event.getRootOwner(),event.getMeta().getVersion(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
         }
         Entity e = mapEntites.get(resourceHelper.getFQTrn(rn));
         mapEntites.remove(resourceHelper.getFQBrn(e));
@@ -137,7 +134,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public <K extends ChildEntity<T>> Collection<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
-        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, id, tenantId);
+        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType,version, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
         Collection<K> result = map.values().stream().filter(e->e.getClass() == childType).map(e -> (K) e).collect(Collectors.toList());
         Collection<K> col = onPageable(result, paging);
@@ -147,9 +144,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         if (id.startsWith(TID_PREFIX)) {
-            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, id, tenantId))));
+            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType,version, id, tenantId))));
         } else {
-            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQBrn(RootEntity.makeRN(rootType, id, tenantId))));
+            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQBrn(RootEntity.makeRN(rootType,version, id, tenantId))));
         }
     }
 
@@ -157,9 +154,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         if (childId.startsWith(TID_PREFIX)) {
-            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, id, childType, childId, tenantId))));
+            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType,version, id, childType, childId, tenantId))));
         } else {
-            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, id, childType, childId, tenantId))));
+            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType,version, id, childType, childId, tenantId))));
         }
     }
 
@@ -167,9 +164,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     public Collection<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
         if (Entity.hasTenant(rootType)) {
-            trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + rootType.getSimpleName() + "/";
+            trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
         } else {
-            trn = resourcePrefix("brn") + ":" + rootType.getSimpleName() + "/";
+            trn = resourcePrefix("brn") + ":" +version +"/"+ rootType.getSimpleName() + "/";
         }
         String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()
@@ -218,7 +215,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (comparator != null) {
             return result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
         } else {
-            return result.stream().skip(offset).limit(min).collect(Collectors.toList());
+            return result.stream().skip(offset).limit(min < 0?0:min).collect(Collectors.toList());
         }
     }
 }

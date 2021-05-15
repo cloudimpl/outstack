@@ -21,8 +21,9 @@ import java.util.function.Supplier;
 public class AyncEntityContext<T extends RootEntity> extends RootEntityContext<T>{
     
     public AyncEntityContext(Class<T> entityType, String tid, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier, Supplier<String> idGenerator,
-            Optional<CRUDOperations> crudOperations, QueryOperations queryOperation, Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
-        super(entityType, tid, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
+            Optional<CRUDOperations> crudOperations, QueryOperations queryOperation, Optional<Consumer<Event>> eventPublisher,
+            Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version) {
+        super(entityType, tid, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector,version);
     }
     
     

@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
@@ -17,7 +18,8 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <I>
  * @param <R>
  */
-public abstract class EntityQueryHandler<T extends Entity,I extends Query,R> implements Handler<T>{
+public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> implements Handler<T> {
+
     protected final Class<T> entityType;
     private final Class<I> queryType;
 
@@ -25,35 +27,33 @@ public abstract class EntityQueryHandler<T extends Entity,I extends Query,R> imp
         this.entityType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 0);
         this.queryType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 1);
     }
-    
+
     public EntityQueryHandler(Class<T> entityType) {
         this.entityType = entityType;
         this.queryType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 1);
     }
-    
-    public boolean isTenantFunction()
-    {
+
+    public boolean isTenantFunction() {
         return Entity.hasTenant(entityType);
     }
-    
-    public  R apply(EntityQueryContext<T> context,I query)
-    {
+
+    public R apply(EntityQueryContext<T> context, I query) {
         validateInput(query);
         return execute(context, query);
     }
-    
-    protected abstract  R execute(EntityQueryContext<T> context,I query);
-    
-    private void validateInput(I query)
-    {
-        if(isTenantFunction() && query.tenantId() == null)
-        {
+
+    protected abstract R execute(EntityQueryContext<T> context, I query);
+
+    private void validateInput(I query) {
+        if (isTenantFunction() && query.tenantId() == null) {
             throw new QueryException("tenantId is not available in the request");
         }
     }
-    
-     public EntityContext<T>  emit(EntityQueryContextProvider contextProvider,IQuery input)
-    {
+
+    public EntityContext<T> emit(EntityQueryContextProvider contextProvider, IQuery input) {
+        if (!contextProvider.getVersion().equals(input.version())) {
+            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_VERSION, "invalid version {0} ,expecting {1}", input.version(), contextProvider.getVersion());
+        }
         I query = input.unwrap(this.queryType);
         validateInput(query);
         EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId());

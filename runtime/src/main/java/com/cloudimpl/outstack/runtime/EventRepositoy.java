@@ -26,8 +26,10 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<TxCheckpoint> mapTxCheckpoints;
     protected final ResourceHelper resourceHelper;
+    protected final String version;
     public EventRepositoy( Class<T> rootType,ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
+        this.version = Entity.getVersion(rootType);
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
         this.mapTxCheckpoints = new ResourceCache<>(1000,Duration.ofHours(1));

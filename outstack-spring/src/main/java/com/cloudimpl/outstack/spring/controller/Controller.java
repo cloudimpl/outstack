@@ -57,7 +57,10 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Create" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withPayload(body).withTenantId(tenantId).build();
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName()).withPayload(body)
+                .withVersion(version)
+                .withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r->this.onRootEntityCreation(context, version, rootEntity, r));
     }
 
@@ -70,7 +73,12 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Update" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withPayload(body).withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload(body)
+                .withId(rootId)
+                .withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -83,7 +91,12 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Create" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withPayload(body).withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload(body)
+                .withRootId(rootId)
+                .withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r->this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
 
@@ -96,7 +109,11 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Update" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withPayload(body).withId(childId).withRootId(rootId).withTenantId(tenantId).build();
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload(body)
+                .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -109,7 +126,10 @@ public class Controller {
         String query = DomainModelDecoder.decode(contentType).orElse("Get" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+        QueryWrapper request = QueryWrapper.builder()
+                .withVersion(version)
+                .withQuery(action.getName())
+                .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -122,7 +142,11 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Get" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withRootId(rootId).withId(childId).withTenantId(tenantId).build();
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withRootId(rootId)
+                .withId(childId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -137,7 +161,11 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("List" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withRootId(rootId).withTenantId(tenantId).withPageRequest(pagingReq).build();
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withRootId(rootId)
+                .withTenantId(tenantId).withPageRequest(pagingReq).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -152,7 +180,10 @@ public class Controller {
         String query = DomainModelDecoder.decode(contentType).orElse("List" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-        QueryWrapper request = QueryWrapper.builder().withQuery(action.getName()).withTenantId(tenantId).withPageRequest(pagingReq).build();
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withTenantId(tenantId).withPageRequest(pagingReq).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -165,7 +196,10 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Delete" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource {0} creation not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withRootId(rootId).withId(childId).withTenantId(tenantId).build();
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -178,7 +212,10 @@ public class Controller {
         String cmd = DomainModelDecoder.decode(contentType).orElse("Delete" + rootType);
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource {0} deletion not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder().withCommand(action.getName()).withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 

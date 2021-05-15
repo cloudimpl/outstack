@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 nuwansa.
+ * Copyright 2021 nuwan.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.core.annon;
+package com.cloudimpl.outstack.runtime.iam;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import java.util.Map;
 
 /**
  *
- * @author nuwansa
+ * @author nuwan
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface CloudFunction {
-    String name();
-    String id() default "";
+public class PolicyStatemetParser {
+    
 }

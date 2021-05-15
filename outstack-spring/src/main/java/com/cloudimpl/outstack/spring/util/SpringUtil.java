@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.spring.util;
 
 import com.cloudimpl.outstack.app.ServiceMeta;
+import com.cloudimpl.outstack.core.CloudFunctionMeta;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.CommandHandler;
@@ -42,9 +43,10 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        attr.put("serviceMeta", GsonCodec.encode(getServiceDescription(resourceHelper.getApiContext(), func.name(), funcType)));
+        SpringServiceDescriptor srvDesc = getServiceDescription(resourceHelper.getApiContext(), func.name(), funcType);
+        attr.put("serviceMeta", GsonCodec.encode(srvDesc));
         //attr.put("plural", value)
-        return new ServiceMeta(funcType, func, router, attr);
+        return new ServiceMeta(funcType, new CloudFunctionMeta(srvDesc.getServiceName(), ""), router, attr);
     }
 
     public static ServiceMeta serviceQueryProviderMeta(ResourceHelper resourceHelper, Class<? extends SpringQueryService> funcType) {
@@ -54,16 +56,17 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        attr.put("serviceQueryMeta", GsonCodec.encode(getQueryServiceDescription(resourceHelper.getApiContext(), func.name(), funcType)));
+        SpringServiceDescriptor srvDesc = getQueryServiceDescription(resourceHelper.getApiContext(), func.name(), funcType);
+        attr.put("serviceQueryMeta", GsonCodec.encode(srvDesc));
         //attr.put("plural", value)
-        return new ServiceMeta(funcType, func, router, attr);
+        return new ServiceMeta(funcType, new CloudFunctionMeta(srvDesc.getServiceName(), ""), router, attr);
     }
 
     public static SpringServiceDescriptor getServiceDescription(String appContext, String serviceName, Class<? extends SpringService> serviceType) {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends CommandHandler<?>>> handlers = SpringService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext, serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
         handlers.stream().filter(h -> EntityCommandHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityCommandHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
@@ -107,7 +110,7 @@ public class SpringUtil {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringQueryService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends Handler<?>>> handlers = SpringQueryService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext, serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext, entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
         handlers.stream().filter(h -> EntityQueryHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityQueryHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);

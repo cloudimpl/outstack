@@ -80,17 +80,17 @@ public class ResourcesLoader {
             case LOCAL:
             case NODE_ID:
             {
-                node.registerService(meta.getFunc().name(), com.cloudimpl.outstack.core.CloudFunction.builder()
+                node.registerService(meta.getFunc().getName(), com.cloudimpl.outstack.core.CloudFunction.builder()
                         .withFunction((Class<? extends Function<?, ? extends Publisher>>) meta.getServiceType())
-                        .withId(meta.getFunc().id()).withAttr(meta.getAttr())
+                        .withId(meta.getFunc().getId()).withAttr(meta.getAttr())
                 .withRouter(CloudRouterDescriptor.builder().withRouterType(meta.getRouterType()).build()).build());
                 break;
             }
             case DYNAMIC:
             {
-                node.registerService(meta.getFunc().name(), com.cloudimpl.outstack.core.CloudFunction.builder()
+                node.registerService(meta.getFunc().getName(), com.cloudimpl.outstack.core.CloudFunction.builder()
                         .withFunction((Class<? extends Function<?, ? extends Publisher>>) meta.getServiceType())
-                        .withId(meta.getFunc().id()).withAttr(meta.getAttr())
+                        .withId(meta.getFunc().getId()).withAttr(meta.getAttr())
                 .withRouter(CloudRouterDescriptor.builder()
                         .withRouterType(meta.getRouterType())
                         .withLoadBalancer(meta.getRouter()
