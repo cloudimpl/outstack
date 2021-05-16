@@ -193,7 +193,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             throw new RepositoryException("null not supported for sorting: " + name + " field");
         }
         if (!leftEl.isJsonPrimitive() || !rightEl.isJsonPrimitive()) {
-            throw new RepositoryException("only primitive types supported for sorting: ");
+            throw new RepositoryException("only primitive types supported for sorting");
         }
         JsonPrimitive leftPrim = leftEl.getAsJsonPrimitive();
         JsonPrimitive rightPrim = rightEl.getAsJsonPrimitive();
@@ -223,7 +223,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                         return false;
                     }
                 } else if (jsonPrim.isString()) {
-                    if (!jsonPrim.getAsString().equals(entry.getValue())) {
+                    if (entry.getValue().startsWith("%")) {
+                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(1))) {
+                            return false;
+                        }
+                    } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
                         return false;
                     }
                 } else if (jsonPrim.isBoolean()) {
@@ -241,7 +245,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     private <T> ResultSet<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
         if (paging == null) {
-            return new ResultSet<>(result.size(),1,0,result);
+            return new ResultSet<>(result.size(), 1, 0, result);
         }
 
         Comparator<T> comparator = null;
@@ -260,6 +264,6 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         } else {
             out = result.stream().skip(offset).limit(min < 0 ? 0 : min).collect(Collectors.toList());
         }
-        return new ResultSet<>(result.size(),(int)Math.ceil(((double)result.size())/paging.pageSize()),paging.pageNum(),out);
+        return new ResultSet<>(result.size(), (int) Math.ceil(((double) result.size()) / paging.pageSize()), paging.pageNum(), out);
     }
 }
