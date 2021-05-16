@@ -28,6 +28,12 @@ public class QueryHelper {
         return query;
     }
     
+    public static Query withVersion(Query query,String version)
+    {
+        query.setVersion(version);
+        return query;
+    }
+    
     public static Query withPageable(Query query, Query.PagingRequest pageable)
     {
         query.setPageable(pageable);

@@ -29,14 +29,14 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
 
     private final Map<String, EntityQueryHandler> mapQueryHandlers = new HashMap<>();
 
-    private final Class<? extends RootEntity> rootType;
+    private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
     public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(rootType,this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
     }
 
     public void registerQueryHandler(Class<? extends EntityQueryHandler> handlerType) {

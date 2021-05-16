@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime.domainspec;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -17,13 +18,15 @@ public abstract class Query implements IQuery {
     private String _rootId;
     private String _tenantId;
     private String _id;
-    private PagingRequest pagingReq;
+    private String _version;
+    private PagingRequest _pagingReq;
 
     public Query(Builder builder) {
         this._rootId = builder.rootId;
         this._tenantId = builder.tenantId;
         this._id = builder.id;
-        this.pagingReq = builder.pagingReq;
+        this._pagingReq = builder.pagingReq;
+        this._version = builder.version;
     }
 
     public final String tenantId() {
@@ -39,7 +42,7 @@ public abstract class Query implements IQuery {
     }
 
     protected void setPageable(PagingRequest pageable) {
-        this.pagingReq = pageable;
+        this._pagingReq = pageable;
     }
 
     protected void setId(String id) {
@@ -56,6 +59,11 @@ public abstract class Query implements IQuery {
         return this.getClass().getSimpleName();
     }
 
+    @Override
+    public String version(){
+        return _version;
+    }
+    
     public final String rootId() {
         return this._rootId;
     }
@@ -65,7 +73,11 @@ public abstract class Query implements IQuery {
     }
 
     public PagingRequest getPagingReq() {
-        return pagingReq;
+        return _pagingReq;
+    }
+
+    protected void setVersion(String version) {
+       this._version = version;
     }
 
     public abstract static class Builder {
@@ -73,6 +85,7 @@ public abstract class Query implements IQuery {
         private String rootId;
         private String tenantId;
         private String id;
+        private String version;
         private PagingRequest pagingReq;
 
         public Builder withRootId(String rootId) {
@@ -90,6 +103,11 @@ public abstract class Query implements IQuery {
             return this;
         }
 
+        public Builder withVersion(String version){
+            this.version = version;
+            return this;
+        }
+        
         public Builder withPagingReq(PagingRequest pagingReq) {
             this.pagingReq = pagingReq;
             return this;
@@ -104,11 +122,12 @@ public abstract class Query implements IQuery {
         private final int pageNum;
         private final int pageSize;
         private final List<Order> orders;
-
-        public PagingRequest(int pageNum, int pageSize, List<Order> orders) {
+        private final Map<String,String> params;
+        public PagingRequest(int pageNum, int pageSize, List<Order> orders,Map<String,String> params) {
             this.pageNum = pageNum;
             this.pageSize = pageSize;
             this.orders = Collections.unmodifiableList(orders);
+            this.params = Collections.unmodifiableMap(params);
         }
 
         public List<Order> orders() {
@@ -121,6 +140,11 @@ public abstract class Query implements IQuery {
 
         public int pageSize() {
             return this.pageSize;
+        }
+        
+        public Map<String,String> getParams()
+        {
+            return params;
         }
     }
 

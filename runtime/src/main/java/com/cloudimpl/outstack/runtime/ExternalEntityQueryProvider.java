@@ -43,7 +43,7 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
         return this.queryOperations.getChildById(type, tid, childType, childId, tenantId);
     }
 
-    public <T extends ChildEntity<R>> Collection<T> getChildsByType(Class<T> childType, Query.PagingRequest pageRequest) {
+    public <T extends ChildEntity<R>> ResultSet<T> getChildsByType(Class<T> childType, Query.PagingRequest pageRequest) {
         String tid = id;
         if (!id.startsWith(EventRepositoy.TID_PREFIX)) {
             tid = getRoot().get().id();
@@ -52,6 +52,6 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
     }
 
     public <T extends ChildEntity<R>> Collection<T> getChildsByType(Class<T> childType) {
-        return getChildsByType(childType, null);
+        return getChildsByType(childType, null).getItems();
     }
 }

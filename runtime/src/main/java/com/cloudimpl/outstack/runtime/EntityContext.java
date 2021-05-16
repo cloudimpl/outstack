@@ -35,8 +35,10 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected EntityContextProvider.ReadOnlyTransaction tx;
     protected final Consumer<Object> validator;
     protected final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
+    protected final String version;
     public EntityContext(Class<T> entityType, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier,Supplier<String> idGenerator,Optional<CRUDOperations> crudOperations,
-            QueryOperations<?> queryOperation,Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+            QueryOperations<?> queryOperation,Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,
+            Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version) {
         this.tenantId = tenantId;
         this.events = new LinkedList<>();
         this.entityType = entityType;
@@ -47,6 +49,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.queryOperation = queryOperation;
         this.validator = validator;
         this.queryOperationSelector = queryOperationSelector;
+        this.version = version;
     }
 
     protected EntityContextProvider.ReadOnlyTransaction getTx()
@@ -54,6 +57,11 @@ public abstract class EntityContext<T extends Entity> implements Context {
         return this.tx;
     }
 
+    protected String getVersion()
+    {
+        return version;
+    }
+    
     protected <R extends RootEntity> EntityProvider<R> getEntityProvider()
     {
         return (EntityProvider<R>) entitySupplier.get();

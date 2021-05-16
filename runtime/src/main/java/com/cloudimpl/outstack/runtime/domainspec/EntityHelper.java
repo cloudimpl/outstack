@@ -40,6 +40,11 @@ public class EntityHelper {
         e.getMeta().setCreatedDate(millis);
     }
     
+    public static void setVersion(Event e,String version)
+    {
+        e.getMeta().setVersion(version);
+    }
+    
     public static <T extends Entity> boolean isRootEntity(Class<T> entityType) {
         return RootEntity.isMyType(entityType);
     }
