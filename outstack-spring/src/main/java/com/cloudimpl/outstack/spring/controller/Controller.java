@@ -295,6 +295,7 @@ public class Controller {
     {
         params.remove("page");
         params.remove("size");
+        params.remove("sort");
         return params;
     }
 }
