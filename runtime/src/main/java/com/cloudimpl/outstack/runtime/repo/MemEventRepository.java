@@ -21,10 +21,12 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -118,9 +120,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     private Entity renamEntity(EntityRenamed event) {
         String rn;
         if (event.isRootEvent()) {
-            rn = RootEntity.makeTRN(event.getOwner(),event.getMeta().getVersion(), event.id(), event.tenantId());
+            rn = RootEntity.makeTRN(event.getOwner(), event.getMeta().getVersion(), event.id(), event.tenantId());
         } else {
-            rn = ChildEntity.makeTRN(event.getRootOwner(),event.getMeta().getVersion(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
+            rn = ChildEntity.makeTRN(event.getRootOwner(), event.getMeta().getVersion(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
         }
         Entity e = mapEntites.get(resourceHelper.getFQTrn(rn));
         mapEntites.remove(resourceHelper.getFQBrn(e));
@@ -134,9 +136,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public <K extends ChildEntity<T>> Collection<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
-        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType,version, id, tenantId);
+        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, version, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
-        Collection<K> result = map.values().stream().filter(e->e.getClass() == childType).map(e -> (K) e).collect(Collectors.toList());
+        Collection<K> result = map.values().stream().filter(e -> e.getClass() == childType)
+                .map(e -> (K) e)
+                .filter(e->onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
         Collection<K> col = onPageable(result, paging);
         return col;
     }
@@ -144,9 +149,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         if (id.startsWith(TID_PREFIX)) {
-            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType,version, id, tenantId))));
+            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId))));
         } else {
-            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQBrn(RootEntity.makeRN(rootType,version, id, tenantId))));
+            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId))));
         }
     }
 
@@ -154,9 +159,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         if (childId.startsWith(TID_PREFIX)) {
-            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType,version, id, childType, childId, tenantId))));
+            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId))));
         } else {
-            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType,version, id, childType, childId, tenantId))));
+            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId))));
         }
     }
 
@@ -166,13 +171,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (Entity.hasTenant(rootType)) {
             trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
         } else {
-            trn = resourcePrefix("brn") + ":" +version +"/"+ rootType.getSimpleName() + "/";
+            trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
         }
         String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()
                 .filter(e -> e.getKey().startsWith(fqtrn))
-                .filter(e->e.getValue().getClass() == rootType)
-                .map(e -> (T) e.getValue()).collect(Collectors.toList());
+                .filter(e -> e.getValue().getClass() == rootType)
+                .map(e -> (T) e.getValue())
+                .filter(e->onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
         return onPageable(filterCollection, paging);
     }
 
@@ -197,6 +204,40 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         throw new RepositoryException("unsupported data type for sorting . {0} : {1} ", leftJson, rightJson);
     }
 
+    private <T> boolean onFilter(T item, Map<String, String> params) {
+        if (params.isEmpty()) {
+            return true;
+        }
+        JsonObject json = GsonCodec.encodeToJson(item).getAsJsonObject();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            JsonElement el = json.get(entry.getKey());
+            if (el == null || !el.isJsonPrimitive()) {
+                System.out.println("el " + entry.getKey() + " not found or not an primitive data type");
+                return false;
+            } else {
+                JsonPrimitive jsonPrim = (JsonPrimitive) el;
+                if (jsonPrim.isNumber()) {
+                    BigDecimal target = new BigDecimal(entry.getValue());
+                    if (jsonPrim.getAsBigDecimal().compareTo(target) != 0) {
+                        return false;
+                    }
+                } else if (jsonPrim.isString()) {
+                    if (!jsonPrim.getAsString().equals(entry.getValue())) {
+                        return false;
+                    }
+                } else if (jsonPrim.isBoolean()) {
+                    if (jsonPrim.getAsBoolean() != Boolean.valueOf(entry.getValue())) {
+                        return false;
+                    }
+                } else {
+                    System.out.println("unhandle primitive data type:" + jsonPrim);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     private <T> Collection<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
         if (paging == null) {
             return result;
@@ -215,7 +256,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (comparator != null) {
             return result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
         } else {
-            return result.stream().skip(offset).limit(min < 0?0:min).collect(Collectors.toList());
+            return result.stream().skip(offset).limit(min < 0 ? 0 : min).collect(Collectors.toList());
         }
     }
 }

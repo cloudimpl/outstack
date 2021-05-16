@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime.domainspec;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -121,11 +122,12 @@ public abstract class Query implements IQuery {
         private final int pageNum;
         private final int pageSize;
         private final List<Order> orders;
-
-        public PagingRequest(int pageNum, int pageSize, List<Order> orders) {
+        private final Map<String,String> params;
+        public PagingRequest(int pageNum, int pageSize, List<Order> orders,Map<String,String> params) {
             this.pageNum = pageNum;
             this.pageSize = pageSize;
             this.orders = Collections.unmodifiableList(orders);
+            this.params = Collections.unmodifiableMap(params);
         }
 
         public List<Order> orders() {
@@ -138,6 +140,11 @@ public abstract class Query implements IQuery {
 
         public int pageSize() {
             return this.pageSize;
+        }
+        
+        public Map<String,String> getParams()
+        {
+            return params;
         }
     }
 

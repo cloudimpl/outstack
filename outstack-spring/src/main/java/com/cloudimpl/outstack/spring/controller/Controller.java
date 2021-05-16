@@ -17,6 +17,7 @@ import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -36,6 +37,7 @@ import static org.springframework.http.ResponseEntity.created;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -152,9 +154,10 @@ public class Controller {
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
-    private Mono<Object> listChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable) {
+    private Mono<Object> listChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable,@RequestParam Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                 pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()));
+                 pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),reqParam);
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
@@ -171,9 +174,10 @@ public class Controller {
 
     @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
-    private Mono<Object> listRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable) {
+    private Mono<Object> listRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable,@RequestParam Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                 pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()));
+                 pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),reqParam);
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();

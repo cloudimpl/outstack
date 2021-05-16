@@ -15,10 +15,16 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
+import java.text.MessageFormat;
+
 /**
  *
  * @author nuwan
  */
-public class ResourceNameDecoder {
+public class PolicyStatementException extends RuntimeException{
+
+    public PolicyStatementException(String format,Object... args) {
+        super(MessageFormat.format(format, args));
+    }
     
 }
