@@ -198,15 +198,16 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         }
 
         @Override
-        public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
 
-            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
+            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable).getItems().stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
             mapEntities.headMap(RootEntity.makeTRN(rootType,version, id, tenantId)).entrySet().forEach(p -> map.put(p.getKey(), (T) p.getValue()));
-            return map.values();
+            Collection<T> out = map.values();
+            return new ResultSet<>(out.size(),(int)Math.ceil(((double)out.size())/pageable.pageSize()),pageable.pageNum(),out);
         }
 
         @Override
-        public Collection<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
+        public ResultSet<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
             throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
         }
     }

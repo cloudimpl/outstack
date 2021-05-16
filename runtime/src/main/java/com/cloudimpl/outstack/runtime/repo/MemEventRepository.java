@@ -10,6 +10,7 @@ import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.EventStream;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
+import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
@@ -134,15 +135,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public <K extends ChildEntity<T>> Collection<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
+    public <K extends ChildEntity<T>> ResultSet<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, version, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
         Collection<K> result = map.values().stream().filter(e -> e.getClass() == childType)
                 .map(e -> (K) e)
-                .filter(e->onFilter(e, paging.getParams()))
+                .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
-        Collection<K> col = onPageable(result, paging);
+        ResultSet<K> col = onPageable(result, paging);
         return col;
     }
 
@@ -166,7 +167,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public Collection<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
+    public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
         if (Entity.hasTenant(rootType)) {
             trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
@@ -178,7 +179,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 .filter(e -> e.getKey().startsWith(fqtrn))
                 .filter(e -> e.getValue().getClass() == rootType)
                 .map(e -> (T) e.getValue())
-                .filter(e->onFilter(e, paging.getParams()))
+                .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         return onPageable(filterCollection, paging);
     }
@@ -238,9 +239,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         return true;
     }
 
-    private <T> Collection<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
+    private <T> ResultSet<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
         if (paging == null) {
-            return result;
+            return new ResultSet<>(result.size(),1,0,result);
         }
 
         Comparator<T> comparator = null;
@@ -253,10 +254,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         }
         int offset = paging.pageNum() * paging.pageSize();
         int min = Math.min(result.size() - offset, paging.pageSize());
+        Collection<T> out;
         if (comparator != null) {
-            return result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
+            out = result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
         } else {
-            return result.stream().skip(offset).limit(min < 0 ? 0 : min).collect(Collectors.toList());
+            out = result.stream().skip(offset).limit(min < 0 ? 0 : min).collect(Collectors.toList());
         }
+        return new ResultSet<>(result.size(),(int)Math.ceil(((double)result.size())/paging.pageSize()),paging.pageNum(),out);
     }
 }

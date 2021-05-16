@@ -143,13 +143,13 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         }
 
         @Override
-        public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
             return queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable);
             
         }
 
         @Override
-        public Collection<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
+        public ResultSet<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
             return queryOperation.getAllByRootType(rootType, tenantId, paging);
         }
     }

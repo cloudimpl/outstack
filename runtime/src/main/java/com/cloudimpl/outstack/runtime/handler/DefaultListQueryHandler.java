@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime.handler;
 
 import com.cloudimpl.outstack.runtime.EntityQueryContext;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
+import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.RootEntityQueryContext;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
  * @author nuwan
  * @param <T>
  */
-public class DefaultListQueryHandler<T extends Entity> extends EntityQueryHandler<T,QueryByIdRequest, Collection<T>>{
+public class DefaultListQueryHandler<T extends Entity> extends EntityQueryHandler<T,QueryByIdRequest, ResultSet<T>>{
     
     public DefaultListQueryHandler(Class<?> type)
     {
@@ -28,14 +29,18 @@ public class DefaultListQueryHandler<T extends Entity> extends EntityQueryHandle
     }
     
     @Override
-    protected Collection<T> execute(EntityQueryContext<T> context, QueryByIdRequest query) {
+    protected ResultSet<T> execute(EntityQueryContext<T> context, QueryByIdRequest query) {
+        ResultSet<T> out;
         if(RootEntity.isMyType(entityType))
         {
             RootEntityQueryContext rootContext = context.asRootQueryContext();
-            return rootContext
+            out =  rootContext
                     .getAll(query.getPagingReq());
+        }else
+        {
+            out = (ResultSet<T>) context.asChildQueryContext().getAllByEntityType((Class<ChildEntity<RootEntity>>)entityType,query.getPagingReq());
         }
-        return context.asChildQueryContext().getAllByEntityType((Class<ChildEntity<RootEntity>>)entityType,query.getPagingReq()).stream().map(e->(T)e).collect(Collectors.toList());
+        return out;
     }
     
 }

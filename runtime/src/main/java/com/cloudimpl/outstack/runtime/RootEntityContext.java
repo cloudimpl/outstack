@@ -184,7 +184,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
-    public <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType,Query.PagingRequest pageable) {
+    public <C extends ChildEntity<T>> ResultSet<C> getAllChildEntitiesByType(Class<C> childType,Query.PagingRequest pageable) {
         return this.<T>getQueryOperations().getAllChildByType(entityType, _id, childType, getTenantId(),pageable);
     }
 
@@ -207,7 +207,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
-    public Collection<T> getAll(Query.PagingRequest pagingRequest) {
+    public ResultSet<T> getAll(Query.PagingRequest pagingRequest) {
         return this.<T>getQueryOperations().getAllByRootType(entityType, getTenantId(), pagingRequest);
     }
 }

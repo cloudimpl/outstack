@@ -185,7 +185,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     }
 
     @Override
-    public Collection<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq) {
+    public ResultSet<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq) {
         return this.<R>getQueryOperations().getAllChildByType(rootType, rootId, type, getTenantId(),pageReq);
     }
 
