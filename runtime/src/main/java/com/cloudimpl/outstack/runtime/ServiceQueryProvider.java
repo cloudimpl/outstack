@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.handler.DefaultGetEventsQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -51,6 +52,7 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
         validateHandler("defaultQueryHandlers", rootType, entityType);
         mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultGetQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
         mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()+"Events").toLowerCase(), s -> Util.createObject(DefaultGetEventsQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
     }
 
     public Optional<EntityQueryHandler> getQueryHandler(String name) {

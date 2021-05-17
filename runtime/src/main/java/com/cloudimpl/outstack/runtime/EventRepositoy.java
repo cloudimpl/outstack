@@ -24,7 +24,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private final Class<T> rootType;
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
-    private final ResourceCache<TxCheckpoint> mapTxCheckpoints;
+    private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;
     protected final ResourceHelper resourceHelper;
     protected final String version;
     public EventRepositoy( Class<T> rootType,ResourceHelper resourceHelper, EventStream eventStream) {

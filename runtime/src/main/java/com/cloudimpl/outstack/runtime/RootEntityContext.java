@@ -210,4 +210,14 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     public ResultSet<T> getAll(Query.PagingRequest pagingRequest) {
         return this.<T>getQueryOperations().getAllByRootType(entityType, getTenantId(), pagingRequest);
     }
+
+    @Override
+    public <C extends ChildEntity<T>> ResultSet<Event<C>> getChildEntityEventsById(Class<C> childType, String id,Query.PagingRequest pageRequest) {
+        return this.<T>getQueryOperations().getEventsByChildId(entityType, _id, childType, id,getTenantId(), pageRequest);
+    }
+
+    @Override
+    public  ResultSet<Event<T>> getEntityEventsById(String id,Query.PagingRequest pageRequest) {
+        return  this.<T>getQueryOperations().getEventsByRootId(entityType, _id, getTenantId(), pageRequest);
+    }
 }

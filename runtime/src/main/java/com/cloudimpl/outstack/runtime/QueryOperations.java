@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
@@ -21,5 +22,7 @@ public interface QueryOperations<R extends RootEntity>{
     Optional<R> getRootById(Class<R> rootType,String id,String tenantId);
     <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType,String id,Class<T> childType, String childId,String tenantId);
     <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType,String id,Class<T> childType,String tenantId,Query.PagingRequest paging);
-    
+   ResultSet<Event<R>>  getEventsByRootId(Class<R> rootType,String rootId,String tenantId,Query.PagingRequest paging);
+    <T extends ChildEntity<R>> ResultSet<Event<T>> getEventsByChildId(Class<R> rootType,String id,Class<T> childType, String childId,String tenantId,Query.PagingRequest paging);
+
 }

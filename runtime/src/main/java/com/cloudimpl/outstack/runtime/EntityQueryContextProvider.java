@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.runtime;
 import static com.cloudimpl.outstack.runtime.EventRepositoy.TID_PREFIX;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -152,5 +153,17 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         public ResultSet<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
             return queryOperation.getAllByRootType(rootType, tenantId, paging);
         }
+
+        @Override
+        public ResultSet<Event<R>> getEventsByRootId(Class<R> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
+            return queryOperation.getEventsByRootId(rootType, rootId, tenantId, paging);
+        }
+
+        @Override
+        public <T extends ChildEntity<R>> ResultSet<Event<T>> getEventsByChildId(Class<R> rootType, String id, Class<T> childType, String childId, String tenantId, Query.PagingRequest paging) {
+            return queryOperation.getEventsByChildId(rootType, id, childType, childId, tenantId, paging);
+        }
+
+        
     }
 }

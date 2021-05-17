@@ -126,9 +126,11 @@ public class SpringUtil {
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(type.getSimpleName(), eMeta.plural());
             if (type == rootType) {
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName()+"Events", SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("List" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             } else {
                 desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName()+"Events", SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
                 desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("List" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             }
 
