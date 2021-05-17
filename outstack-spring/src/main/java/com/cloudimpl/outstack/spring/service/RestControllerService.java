@@ -16,7 +16,7 @@ import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.EventRepositoy;
+import com.cloudimpl.outstack.runtime.EventRepository;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -45,7 +45,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private ServiceDescriptorVersionManager serviceQieryManager;
     private ResourceHelper resourceHelper;
     private ILogger logger;
-    private EventRepositoy<MicroService> eventRepo;
+    private EventRepository<MicroService> eventRepo;
 
     @Inject
     public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
@@ -116,7 +116,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     }
 
     private MicroService createMicroService(SpringServiceDescriptor desc) {
-        String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getRootType());
+        String id = EventRepository.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getRootType());
         MicroServiceProvisioned provisioned = new MicroServiceProvisioned(desc.getServiceName(), desc.getRootType(), desc.getVersion(), desc.getApiContext(), desc.isTenantService());
         provisioned.setId(id);
         provisioned.setRootId(id);
@@ -127,7 +127,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private void addActions(String rootId, String targetEntity, SpringServiceDescriptor serviceDesc, Collection<SpringServiceDescriptor.ActionDescriptor> actions) {
         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER).forEach(action -> {
             CommandHandlerRegistered event = new CommandHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType()+ ":cmd:" + action.getName());
+            String childId = EventRepository.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType()+ ":cmd:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
@@ -136,7 +136,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER).forEach(action -> {
             EventHandlerRegistered event = new EventHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":evt:" + action.getName());
+            String childId = EventRepository.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":evt:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
@@ -145,7 +145,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
             QueryHandlerRegistered event = new QueryHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
+            String childId = EventRepository.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);

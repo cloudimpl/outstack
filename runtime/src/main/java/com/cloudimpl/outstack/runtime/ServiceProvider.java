@@ -32,10 +32,10 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final Map<String, EntityCommandHandler> mapCmdHandlers = new HashMap<>();
     private final EventHandlerManager evtHandlerManager;
     private final Class<? extends RootEntity> rootType;
-    private final EventRepositoy<T> eventRepository;
+    private final EventRepository<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    public ServiceProvider(Class<T> rootType, EventRepository<T> eventRepository, Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;

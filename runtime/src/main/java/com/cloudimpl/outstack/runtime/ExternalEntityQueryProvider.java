@@ -10,7 +10,6 @@ import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.function.Function;
 
 /**
  *
@@ -37,7 +36,7 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
 
     public <T extends ChildEntity<R>> Optional<T> getChild(Class<T> childType, String childId) {
         String tid = id;
-        if (!id.startsWith(EventRepositoy.TID_PREFIX)) {
+        if (!id.startsWith(EventRepository.TID_PREFIX)) {
             tid = getRoot().get().id();
         }
         return this.queryOperations.getChildById(type, tid, childType, childId, tenantId);
@@ -45,7 +44,7 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
 
     public <T extends ChildEntity<R>> Collection<T> getChildsByType(Class<T> childType, Query.PagingRequest pageRequest) {
         String tid = id;
-        if (!id.startsWith(EventRepositoy.TID_PREFIX)) {
+        if (!id.startsWith(EventRepository.TID_PREFIX)) {
             tid = getRoot().get().id();
         }
         return this.queryOperations.getAllChildByType(type, tid, childType, tenantId, pageRequest);

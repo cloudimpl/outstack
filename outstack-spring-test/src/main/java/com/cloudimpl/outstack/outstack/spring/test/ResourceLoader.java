@@ -78,4 +78,24 @@ public class ResourceLoader {
             mapEvtHandlers.put(type.getSimpleName(), (Class<? extends EntityEventHandler>) type);
         }
     }
+
+    public Map<String, Class<? extends Entity>> getMapEntities() {
+        return mapEntities;
+    }
+
+    public Map<String, Class<? extends Event>> getMapEvents() {
+        return mapEvents;
+    }
+
+    public Map<String, Class<? extends Command>> getMapCommands() {
+        return mapCommands;
+    }
+
+    public Map<String, Class<? extends EntityCommandHandler>> getMapCmdHandlers() {
+        return mapCmdHandlers;
+    }
+
+    public Map<String, Class<? extends EntityEventHandler>> getMapEvtHandlers() {
+        return mapEvtHandlers;
+    }
 }

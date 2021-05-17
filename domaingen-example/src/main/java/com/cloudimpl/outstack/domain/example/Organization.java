@@ -1,30 +1,31 @@
 package com.cloudimpl.outstack.domain.example;
 
-import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
-import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import javax.validation.constraints.NotBlank;
-import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.cloudimpl.outstack.domain.example.OrganizationCreated;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 
-@EntityMeta(plural="organizations",version="V1")
+@EntityMeta(plural = "organizations", version = "V1")
 public class Organization extends RootEntity {
-    private String website ;
+
+    private String website;
     @NotBlank(message = "orgName field cannot be blank in Organization entity")
     @NotEmpty(message = "orgName field cannot be empty or null in Organization entity")
-    private final String orgName ;
+    private final String orgName;
 
     public Organization(String orgName) {
-        this.orgName = orgName ;
+        this.orgName = orgName;
     }
 
     public String getWebsite() {
-        return this.website ;
+        return this.website;
     }
 
     public String getOrgName() {
-        return this.orgName ;
+        return this.orgName;
     }
 
     @Override
@@ -38,19 +39,19 @@ public class Organization extends RootEntity {
     }
 
     private void applyEvent(OrganizationCreated evt) {
-        this.website = evt.getWebsite() ;
+        this.website = evt.getWebsite();
     }
 
     @Override
     public void apply(Event event) {
 
-        switch (event.getClass().getSimpleName() ) {
-            case "OrganizationCreated" : {
-                applyEvent((OrganizationCreated) event) ;
-                break ;
+        switch (event.getClass().getSimpleName()) {
+            case "OrganizationCreated": {
+                applyEvent((OrganizationCreated) event);
+                break;
             }
-            default : {
-                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT,"unhandled event:"+event.getClass().getName()) ;
+            default: {
+                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT, "unhandled event:" + event.getClass().getName());
             }
         }
     }

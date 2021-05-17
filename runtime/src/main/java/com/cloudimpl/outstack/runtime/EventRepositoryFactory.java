@@ -12,5 +12,5 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  * @author nuwan
  */
 public interface EventRepositoryFactory {
-    <T extends RootEntity> EventRepositoy<T> createRepository(Class<T> rootType);
+    <T extends RootEntity> EventRepository<T> createRepository(Class<T> rootType);
 }

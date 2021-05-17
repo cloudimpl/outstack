@@ -5,7 +5,6 @@
  */
 package com.cloudimpl.outstack.spring.controller;
 
-import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import java.util.Optional;
 
 /**

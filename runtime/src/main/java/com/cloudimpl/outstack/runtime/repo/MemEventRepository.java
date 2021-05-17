@@ -7,7 +7,7 @@ package com.cloudimpl.outstack.runtime.repo;
 
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
-import com.cloudimpl.outstack.runtime.EventRepositoy;
+import com.cloudimpl.outstack.runtime.EventRepository;
 import com.cloudimpl.outstack.runtime.EventStream;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
@@ -29,15 +29,13 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import reactor.core.publisher.Flux;
 
 /**
  *
  * @author nuwan
  * @param <T>
  */
-public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> {
+public class MemEventRepository<T extends RootEntity> extends EventRepository<T> {
 
     private final TreeMap<String, Entity> mapEntites = new TreeMap<>();
 

@@ -19,7 +19,7 @@ public class EntityIdHelper {
     public static void validateEntityId(String id)
     {
         Objects.requireNonNull(id);
-        if(id.startsWith(EventRepositoy.TID_PREFIX))
+        if(id.startsWith(EventRepository.TID_PREFIX))
         {
             throw new DomainEventException(DomainEventException.ErrorCode.EXPECT_ENTITY_ID,"invalid entity id format.{0}", id);
         }
@@ -28,7 +28,7 @@ public class EntityIdHelper {
     public static void validateTechnicalId(String id)
     {
         Objects.requireNonNull(id);
-        if(!id.startsWith(EventRepositoy.TID_PREFIX))
+        if(!id.startsWith(EventRepository.TID_PREFIX))
         {
             throw new DomainEventException(DomainEventException.ErrorCode.EXPECT_TECHNICAL_ID,"invalid entity technical id format.{0}", id);
         }
@@ -37,17 +37,17 @@ public class EntityIdHelper {
     public static boolean isTechnicalId(String id)
     {
         Objects.requireNonNull(id);
-        return id.startsWith(EventRepositoy.TID_PREFIX);
+        return id.startsWith(EventRepository.TID_PREFIX);
     }
     
     public static String toTechnicalId(String id)
     {
-        int index = id.indexOf(EventRepositoy.TID_PREFIX);
+        int index = id.indexOf(EventRepository.TID_PREFIX);
         if(index == -1)
         {
             throw new DomainEventException(DomainEventException.ErrorCode.EXPECT_TECHNICAL_ID,"invalid technical id {0} ,must starts with 'id-'", id);
         }
-        return id.substring(index + EventRepositoy.TID_PREFIX.length());
+        return id.substring(index + EventRepository.TID_PREFIX.length());
     }
     
     public static void validateId(String id,Entity entity)

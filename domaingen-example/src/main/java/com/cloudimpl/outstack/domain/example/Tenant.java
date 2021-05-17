@@ -1,31 +1,31 @@
 package com.cloudimpl.outstack.domain.example;
 
-import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
-import javax.validation.constraints.NotBlank;
-import com.cloudimpl.outstack.domain.example.Organization;
-import com.cloudimpl.outstack.domain.example.TenantCreated;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
-import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
+
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 
-@EntityMeta(plural="tenants",version="V1")
+@EntityMeta(plural = "tenants", version = "V1")
 public class Tenant extends ChildEntity<Organization> {
-    private String endpoint ;
+
+    private String endpoint;
     @NotEmpty(message = "tenantName field cannot be empty or null in Tenant entity")
     @NotBlank(message = "tenantName field cannot be blank in Tenant entity")
-    private final String tenantName ;
+    private final String tenantName;
 
     public Tenant(String tenantName) {
-        this.tenantName = tenantName ;
+        this.tenantName = tenantName;
     }
 
     public String getEndpoint() {
-        return this.endpoint ;
+        return this.endpoint;
     }
 
     public String getTenantName() {
-        return this.tenantName ;
+        return this.tenantName;
     }
 
     @Override
@@ -44,19 +44,19 @@ public class Tenant extends ChildEntity<Organization> {
     }
 
     private void applyEvent(TenantCreated evt) {
-        this.endpoint = evt.getEndpoint() ;
+        this.endpoint = evt.getEndpoint();
     }
 
     @Override
     public void apply(Event event) {
 
-        switch (event.getClass().getSimpleName() ) {
-            case "TenantCreated" : {
-                applyEvent((TenantCreated) event) ;
-                break ;
+        switch (event.getClass().getSimpleName()) {
+            case "TenantCreated": {
+                applyEvent((TenantCreated) event);
+                break;
             }
-            default : {
-                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT,"unhandled event:"+event.getClass().getName()) ;
+            default: {
+                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT, "unhandled event:" + event.getClass().getName());
             }
         }
     }

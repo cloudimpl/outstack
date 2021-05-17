@@ -18,7 +18,7 @@ import java.util.UUID;
  * @author nuwan
  * @param <T>
  */
-public abstract class EventRepositoy<T extends RootEntity> implements QueryOperations<T>{
+public abstract class EventRepository<T extends RootEntity> implements QueryOperations<T>{
 
     public static final String TID_PREFIX = "id-";
     private final Class<T> rootType;
@@ -26,7 +26,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<TxCheckpoint> mapTxCheckpoints;
     protected final ResourceHelper resourceHelper;
-    public EventRepositoy( Class<T> rootType,ResourceHelper resourceHelper, EventStream eventStream) {
+    public EventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));

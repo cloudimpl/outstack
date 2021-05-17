@@ -10,22 +10,22 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**
- *
- * @author nuwan
  * @param <T>
  * @param <E>
+ * @author nuwan
  */
-public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> implements CommandHandler<T>{
+public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> implements CommandHandler<T> {
 
-    private final Class<T> enityType;
+    private final Class<T> entityType;
     private final Class<E> eventType;
+
     public EntityEventHandler() {
-        this.enityType = Util.extractGenericParameter(this.getClass(), EntityEventHandler.class, 0);
+        this.entityType = Util.extractGenericParameter(this.getClass(), EntityEventHandler.class, 0);
         this.eventType = Util.extractGenericParameter(this.getClass(), EntityEventHandler.class, 1);
     }
 
     public boolean isTenantFunction() {
-        return Entity.hasTenant(enityType);
+        return Entity.hasTenant(entityType);
     }
 
     public void accept(EntityContext<T> context, E event) {
@@ -34,18 +34,15 @@ public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> i
     }
 
     protected abstract void execute(EntityContext<T> context, E event);
-    
-    private void validateInput(Event<?> event)
-    {
-        if(isTenantFunction() && event.tenantId() == null)
-        {
+
+    private void validateInput(Event<?> event) {
+        if (isTenantFunction() && event.tenantId() == null) {
             throw new CommandException("tenantId is not available in the request");
         }
     }
-    
-    protected EntityContext<T> emit(EntityContextProvider.Transaction tx,E event)
-    {
-        EntityContext<T> context = tx.getContext(enityType);
+
+    protected EntityContext<T> emit(EntityContextProvider.Transaction tx, E event) {
+        EntityContext<T> context = tx.getContext(entityType);
         accept(context, event);
         return context;
     }

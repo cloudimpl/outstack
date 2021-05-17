@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import static com.cloudimpl.outstack.runtime.EventRepositoy.TID_PREFIX;
+import static com.cloudimpl.outstack.runtime.EventRepository.TID_PREFIX;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Query;

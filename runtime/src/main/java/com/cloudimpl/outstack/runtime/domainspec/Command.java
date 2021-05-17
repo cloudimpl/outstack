@@ -9,7 +9,7 @@ package com.cloudimpl.outstack.runtime.domainspec;
  *
  * @author nuwansa
  */
-public abstract class Command implements Input,ICommand {
+public abstract class Command implements Input, ICommand {
 
     private  String _rootId;
     private String _id;

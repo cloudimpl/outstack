@@ -13,19 +13,19 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- *
  * @author nuwan
  */
 public class SpringServiceDescriptor {
-    private final Map<String,ActionDescriptor> rootActions;
-    private final Map<String,Map<String,ActionDescriptor>> childActions;
-    private final Map<String,EntityDescriptor> mapDescriptors;
+    private final Map<String, ActionDescriptor> rootActions;
+    private final Map<String, Map<String, ActionDescriptor>> childActions;
+    private final Map<String, EntityDescriptor> mapDescriptors;
     private final EntityDescriptor rootDesc;
     private final String version;
     private final boolean isTenant;
-    private final String  serviceName;
+    private final String serviceName;
     private final String apiContext;
-    public SpringServiceDescriptor(String apiContext,String serviceName,String rootType,String version,String plural,boolean isTenant) {
+
+    public SpringServiceDescriptor(String apiContext, String serviceName, String rootType, String version, String plural, boolean isTenant) {
         this.apiContext = apiContext;
         this.serviceName = serviceName;
         this.rootDesc = new EntityDescriptor(rootType, plural);
@@ -35,63 +35,49 @@ public class SpringServiceDescriptor {
         this.childActions = new HashMap<>();
         this.mapDescriptors = new HashMap<>();
     }
-    
-    public Collection<ActionDescriptor> getRootActions()
-    {
+
+    public Collection<ActionDescriptor> getRootActions() {
         return rootActions.values();
     }
-    
-    public Collection<ActionDescriptor> getChildActions(String childEntity)
-    {
-        return childActions.getOrDefault(childEntity,Collections.EMPTY_MAP).values();
+
+    public Collection<ActionDescriptor> getChildActions(String childEntity) {
+        return childActions.getOrDefault(childEntity, Collections.EMPTY_MAP).values();
     }
-    
-    public Collection<EntityDescriptor> entityDescriptors()
-    {
+
+    public Collection<EntityDescriptor> entityDescriptors() {
         return mapDescriptors.values();
     }
-    
-    public void putRootAction(ActionDescriptor action)
-    {
-        this.rootActions.put(action.getName(),action);
+
+    public void putRootAction(ActionDescriptor action) {
+        this.rootActions.put(action.getName(), action);
     }
 
     public String getApiContext() {
         return apiContext;
     }
-   
-    public void putChildAction(EntityDescriptor child,ActionDescriptor action)
-    {
-       this.mapDescriptors.put(child.getPlural().toLowerCase(), child);
-       Map<String,ActionDescriptor> map = childActions.get(child.getName());
-       if(map == null)
-       {
-           map = new HashMap<>();
-           childActions.put(child.getName(), map);
-       }
-       map.put(action.getName(),action);
+
+    public void putChildAction(EntityDescriptor child, ActionDescriptor action) {
+        this.mapDescriptors.put(child.getPlural().toLowerCase(), child);
+        Map<String, ActionDescriptor> map = childActions.computeIfAbsent(child.getName(), k -> new HashMap<>());
+        map.put(action.getName(), action);
     }
 
-    public boolean isTenantService()
-    {
+    public boolean isTenantService() {
         return isTenant;
     }
-    
-    public Optional<EntityDescriptor> getEntityDescriptorByPlural(String plural)
-    {
+
+    public Optional<EntityDescriptor> getEntityDescriptorByPlural(String plural) {
         return Optional.ofNullable(mapDescriptors.get(plural.toLowerCase()));
     }
-    
-    public String getPlural()
-    {
+
+    public String getPlural() {
         return rootDesc.getPlural().toLowerCase();
     }
-    
-    public String getVersion()
-    {
+
+    public String getVersion() {
         return version;
     }
-    
+
     public String getRootType() {
         return rootDesc.getName();
     }
@@ -99,20 +85,18 @@ public class SpringServiceDescriptor {
     public String getServiceName() {
         return serviceName;
     }
-    
-    public Optional<ActionDescriptor> getRootAction(String action)
-    {
+
+    public Optional<ActionDescriptor> getRootAction(String action) {
         return Optional.ofNullable(rootActions.get(action));
     }
-    
-    public Optional<ActionDescriptor> getChildAction(String child,String action)
-    {
-        return Optional.ofNullable(childActions.get(child)).map(m->m.get(action));
+
+    public Optional<ActionDescriptor> getChildAction(String child, String action) {
+        return Optional.ofNullable(childActions.get(child)).map(m -> m.get(action));
     }
-    
-    public static final class ActionDescriptor
-    {
-        public enum ActionType { COMMAND_HANDLER,EVENT_HANDLER,QUERY_HANDLER }
+
+    public static final class ActionDescriptor {
+        public enum ActionType {COMMAND_HANDLER, EVENT_HANDLER, QUERY_HANDLER}
+
         private final String name;
         private final ActionType actionType;
 
@@ -127,11 +111,10 @@ public class SpringServiceDescriptor {
 
         public String getName() {
             return name;
-        }    
+        }
     }
-    
-    public static final class EntityDescriptor
-    {
+
+    public static final class EntityDescriptor {
         private final String name;
         private final String plural;
 
@@ -172,7 +155,5 @@ public class SpringServiceDescriptor {
             }
             return true;
         }
-        
-        
     }
 }
