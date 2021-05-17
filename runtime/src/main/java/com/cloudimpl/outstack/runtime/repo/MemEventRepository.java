@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.repo;
 
+import com.cloudimpl.outstack.runtime.EntityCheckpoint;
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
@@ -26,12 +27,16 @@ import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  *
@@ -41,6 +46,8 @@ import java.util.stream.Collectors;
 public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> {
 
     private final TreeMap<String, Entity> mapEntites = new TreeMap<>();
+    private final List<Event> events = new CopyOnWriteArrayList<>();
+    private final Map<String, EntityCheckpoint> checkpoints = new HashMap<>();
 
     public MemEventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         super(rootType, resourceHelper, eventStream);
@@ -53,7 +60,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         for (Event event : events) {
             System.out.println("tx: " + event);
             Entity e = applyEvent(event);
-            System.out.println("entity: " + e);
+            System.out.println("entity: " + e + " event : " + event);
         }
     }
 
@@ -80,7 +87,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             }
         }
         System.out.println("entity: " + e);
+        long nextSeq = getCheckpoint(event.getRootEntityTRN()).getSeq() + 1;
+        event.setSeqNum(nextSeq);
+        getCheckpoint(event.getRootEntityTRN()).setSeq(nextSeq);
+        events.add(event);
         return (T) e;
+    }
+
+    private EntityCheckpoint getCheckpoint(String rootTrn) {
+        return checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn));
     }
 
     private Entity createEntity(Event event) {
@@ -135,7 +150,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public <K extends ChildEntity<T>> ResultSet<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
+    public synchronized <K extends ChildEntity<T>> ResultSet<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, version, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
@@ -148,7 +163,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
+    public synchronized Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         if (id.startsWith(TID_PREFIX)) {
             return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId))));
         } else {
@@ -157,7 +172,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
+    public synchronized <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         if (childId.startsWith(TID_PREFIX)) {
             return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId))));
@@ -167,7 +182,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
+    public synchronized ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
         if (Entity.hasTenant(rootType)) {
             trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
@@ -223,8 +238,13 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                         return false;
                     }
                 } else if (jsonPrim.isString()) {
-                    if (entry.getValue().startsWith("%")) {
-                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(1))) {
+                    if (entry.getValue().startsWith("%") && entry.getValue().length() > 1) {
+                        if (!jsonPrim.getAsString().endsWith(entry.getValue().substring(1))) {
+                            return false;
+                        }
+                    }
+                    if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
+                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(0, entry.getValue().length() - 2))) {
                             return false;
                         }
                     } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
@@ -266,4 +286,59 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         }
         return new ResultSet<>(result.size(), (int) Math.ceil(((double) result.size()) / paging.pageSize()), paging.pageNum(), out);
     }
+
+    @Override
+    public ResultSet<Event<T>> getEventsByRootId(Class<T> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
+
+        String rn;
+        boolean technicalId = false;
+        if (rootId.startsWith(TID_PREFIX)) {
+            rn = RootEntity.makeTRN(rootType, version, rootId, tenantId);
+            technicalId = true;
+        } else {
+            rn = RootEntity.makeRN(rootType, version, rootId, tenantId);
+        }
+        String rootTrn = RootEntity.makeTRN(rootType, version, rootId, tenantId);
+        int size = events.size();
+
+        Stream<Event<T>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
+        if (technicalId) {
+            stream = stream.filter(e -> e.getRootEntityTRN().equals(rn));
+        } else {
+            stream = stream.filter(e -> e.getRootEntityRN().equals(rn));
+        }
+        Collection<Event<T>> cols = stream.map(e -> (Event<T>) e)
+                .filter(e -> onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
+        return onPageable(cols, paging);
+    }
+
+    @Override
+    public <K extends ChildEntity<T>> ResultSet<Event<K>> getEventsByChildId(Class<T> rootType, String id, Class<K> childType, String childId, String tenantId, Query.PagingRequest paging) {
+        EntityIdHelper.validateTechnicalId(id);
+        String rn;
+        boolean technicald = false;
+        if (childId.startsWith(TID_PREFIX)) {
+            rn = ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId);
+            technicald = true;
+        } else {
+            rn = ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId);
+        }
+
+        int size = events.size();
+
+        Stream<Event<K>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
+        if (technicald) {
+            stream = stream.filter(e -> e.getEntityTRN().equals(rn));
+        }
+        else
+        {
+            stream = stream.filter(e -> e.getEntityRN().equals(rn));
+        }
+        Collection<Event<K>> cols = stream.map(e -> (Event<K>) e)
+                .filter(e -> onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
+        return onPageable(cols, paging);
+    }
+
 }

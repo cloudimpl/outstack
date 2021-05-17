@@ -1,0 +1,12 @@
+outstack:
+    apiContext: example
+    providers:
+      - name : com.cloudimpl.outstack.collection.CollectionProvider
+        impl: com.cloudimpl.outstack.collection.MemCollectionProvider
+        
+      - name:  com.cloudimpl.outstack.collection.CollectionProvider
+        impl: com.cloudimpl.outstack.collection.AwsCollectionProvider
+        status: active
+        configs:
+          endpoint: http://localhost:1234
+          leaderTable : LeaderTable 

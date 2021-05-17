@@ -13,7 +13,6 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -197,5 +196,10 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     @Override
     public ChildEntityQueryContext<R, T> asChildQueryContext() {
         return this;
+    }
+
+    @Override
+    public ResultSet<Event<T>> getEntityEventsById(String id, Query.PagingRequest pageRequest) {
+         return  this.<R>getQueryOperations().getEventsByChildId(rootType, rootId, entityType, id, getTenantId(), pageRequest);
     }
 }
