@@ -24,10 +24,12 @@ public abstract class EventRepository<T extends RootEntity> implements QueryOper
     private final Class<T> rootType;
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
-    private final ResourceCache<TxCheckpoint> mapTxCheckpoints;
+    private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;
     protected final ResourceHelper resourceHelper;
+    protected final String version;
     public EventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
+        this.version = Entity.getVersion(rootType);
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
         this.mapTxCheckpoints = new ResourceCache<>(1000,Duration.ofHours(1));

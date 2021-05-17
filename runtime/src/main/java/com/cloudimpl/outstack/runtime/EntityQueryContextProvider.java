@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.runtime;
 import static com.cloudimpl.outstack.runtime.EventRepository.TID_PREFIX;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -34,7 +35,11 @@ public class EntityQueryContextProvider<T extends RootEntity> {
     protected final ValidatorFactory factory;
     protected final Validator validator;
     protected final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
-    public EntityQueryContextProvider(Supplier<String> idGenerator, QueryOperations<T> queryOperation,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    protected final Class<T> type;
+    protected final String version;
+    public EntityQueryContextProvider(Class<T> type,Supplier<String> idGenerator, QueryOperations<T> queryOperation,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+        this.type = type;
+        this.version = Entity.getVersion(type);
         this.idGenerator = idGenerator;
         this.queryOperation = queryOperation;
         this.factory = Validation.buildDefaultValidatorFactory();
@@ -43,7 +48,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
     }
 
     public ReadOnlyTransaction<T> createTransaction(String rootTid, String tenantId) {
-        return new ReadOnlyTransaction(idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector);
+        return new ReadOnlyTransaction(idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector,version);
     }
 
     private <T> void validateObject(T target)
@@ -55,6 +60,11 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             throw error;
         }          
     }
+
+    public String getVersion() {
+        return version;
+    }
+    
     
     public static  class ReadOnlyTransaction< R extends RootEntity> implements QueryOperations<R> {
 
@@ -65,14 +75,17 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected Object reply;
         protected final Consumer<Object> validator;
         protected final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
+        protected final String version;
         public ReadOnlyTransaction(Supplier<String> idGenerator, String rootTid,
-                String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+                String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,
+                Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version) {
             this.idGenerator = idGenerator;
             this.rootTid = rootTid;
             this.tenantId = tenantId;
             this.queryOperation = queryOperation;
             this.validator = validator;
             this.queryOperationSelector = queryOperationSelector;
+            this.version = version;
         }
 
         public String getTenantId() {
@@ -95,12 +108,12 @@ public class EntityQueryContextProvider<T extends RootEntity> {
            
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
-                return new RootEntityContext<>(rootType, rootTid, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(),validator,this.queryOperationSelector);
+                return new RootEntityContext<>(rootType, rootTid, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(),validator,this.queryOperationSelector,version);
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(),validator,this.queryOperationSelector);
+                return new ChildEntityContext<>(rootType, rootTid, childType, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(),validator,this.queryOperationSelector,version);
             }
         }
 
@@ -131,14 +144,26 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         }
 
         @Override
-        public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId,Query.PagingRequest pageable) {
             return queryOperation.getAllChildByType(rootType, id, childType, tenantId,pageable);
             
         }
 
         @Override
-        public Collection<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
+        public ResultSet<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging) {
             return queryOperation.getAllByRootType(rootType, tenantId, paging);
         }
+
+        @Override
+        public ResultSet<Event<R>> getEventsByRootId(Class<R> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
+            return queryOperation.getEventsByRootId(rootType, rootId, tenantId, paging);
+        }
+
+        @Override
+        public <T extends ChildEntity<R>> ResultSet<Event<T>> getEventsByChildId(Class<R> rootType, String id, Class<T> childType, String childId, String tenantId, Query.PagingRequest paging) {
+            return queryOperation.getEventsByChildId(rootType, id, childType, childId, tenantId, paging);
+        }
+
+        
     }
 }

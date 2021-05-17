@@ -22,6 +22,7 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.core.ComponentProvider;
 import com.cloudimpl.outstack.core.Injector;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
@@ -41,7 +42,7 @@ public class CloudApp {
         new CommandLine(appConfig).execute(args);
         Injector injector = new Injector();
         injector.bind(LogWriter.class).to(new ConsoleLogWriter());
-        injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
+        injector.bind(CollectionProvider.class).to(new AwsCollectionProvider(ComponentProvider.ProviderConfigs.EMTPY));
         injector.nameBind("leaderOptions",CollectionOptions.builder().withOption("TableName", "Test").build());
         ResourcesLoader serviceLoader = new ResourcesLoader();
         serviceLoader.preload();

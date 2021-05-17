@@ -31,8 +31,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     public RootEntityContext(Class<T> entityType, String tid, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier,
             Supplier<String> idGenerator, Optional<CRUDOperations> crudOperations, QueryOperations<T> queryOperation,
-            Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
-        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
+            Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,
+            Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector,String version) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector,version);
         this._id = tid;
     }
 
@@ -58,6 +59,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
             throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"event id and given id not equal. {0} , {1}", id, event.entityId());
         }
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         T root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
 
         event.setTenantId(getTenantId());
@@ -91,6 +93,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityIdHelper.validateId(id, event);
         
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         event.setTenantId(getTenantId());
         event.setId(_id);
         event.setRootId(_id);
@@ -123,6 +126,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setTenantId(getTenantId());
         event.setAction(Event.Action.DELETE);
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         validator.accept(event);
         addEvent(event);
         getCrudOperations().delete(root);
@@ -151,6 +155,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(_id);
         event.setAction(Event.Action.RENAME);
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         validator.accept(event);
         addEvent(event);
         T old = root;
@@ -179,7 +184,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
-    public <C extends ChildEntity<T>> Collection<C> getAllChildEntitiesByType(Class<C> childType,Query.PagingRequest pageable) {
+    public <C extends ChildEntity<T>> ResultSet<C> getAllChildEntitiesByType(Class<C> childType,Query.PagingRequest pageable) {
         return this.<T>getQueryOperations().getAllChildByType(entityType, _id, childType, getTenantId(),pageable);
     }
 
@@ -202,7 +207,17 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
-    public Collection<T> getAll(Query.PagingRequest pagingRequest) {
+    public ResultSet<T> getAll(Query.PagingRequest pagingRequest) {
         return this.<T>getQueryOperations().getAllByRootType(entityType, getTenantId(), pagingRequest);
+    }
+
+    @Override
+    public <C extends ChildEntity<T>> ResultSet<Event<C>> getChildEntityEventsById(Class<C> childType, String id,Query.PagingRequest pageRequest) {
+        return this.<T>getQueryOperations().getEventsByChildId(entityType, _id, childType, id,getTenantId(), pageRequest);
+    }
+
+    @Override
+    public  ResultSet<Event<T>> getEntityEventsById(String id,Query.PagingRequest pageRequest) {
+        return  this.<T>getQueryOperations().getEventsByRootId(entityType, _id, getTenantId(), pageRequest);
     }
 }

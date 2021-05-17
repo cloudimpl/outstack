@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.util;
 
 import com.cloudimpl.outstack.app.ServiceMeta;
+import com.cloudimpl.outstack.core.CloudFunctionMeta;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 
@@ -32,6 +33,6 @@ public class SrvUtil {
         Objects.requireNonNull(func);
         Router router = funcType.getAnnotation(Router.class);
         Objects.requireNonNull(func);
-        return new ServiceMeta(funcType,func, router);
+        return new ServiceMeta(funcType,new CloudFunctionMeta(func.name(),func.id()), router);
     }
 }

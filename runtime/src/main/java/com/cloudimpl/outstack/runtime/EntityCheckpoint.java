@@ -9,18 +9,19 @@ package com.cloudimpl.outstack.runtime;
  *
  * @author nuwan
  */
-public class TxCheckpoint {
+public class EntityCheckpoint {
     private final String rootTrn;
     private long seq;
 
-    public TxCheckpoint(String rootTrn) {
+    public EntityCheckpoint(String rootTrn) {
         this.rootTrn = rootTrn;
         this.seq = 0;
     }
     
-    public void setSeq(long seq)
+    public long setSeq(long seq)
     {
         this.seq = seq;
+        return this.seq;
     }
 
     public long getSeq() {

@@ -16,8 +16,13 @@ import com.google.gson.JsonObject;
 public abstract class Entity implements IResource {
 
     private String _id;
-    private Meta _meta = new Meta();
+    private final Meta _meta = new Meta();
 
+    public Entity() {
+        this._meta.setVersion(this.getClass().getAnnotation(EntityMeta.class).version());
+    }
+
+    
     final void setTid(String id) {
         this._id = id;
     }
@@ -70,6 +75,10 @@ public abstract class Entity implements IResource {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
+    public static String getVersion(Class<? extends Entity> entityType){
+        return entityType.getAnnotation(EntityMeta.class).version();
+    }
+    
     public final Meta getMeta() {
         return _meta;
     }
@@ -83,7 +92,8 @@ public abstract class Entity implements IResource {
 
         private long createdDate;
         private long updatedDate;
-
+        private String version;
+        
         protected void setCreatedDate(long createdDate) {
             this.createdDate = createdDate;
         }
@@ -92,6 +102,9 @@ public abstract class Entity implements IResource {
             this.updatedDate = updatedDate;
         }
 
+        protected void setVersion(String version){
+            this.version = version;
+        }
         
         public String getCreatedDate() {
             return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(createdDate));
@@ -101,6 +114,10 @@ public abstract class Entity implements IResource {
             return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(updatedDate));
         }
 
+        public String getVersion(){
+            return version;
+        }
+        
         public long createdDate()
         {
             return this.createdDate;

@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime.util;
 
 import com.cloudimpl.outstack.collection.error.CollectionException;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -80,6 +81,13 @@ public class Util {
         throw CollectionException.RELECTION_EXCEPTION(err->err.wrap(new RuntimeException("template parameter not found")));
     }
 
+//    public static ResourceDescriptor parserResource(String resourceName)
+//    {
+//        
+//        //Organization/1234/Child/234
+//        //Tenant/1234/User/32515
+//    }
+    
     public static final class VarArg<T> {
 
         private final T[] args;

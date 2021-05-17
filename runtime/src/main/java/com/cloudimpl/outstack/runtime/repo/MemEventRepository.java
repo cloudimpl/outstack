@@ -5,11 +5,13 @@
  */
 package com.cloudimpl.outstack.runtime.repo;
 
+import com.cloudimpl.outstack.runtime.EntityCheckpoint;
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EventRepository;
 import com.cloudimpl.outstack.runtime.EventStream;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
+import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
@@ -21,14 +23,20 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  *
@@ -38,6 +46,8 @@ import java.util.stream.Collectors;
 public class MemEventRepository<T extends RootEntity> extends EventRepository<T> {
 
     private final TreeMap<String, Entity> mapEntites = new TreeMap<>();
+    private final List<Event> events = new CopyOnWriteArrayList<>();
+    private final Map<String, EntityCheckpoint> checkpoints = new HashMap<>();
 
     public MemEventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         super(rootType, resourceHelper, eventStream);
@@ -49,9 +59,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
 
         for (Event event : events) {
             System.out.println("tx: " + event);
-            Entity e = null;
-            applyEvent(event);
-            System.out.println("entity: " + e);
+            Entity e = applyEvent(event);
+            System.out.println("entity: " + e + " event : " + event);
         }
     }
 
@@ -78,7 +87,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
             }
         }
         System.out.println("entity: " + e);
+        long nextSeq = getCheckpoint(event.getRootEntityTRN()).getSeq() + 1;
+        event.setSeqNum(nextSeq);
+        getCheckpoint(event.getRootEntityTRN()).setSeq(nextSeq);
+        events.add(event);
         return (T) e;
+    }
+
+    private EntityCheckpoint getCheckpoint(String rootTrn) {
+        return checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn));
     }
 
     private Entity createEntity(Event event) {
@@ -119,9 +136,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
     private Entity renamEntity(EntityRenamed event) {
         String rn;
         if (event.isRootEvent()) {
-            rn = RootEntity.makeTRN(event.getOwner(), event.id(), event.tenantId());
+            rn = RootEntity.makeTRN(event.getOwner(), event.getMeta().getVersion(), event.id(), event.tenantId());
         } else {
-            rn = ChildEntity.makeTRN(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
+            rn = ChildEntity.makeTRN(event.getRootOwner(), event.getMeta().getVersion(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
         }
         Entity e = mapEntites.get(resourceHelper.getFQTrn(rn));
         mapEntites.remove(resourceHelper.getFQBrn(e));
@@ -133,47 +150,52 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
     }
 
     @Override
-    public <K extends ChildEntity<T>> Collection<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
+    public synchronized <K extends ChildEntity<T>> ResultSet<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
-        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, id, tenantId);
+        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, version, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
-        Collection<K> result = map.values().stream().filter(e->e.getClass() == childType).map(e -> (K) e).collect(Collectors.toList());
-        Collection<K> col = onPageable(result, paging);
+        Collection<K> result = map.values().stream().filter(e -> e.getClass() == childType)
+                .map(e -> (K) e)
+                .filter(e -> onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
+        ResultSet<K> col = onPageable(result, paging);
         return col;
     }
 
     @Override
-    public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
+    public synchronized Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         if (id.startsWith(TID_PREFIX)) {
-            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, id, tenantId))));
+            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId))));
         } else {
-            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQBrn(RootEntity.makeRN(rootType, id, tenantId))));
+            return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId))));
         }
     }
 
     @Override
-    public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
+    public synchronized <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         if (childId.startsWith(TID_PREFIX)) {
-            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, id, childType, childId, tenantId))));
+            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId))));
         } else {
-            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, id, childType, childId, tenantId))));
+            return Optional.ofNullable((C) mapEntites.get(resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId))));
         }
     }
 
     @Override
-    public Collection<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
+    public synchronized ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
         if (Entity.hasTenant(rootType)) {
-            trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + rootType.getSimpleName() + "/";
+            trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
         } else {
-            trn = resourcePrefix("brn") + ":" + rootType.getSimpleName() + "/";
+            trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
         }
         String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()
                 .filter(e -> e.getKey().startsWith(fqtrn))
-                .filter(e->e.getValue().getClass() == rootType)
-                .map(e -> (T) e.getValue()).collect(Collectors.toList());
+                .filter(e -> e.getValue().getClass() == rootType)
+                .map(e -> (T) e.getValue())
+                .filter(e -> onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
         return onPageable(filterCollection, paging);
     }
 
@@ -186,7 +208,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
             throw new RepositoryException("null not supported for sorting: " + name + " field");
         }
         if (!leftEl.isJsonPrimitive() || !rightEl.isJsonPrimitive()) {
-            throw new RepositoryException("only primitive types supported for sorting: ");
+            throw new RepositoryException("only primitive types supported for sorting");
         }
         JsonPrimitive leftPrim = leftEl.getAsJsonPrimitive();
         JsonPrimitive rightPrim = rightEl.getAsJsonPrimitive();
@@ -198,9 +220,52 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
         throw new RepositoryException("unsupported data type for sorting . {0} : {1} ", leftJson, rightJson);
     }
 
-    private <T> Collection<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
+    private <T> boolean onFilter(T item, Map<String, String> params) {
+        if (params.isEmpty()) {
+            return true;
+        }
+        JsonObject json = GsonCodec.encodeToJson(item).getAsJsonObject();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            JsonElement el = json.get(entry.getKey());
+            if (el == null || !el.isJsonPrimitive()) {
+                System.out.println("el " + entry.getKey() + " not found or not an primitive data type");
+                return false;
+            } else {
+                JsonPrimitive jsonPrim = (JsonPrimitive) el;
+                if (jsonPrim.isNumber()) {
+                    BigDecimal target = new BigDecimal(entry.getValue());
+                    if (jsonPrim.getAsBigDecimal().compareTo(target) != 0) {
+                        return false;
+                    }
+                } else if (jsonPrim.isString()) {
+                    if (entry.getValue().startsWith("%") && entry.getValue().length() > 1) {
+                        if (!jsonPrim.getAsString().endsWith(entry.getValue().substring(1))) {
+                            return false;
+                        }
+                    }
+                    if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
+                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(0, entry.getValue().length() - 2))) {
+                            return false;
+                        }
+                    } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
+                        return false;
+                    }
+                } else if (jsonPrim.isBoolean()) {
+                    if (jsonPrim.getAsBoolean() != Boolean.valueOf(entry.getValue())) {
+                        return false;
+                    }
+                } else {
+                    System.out.println("unhandle primitive data type:" + jsonPrim);
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private <T> ResultSet<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
         if (paging == null) {
-            return result;
+            return new ResultSet<>(result.size(), 1, 0, result);
         }
 
         Comparator<T> comparator = null;
@@ -213,10 +278,67 @@ public class MemEventRepository<T extends RootEntity> extends EventRepository<T>
         }
         int offset = paging.pageNum() * paging.pageSize();
         int min = Math.min(result.size() - offset, paging.pageSize());
+        Collection<T> out;
         if (comparator != null) {
-            return result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
+            out = result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
         } else {
-            return result.stream().skip(offset).limit(min).collect(Collectors.toList());
+            out = result.stream().skip(offset).limit(min < 0 ? 0 : min).collect(Collectors.toList());
         }
+        return new ResultSet<>(result.size(), (int) Math.ceil(((double) result.size()) / paging.pageSize()), paging.pageNum(), out);
     }
+
+    @Override
+    public ResultSet<Event<T>> getEventsByRootId(Class<T> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
+
+        String rn;
+        boolean technicalId = false;
+        if (rootId.startsWith(TID_PREFIX)) {
+            rn = RootEntity.makeTRN(rootType, version, rootId, tenantId);
+            technicalId = true;
+        } else {
+            rn = RootEntity.makeRN(rootType, version, rootId, tenantId);
+        }
+        String rootTrn = RootEntity.makeTRN(rootType, version, rootId, tenantId);
+        int size = events.size();
+
+        Stream<Event<T>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
+        if (technicalId) {
+            stream = stream.filter(e -> e.getRootEntityTRN().equals(rn));
+        } else {
+            stream = stream.filter(e -> e.getRootEntityRN().equals(rn));
+        }
+        Collection<Event<T>> cols = stream.map(e -> (Event<T>) e)
+                .filter(e -> onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
+        return onPageable(cols, paging);
+    }
+
+    @Override
+    public <K extends ChildEntity<T>> ResultSet<Event<K>> getEventsByChildId(Class<T> rootType, String id, Class<K> childType, String childId, String tenantId, Query.PagingRequest paging) {
+        EntityIdHelper.validateTechnicalId(id);
+        String rn;
+        boolean technicald = false;
+        if (childId.startsWith(TID_PREFIX)) {
+            rn = ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId);
+            technicald = true;
+        } else {
+            rn = ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId);
+        }
+
+        int size = events.size();
+
+        Stream<Event<K>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
+        if (technicald) {
+            stream = stream.filter(e -> e.getEntityTRN().equals(rn));
+        }
+        else
+        {
+            stream = stream.filter(e -> e.getEntityRN().equals(rn));
+        }
+        Collection<Event<K>> cols = stream.map(e -> (Event<K>) e)
+                .filter(e -> onFilter(e, paging.getParams()))
+                .collect(Collectors.toList());
+        return onPageable(cols, paging);
+    }
+
 }

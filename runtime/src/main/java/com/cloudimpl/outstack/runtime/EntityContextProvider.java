@@ -36,16 +36,16 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
     private final EntityProvider entityProvider;
 
-    public EntityContextProvider(EntityProvider entityProvider, Supplier<String> idGenerator,
+    public EntityContextProvider(Class<T> type,EntityProvider entityProvider, Supplier<String> idGenerator,
                                  QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>,
             QueryOperations<?>> queryOperationSelector) {
-        super(idGenerator, queryOperation, queryOperationSelector);
+        super(type,idGenerator, queryOperation, queryOperationSelector);
         this.entityProvider = entityProvider;
     }
 
     public Transaction<T> createWritableTransaction(String rootTid, String tenantId) {
         return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject,
-                this.queryOperationSelector);
+                this.queryOperationSelector,version);
     }
 
     private <T> void validateObject(T target) {
@@ -64,8 +64,8 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         private final List<Event> eventList;
 
         public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid,
-                           String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
-            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector);
+                           String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,String version) {
+            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector,version);
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.eventList = new LinkedList<>();
@@ -97,7 +97,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                         idGenerator, Optional.of((CRUDOperations) this),
                         this,
                         Optional.of((Consumer<Event>) this::publishEvent),
-                        validator, this.queryOperationSelector);
+                        validator, this.queryOperationSelector,version);
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
@@ -106,7 +106,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                         rootType,
                         rootTid, childType, tenantId,
                         Optional.of((EntityProvider) this::loadEntity), idGenerator, Optional.of((CRUDOperations) this),
-                        this, Optional.of((Consumer<Event>) this::publishEvent), validator, this.queryOperationSelector);
+                        this, Optional.of((Consumer<Event>) this::publishEvent), validator, this.queryOperationSelector,version);
             }
         }
 
@@ -127,18 +127,18 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
         protected Optional<R> loadRootEntity(Class<R> rootType, String id, String tenantId) {
             if (id.startsWith(TID_PREFIX)) {
-                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeTRN(rootType, id, tenantId)));
+                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeTRN(rootType,version, id, tenantId)));
             } else {
-                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeRN(rootType, id, tenantId)));
+                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeRN(rootType,version, id, tenantId)));
             }
         }
 
         protected <C extends ChildEntity<R>> Optional<C> loadChildEntity(Class<R> rootType, String id, Class<C> childType, String childId, String tenantId) {
             EntityIdHelper.validateTechnicalId(id);
             if (childId.startsWith(TID_PREFIX)) {
-                return Optional.ofNullable((C) mapEntities.get(ChildEntity.makeTRN(rootType, id, childType, childId, tenantId)));
+                return Optional.ofNullable((C) mapEntities.get(ChildEntity.makeTRN(rootType,version, id, childType, childId, tenantId)));
             } else {
-                return Optional.ofNullable((C) mapEntities.get(ChildEntity.makeRN(rootType, id, childType, childId, tenantId)));
+                return Optional.ofNullable((C) mapEntities.get(ChildEntity.makeRN(rootType,version, id, childType, childId, tenantId)));
             }
         }
 
@@ -179,9 +179,9 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         @Override
         public Optional<R> getRootById(Class<R> rootType, String id, String tenantId) {
             if (id.startsWith(TID_PREFIX)) {
-                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeTRN(rootType, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
+                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeTRN(rootType,version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
             } else {
-                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeRN(rootType, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
+                return Optional.ofNullable((R) mapEntities.get(RootEntity.makeRN(rootType,version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
             }
         }
 
@@ -189,25 +189,26 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         public <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType, String id, Class<T> childType, String childId, String tenantId) {
             EntityIdHelper.validateTechnicalId(id);
             if (childId.startsWith(TID_PREFIX)) {
-                return Optional.ofNullable((T) mapEntities.get(ChildEntity.makeTRN(rootType, id, childType, id, tenantId)))
+                return Optional.ofNullable((T) mapEntities.get(ChildEntity.makeTRN(rootType,version, id, childType, id, tenantId)))
                         .or(() -> queryOperation.getChildById(rootType, id, childType, childId, tenantId));
             } else {
-                return Optional.ofNullable((T) mapEntities.get(ChildEntity.makeRN(rootType, id, childType, childId, tenantId)))
+                return Optional.ofNullable((T) mapEntities.get(ChildEntity.makeRN(rootType,version, id, childType, childId, tenantId)))
                         .or(() -> queryOperation.getChildById(rootType, id, childType, childId, tenantId));
             }
 
         }
 
         @Override
-        public <T extends ChildEntity<R>> Collection<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId, Query.PagingRequest pageable) {
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId, Query.PagingRequest pageable) {
 
-            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId, pageable).stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
-            mapEntities.headMap(RootEntity.makeTRN(rootType, id, tenantId)).entrySet().forEach(p -> map.put(p.getKey(), (T) p.getValue()));
-            return map.values();
+            Map<String, T> map = (Map<String, T>) new HashMap<>(queryOperation.getAllChildByType(rootType, id, childType, tenantId, pageable).getItems().stream().collect(Collectors.toMap(c -> c.getTRN(), c -> (T) c)));
+            mapEntities.headMap(RootEntity.makeTRN(rootType,version, id, tenantId)).entrySet().forEach(p -> map.put(p.getKey(), (T) p.getValue()));
+            Collection<T> out = map.values();
+            return new ResultSet<>(out.size(),(int)Math.ceil(((double)out.size())/pageable.pageSize()),pageable.pageNum(),out);
         }
 
         @Override
-        public Collection<R> getAllByRootType(Class<R> rootType, String tenantId, Query.PagingRequest paging) {
+        public ResultSet<R> getAllByRootType(Class<R> rootType, String tenantId, Query.PagingRequest paging) {
             throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
         }
     }

@@ -16,8 +16,8 @@
 package com.cloudimpl.outstack.app;
 
 import com.cloudimpl.outstack.core.CloudException;
+import com.cloudimpl.outstack.core.CloudFunctionMeta;
 import com.cloudimpl.outstack.core.CloudRouter;
-import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.routers.DynamicRouter;
 import com.cloudimpl.outstack.routers.LeaderRouter;
@@ -35,23 +35,23 @@ import java.util.Map;
  */
 public class ServiceMeta {
 
-    private final CloudFunction func;
+    private final CloudFunctionMeta func;
     private final Router router;
     private final Class<?> serviceType;
     private final Map<String,String> attr;
     
-    public ServiceMeta(Class<?> serviceType, CloudFunction func, Router router) {
+    public ServiceMeta(Class<?> serviceType, CloudFunctionMeta func, Router router) {
       this(serviceType,func,router,Collections.EMPTY_MAP);
     }
     
-    public ServiceMeta(Class<?> serviceType, CloudFunction func, Router router,Map<String,String> attr) {
+    public ServiceMeta(Class<?> serviceType, CloudFunctionMeta func, Router router,Map<String,String> attr) {
         this.serviceType = serviceType;
         this.func = func;
         this.router = router;
         this.attr = Collections.unmodifiableMap(attr);
     }
 
-    public CloudFunction getFunc() {
+    public CloudFunctionMeta getFunc() {
         return func;
     }
 

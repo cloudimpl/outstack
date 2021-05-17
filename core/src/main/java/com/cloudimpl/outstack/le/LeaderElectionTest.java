@@ -17,6 +17,8 @@ package com.cloudimpl.outstack.le;
 
 import com.cloudimpl.outstack.collection.AwsCollectionProvider;
 import com.cloudimpl.outstack.collection.CollectionOptions;
+import com.cloudimpl.outstack.collection.CollectionProvider;
+import com.cloudimpl.outstack.collection.MemCollectionProvider;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.Logger;
@@ -40,10 +42,10 @@ import reactor.core.publisher.Flux;
 public class LeaderElectionTest {
 
     public static void main(String[] args) throws InterruptedException {
-        AwsCollectionProvider provider = new AwsCollectionProvider("http://localhost:4566");
+        CollectionProvider provider = new MemCollectionProvider();
         ILogger logger = new Logger("test", "node", new ConsoleLogWriter());
         logger.setLevel(ILogger.LogLevel.DEBUG);
-        LeaderElectionManager man = new LeaderElectionManager(provider,CollectionOptions.builder().withOption("TableName", "Test").build());
+        LeaderElectionManager man = new LeaderElectionManager(provider);
         Flux.interval(Duration.ofSeconds(5)).take(100).doOnNext(i->new LeaderWorker(logger, provider)).subscribe();
         Thread.sleep(1000000);
     }
@@ -52,8 +54,8 @@ public class LeaderElectionTest {
         public static final AtomicInteger id = new AtomicInteger();
         public static final Set<String> members = new ConcurrentSkipListSet<>();
         public static final List<LeaderElection> els = new CopyOnWriteArrayList<>();
-        public LeaderWorker(ILogger logger,AwsCollectionProvider provider) {
-            LeaderElectionManager man = new LeaderElectionManager(provider,CollectionOptions.builder().withOption("TableName", "Test").build());
+        public LeaderWorker(ILogger logger,CollectionProvider provider) {
+            LeaderElectionManager man = new LeaderElectionManager(provider);
             LeaderElection el = man.create("TestGroup", "member:"+id.incrementAndGet(), 10000, logger);
             System.out.println("member initialized: "+el.getMemberId());
             members.forEach(m->el.addMember(m));

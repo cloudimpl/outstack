@@ -11,5 +11,6 @@ package com.cloudimpl.outstack.runtime.domainspec;
  */
 public interface IQuery {
     String queryName();
+    String version();
     <T extends Query> T unwrap(Class<T> type);
 }

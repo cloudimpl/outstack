@@ -18,9 +18,9 @@ import java.util.Collection;
  */
 public interface ChildEntityQueryContext<R extends RootEntity,T extends ChildEntity<R>> extends EntityQueryContext<T>{
      <R extends RootEntity> R getRoot();
-     Collection<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq);
+     ResultSet<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq);
      default Collection<T> getAllByEntityType(Class<T> type)
      {
-         return getAllByEntityType(type, null);
+         return getAllByEntityType(type, null).getItems();
      }
 }

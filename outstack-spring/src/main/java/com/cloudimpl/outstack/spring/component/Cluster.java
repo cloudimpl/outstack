@@ -10,6 +10,7 @@ import com.cloudimpl.outstack.app.ResourcesLoader;
 import com.cloudimpl.outstack.collection.AwsCollectionProvider;
 import com.cloudimpl.outstack.collection.CollectionOptions;
 import com.cloudimpl.outstack.collection.CollectionProvider;
+import com.cloudimpl.outstack.collection.MemCollectionProvider;
 import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
@@ -24,6 +25,7 @@ import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -62,22 +64,28 @@ public class Cluster {
 
     private ServiceDescriptorContextManager serviceDescriptorContextMan;
 
+    @Autowired
+    private SpringApplicationConfigManager configManager;
+    
     public Cluster() {
     }
 
     @PostConstruct
     public void init() {
+        Injector injector = new Injector();
+        configManager.setInjector(injector);
         serviceDescriptorContextMan = new ServiceDescriptorContextManager();
-        ResourceHelper resourceHelper = new ResourceHelper(domainOwner, domainContext, apiContext);
+        ResourceHelper resourceHelper = new ResourceHelper(domainOwner, domainContext, configManager.getApiContext());
         EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(gossipPort).withSeedName(seedName).withServicePort(servicePort).build();
-        Injector injector = new Injector();
+        
         injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
         injector.bind(ResourceHelper.class).to(resourceHelper);
         injector.bind(ServiceDescriptorContextManager.class).to(serviceDescriptorContextMan);
         injector.bind(LogWriter.class).to(new ConsoleLogWriter());
-        injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
+        //injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
         injector.nameBind("leaderOptions", CollectionOptions.builder().withOption("TableName", "Test").build());
+        injector.bind(CollectionProvider.class).to(configManager.getProvider(CollectionProvider.class.getName()).getInstance());
         ResourcesLoader serviceLoader = new ResourcesLoaderEx(resourceHelper);
         serviceLoader.preload();
         appConfig.getNodeConfigBuilder().doOnNext(c -> c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C -> C.build())

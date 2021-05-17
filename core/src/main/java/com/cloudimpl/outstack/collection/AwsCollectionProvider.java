@@ -26,6 +26,8 @@ import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
 import com.amazonaws.services.dynamodbv2.model.KeyType;
 import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import com.amazonaws.services.dynamodbv2.model.ResourceNotFoundException;
+import com.cloudimpl.outstack.core.ComponentProvider;
+import com.cloudimpl.outstack.core.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,26 +40,29 @@ import java.util.NavigableMap;
 public class AwsCollectionProvider implements CollectionProvider {
 
     private final AmazonDynamoDB ddb;
-
+    private final ComponentProvider.ProviderConfigs configs;
     public AwsCollectionProvider(AmazonDynamoDB ddb) {
         this.ddb = ddb;
+        this.configs = ComponentProvider.ProviderConfigs.EMTPY;
     }
-     
-    public AwsCollectionProvider(String endpoint) {
+    
+    @Inject
+    public AwsCollectionProvider(ComponentProvider.ProviderConfigs configs) {
+        this.configs = configs;
         ddb = AmazonDynamoDBClientBuilder.standard()
-                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endpoint, Regions.US_EAST_1.name()))
+                .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(this.configs.getOption("endpoint").get(), Regions.US_EAST_1.name()))
                 // .withRegion(Regions.US_EAST_1)
                 .build();
     }
 
     @Override
-    public <V> Map<String, V> createHashMap(String name, CollectionOptions options) {
-        return new AwsDynamodbMap<>(ddb, options.<String>get("TableName").get(), name);
+    public <V> Map<String, V> createHashMap(String name) {
+        return new AwsDynamodbMap<>(ddb,this.configs.getOption("TableName").get(), name);
     }
 
     @Override
-    public <V> NavigableMap<String, V> createNavigableMap(String name, CollectionOptions options) {
-        return new AwsDynamodbNavigableMap<>(ddb, options.<String>get("TableName").get(), name);
+    public <V> NavigableMap<String, V> createNavigableMap(String name) {
+        return new AwsDynamodbNavigableMap<>(ddb, this.configs.getOption("TableName").get(), name);
     }
 
     public void createMapTable(String tableName) {

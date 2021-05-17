@@ -23,6 +23,6 @@ import java.util.NavigableMap;
  * @author nuwansa
  */
 public interface CollectionProvider {
-    public <V> Map<String,V> createHashMap(String name,CollectionOptions options);
-    public <V> NavigableMap<String,V> createNavigableMap(String name,CollectionOptions options);
+    public <V> Map<String,V> createHashMap(String name);
+    public <V> NavigableMap<String,V> createNavigableMap(String name);
 }

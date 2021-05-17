@@ -13,7 +13,6 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -33,8 +32,9 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
 
     public ChildEntityContext(Class<R> rootType, String rootId, Class<T> entityType, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier,
             Supplier<String> idGenerator, Optional<CRUDOperations> crudOperations,
-            QueryOperations<R> queryOperation, Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector) {
-        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector);
+            QueryOperations<R> queryOperation, Optional<Consumer<Event>> eventPublisher,Consumer<Object> validator,
+            Function<Class<? extends RootEntity> ,QueryOperations<?>> queryOperationSelector,String version) {
+        super(entityType, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector,version);
         this.rootType = rootType;
         this.rootId = rootId;
         Objects.requireNonNull(this.rootId);
@@ -58,6 +58,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
             throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"root entity Id and event root id not equal. {0} , {1}", root.entityId(), event.rootEntityId());
         }
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         T child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
@@ -82,7 +83,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
                 .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} is not exist", event.getRootEntityRN()));
 
         T child = (T) this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId())
-                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType,getVersion(), root.entityId(), entityType, id, getTenantId())));
 
         if (!event.rootEntityId().equals(root.entityId())) {
             throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"invalid root entity id {0} in the event faor root entity {1}", event.rootEntityId(), root.entityId());
@@ -92,6 +93,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityIdHelper.validateId(id, event);
        
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         
         event.setTenantId(getTenantId());
         event.setRootId(root.id());
@@ -113,7 +115,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
                 .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0}:{1} is not exist", rootType.getSimpleName(), rootId));
 
         T child = (T) this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId())
-                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType,getVersion(), root.entityId(), entityType, id, getTenantId())));
         
         EntityIdHelper.validateId(id, child);
 
@@ -122,6 +124,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         event.setAction(Event.Action.DELETE);
         validator.accept(event); //validate event
         addEvent(event);
@@ -137,7 +140,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
                 .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0}:{1} is not exist", rootType.getSimpleName(), rootId));
 
         T child = (T) this.<R>getEntityProvider().loadEntity(rootType, root.id(), entityType, id, getTenantId())
-                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType, root.entityId(), entityType, id, getTenantId())));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"child entity {0} is does not exist", ChildEntity.makeRN(rootType,getVersion(), root.entityId(), entityType, id, getTenantId())));
         
         EntityIdHelper.validateId(id, child);
   
@@ -146,6 +149,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setVersion(event, version);
         event.setAction(Event.Action.RENAME);
         validator.accept(event); //validate event
         addEvent(event);
@@ -180,7 +184,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     }
 
     @Override
-    public Collection<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq) {
+    public ResultSet<T> getAllByEntityType(Class<T> type,Query.PagingRequest pageReq) {
         return this.<R>getQueryOperations().getAllChildByType(rootType, rootId, type, getTenantId(),pageReq);
     }
 
@@ -192,5 +196,10 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     @Override
     public ChildEntityQueryContext<R, T> asChildQueryContext() {
         return this;
+    }
+
+    @Override
+    public ResultSet<Event<T>> getEntityEventsById(String id, Query.PagingRequest pageRequest) {
+         return  this.<R>getQueryOperations().getEventsByChildId(rootType, rootId, entityType, id, getTenantId(), pageRequest);
     }
 }

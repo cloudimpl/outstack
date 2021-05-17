@@ -21,12 +21,14 @@ public class QueryWrapper implements IQuery {
     private final String rootId;
     private final String id;
     private final String tenantId;
+    private final String version;
     private final String payload;
     private final Query.PagingRequest pagingRequest;
     public QueryWrapper(Builder builder) {
         this.query = builder.query;
         this.rootId = builder.rootId;
         this.id = builder.id;
+        this.version = builder.version;
         this.tenantId = builder.tenantId;
         this.payload = builder.payload == null?"{}":builder.payload;
         this.pagingRequest = builder.pageRequest;
@@ -38,6 +40,7 @@ public class QueryWrapper implements IQuery {
         QueryHelper.withRootId(query, rootId);
         QueryHelper.withId(query, id);
         QueryHelper.withTenantId(query, tenantId);
+        QueryHelper.withVersion(query, version);
         QueryHelper.withPageable(query, this.pagingRequest);
         return query;
     }
@@ -47,6 +50,11 @@ public class QueryWrapper implements IQuery {
         return this.query;
     }
 
+    @Override
+    public String version(){
+        return this.version;
+    }
+    
     public Optional<String> getRootId() {
         return Optional.ofNullable(rootId);
     }
@@ -67,6 +75,7 @@ public class QueryWrapper implements IQuery {
         private  String rootId;
         private  String id;
         private  String tenantId;
+        private  String version;
         private  String payload;
         private Query.PagingRequest pageRequest;
         
@@ -79,6 +88,12 @@ public class QueryWrapper implements IQuery {
         public Builder withRootId(String rootId)
         {
             this.rootId = rootId;
+            return this;
+        }
+        
+        public Builder withVersion(String version)
+        {
+            this.version = version;
             return this;
         }
         

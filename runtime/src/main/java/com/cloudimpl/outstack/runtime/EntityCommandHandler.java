@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -48,6 +49,10 @@ public abstract class EntityCommandHandler<T extends Entity, I extends Command, 
     }
 
     public EntityContext<T> emit(EntityContextProvider contextProvider, ICommand input) {
+        if(!contextProvider.getVersion().equals(input.version()))
+        {
+            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_VERSION,"invalid version {0} ,expecting {1}", input.version(),contextProvider.getVersion());
+        }
         I cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
         EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), cmd.tenantId());

@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.handler.DefaultGetEventsQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -29,14 +30,14 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
 
     private final Map<String, EntityQueryHandler> mapQueryHandlers = new HashMap<>();
 
-    private final Class<? extends RootEntity> rootType;
+    private final Class<T> rootType;
     private final EventRepository<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
     public ServiceQueryProvider(Class<T> rootType, EventRepository<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(rootType,this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
     }
 
     public void registerQueryHandler(Class<? extends EntityQueryHandler> handlerType) {
@@ -51,6 +52,7 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
         validateHandler("defaultQueryHandlers", rootType, entityType);
         mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultGetQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
         mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()+"Events").toLowerCase(), s -> Util.createObject(DefaultGetEventsQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
     }
 
     public Optional<EntityQueryHandler> getQueryHandler(String name) {

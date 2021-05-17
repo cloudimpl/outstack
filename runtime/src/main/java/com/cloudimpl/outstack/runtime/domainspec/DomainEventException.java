@@ -27,7 +27,8 @@ public class DomainEventException extends RuntimeException{
         TENANT_ID_NOT_AVAILABLE,
         TENANT_ID_NOT_APPLICABLE,
         INVALID_ENTITY_TYPE,
-        UNHANDLED_EVENT
+        UNHANDLED_EVENT,
+        INVALID_VERSION
     }
     
     private final ErrorCode errCode;

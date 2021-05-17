@@ -11,5 +11,6 @@ package com.cloudimpl.outstack.runtime.domainspec;
  */
 public interface ICommand {
     String commandName();
+    String version();
     <T extends Command> T unwrap(Class<T> type);
 }
