@@ -10,3 +10,4 @@ outstack:
         configs:
           endpoint: http://localhost:1234
           leaderTable : LeaderTable 
+

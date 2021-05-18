@@ -243,8 +243,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                             return false;
                         }
                     }
-                    if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
-                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(0, entry.getValue().length() - 2))) {
+                    else if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
+                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1))) {
                             return false;
                         }
                     } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
