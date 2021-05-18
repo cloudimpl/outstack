@@ -26,11 +26,14 @@ public class AyncEntityContext<T extends RootEntity> extends RootEntityContext<T
         super(entityType, tid, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector,version);
     }
     
-    
     public <C extends ChildEntity<T>> C create(Class<C> type,String id, Event<C> event)
     {
-        //EntityContextProvider.Transaction<T> tx = getTx();
-       // ChildEntityContext<T,C> context = tx.getContext((Class<K>) type);
-        return null;
+        return (C) getTx().getContext(type).asChildContext().create(id, event);
+    }
+    
+    
+     @Override
+    public  AyncEntityContext<T> asAsyncEntityContext() {
+        return this;
     }
 }

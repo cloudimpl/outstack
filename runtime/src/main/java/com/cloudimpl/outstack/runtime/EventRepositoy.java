@@ -21,7 +21,7 @@ import java.util.UUID;
 public abstract class EventRepositoy<T extends RootEntity> implements QueryOperations<T>{
 
     public static final String TID_PREFIX = "id-";
-    private final Class<T> rootType;
+    protected final Class<T> rootType;
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;

@@ -35,11 +35,11 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(rootType,this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository,queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(rootType, this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
@@ -64,7 +64,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     public Optional<EntityCommandHandler> getCmdHandler(String name) {
         return Optional.ofNullable(mapCmdHandlers.get(name.toLowerCase()));
     }
-    
+
     public static void validateHandler(String name, Class<? extends RootEntity> rootType, Class<? extends Entity> type) {
         if (RootEntity.isMyType(type)) {
             if (type != rootType) {
@@ -84,29 +84,35 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
         if (ICommand.class.isInstance(input)) {
             return applyCommand((ICommand) input);
-        }else {
+        } else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
 
     }
 
     private Publisher applyCommand(ICommand cmd) {
-        try
-        {
-            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
-                .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction)ct.getTx(), ct.getEvents()))
-                .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction)ct.getTx()))
-                .map(ct -> ct.getTx().getReply());
-        }catch(Throwable thr)
-        {
+        try {
+            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd)) //TODO do the asyn sybscription
+                    .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
+                    .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                    .flatMap(ct -> resolveReply(ct.getTx().getReply()));
+        } catch (Throwable thr) {
             thr.printStackTrace();
             return Mono.error(thr);
         }
-        
+
+    }
+
+    private Mono resolveReply(Object reply) {
+        if (Mono.class.isInstance(reply)) {
+            return (Mono) reply;
+        } else {
+            return Mono.just(reply);
+        }
     }
 
     public void applyEvent(Event event) {
-        EntityContextProvider.Transaction<T> tx = contextProvider.createWritableTransaction(event.rootId(), event.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createWritableTransaction(event.rootId(), event.tenantId(), false);
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
     }

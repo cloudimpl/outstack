@@ -13,7 +13,6 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -219,5 +218,10 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     @Override
     public  ResultSet<Event<T>> getEntityEventsById(String id,Query.PagingRequest pageRequest) {
         return  this.<T>getQueryOperations().getEventsByRootId(entityType, _id, getTenantId(), pageRequest);
+    }
+
+    @Override
+    public <R extends RootEntity> AyncEntityContext<R> asAsyncEntityContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }
 }

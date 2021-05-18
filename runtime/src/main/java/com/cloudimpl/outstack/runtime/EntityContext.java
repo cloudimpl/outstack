@@ -9,7 +9,6 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -105,6 +104,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     
     public abstract <R extends RootEntity> RootEntityContext<R> asRootContext();
 
+    public abstract <R extends RootEntity> AyncEntityContext<R> asAsyncEntityContext();
 
     public abstract <R extends RootEntity,K extends ChildEntity<R>> ChildEntityContext<R,K> asChildContext() ;
     

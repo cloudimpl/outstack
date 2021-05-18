@@ -56,7 +56,7 @@ public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> i
         }
         I query = input.unwrap(this.queryType);
         validateInput(query);
-        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId());
+        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId(),false);
         EntityContext<T> context = tx.getContext(this.entityType);
         context.setTx(tx);
         R reply = apply((EntityQueryContext<T>) context, query);

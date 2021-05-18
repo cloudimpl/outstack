@@ -21,8 +21,8 @@ import com.cloudimpl.outstack.runtime.util.Util;
  */
 public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements CommandHandler<T>
 {
-    private final Class<T> enityType;
-    private final Class<I> cmdType;
+    protected final Class<T> enityType;
+    protected final Class<I> cmdType;
     public EntityCommandHandler() {
         this.enityType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 0);
         this.cmdType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 1);
@@ -46,7 +46,7 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
     
     protected abstract  R execute(EntityContext<T> context,I command);
     
-    private void validateInput(I command)
+    protected void validateInput(I command)
     {
         if(isTenantFunction() && command.tenantId() == null)
         {
@@ -54,7 +54,7 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         }
     }
     
-    public EntityContext<T>  emit(EntityContextProvider contextProvider,ICommand input)
+    protected EntityContext<T>  emit(EntityContextProvider contextProvider,ICommand input)
     {
         if(!contextProvider.getVersion().equals(input.version()))
         {
@@ -62,7 +62,7 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         }
         I cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
-        EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), cmd.tenantId());
+        EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), cmd.tenantId(),false);
         EntityContext<T> context = tx.getContext(enityType);
         context.setTx(tx);
         R reply = apply(context, (I) cmd);

@@ -47,8 +47,8 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         this.queryOperationSelector = queryOperationSelector;
     }
 
-    public ReadOnlyTransaction<T> createTransaction(String rootTid, String tenantId) {
-        return new ReadOnlyTransaction(idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector,version);
+    public ReadOnlyTransaction<T> createTransaction(String rootTid, String tenantId,boolean async) {
+        return new ReadOnlyTransaction(idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector,version,async);
     }
 
     private <T> void validateObject(T target)
@@ -76,9 +76,10 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected final Consumer<Object> validator;
         protected final Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector;
         protected final String version;
+        protected final boolean async;
         public ReadOnlyTransaction(Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,
-                Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version) {
+                Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version,boolean async) {
             this.idGenerator = idGenerator;
             this.rootTid = rootTid;
             this.tenantId = tenantId;
@@ -86,6 +87,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             this.validator = validator;
             this.queryOperationSelector = queryOperationSelector;
             this.version = version;
+            this.async = async;
         }
 
         public String getTenantId() {

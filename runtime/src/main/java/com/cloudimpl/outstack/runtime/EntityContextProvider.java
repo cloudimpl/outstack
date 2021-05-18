@@ -25,9 +25,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 
 /**
  *
@@ -42,8 +39,8 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         this.entityProvider = entityProvider;
     }
 
-    public Transaction<T> createWritableTransaction(String rootTid, String tenantId) {
-        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector,version);
+    public Transaction<T> createWritableTransaction(String rootTid, String tenantId,boolean async) {
+        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation,this::validateObject,this.queryOperationSelector,version,async);
     }
 
     private <T> void validateObject(T target)
@@ -63,8 +60,8 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         private Object reply;
         private final List<Event> eventList;
         public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid,
-                String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version) {
-            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector,version);
+                String tenantId, QueryOperations<R> queryOperation,Consumer<Object> validator,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector,String version,boolean async) {
+            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector,version,async);
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.eventList = new LinkedList<>();
