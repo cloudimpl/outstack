@@ -239,12 +239,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                     }
                 } else if (jsonPrim.isString()) {
                     if (entry.getValue().startsWith("%") && entry.getValue().length() > 1) {
-                        if (!jsonPrim.getAsString().endsWith(entry.getValue().substring(1))) {
+                        if (!jsonPrim.getAsString().toLowerCase().endsWith(entry.getValue().substring(1).toLowerCase())) {
                             return false;
                         }
                     }
                     else if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
-                        if (!jsonPrim.getAsString().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1))) {
+                        if (!jsonPrim.getAsString().toLowerCase().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1).toLowerCase())) {
                             return false;
                         }
                     } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
