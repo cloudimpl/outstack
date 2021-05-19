@@ -66,4 +66,8 @@ public abstract class EntityCommandHandler<T extends Entity, I extends Command, 
     public Class<T> getEntityType() {
         return entityType;
     }
+
+    public Class<I> getCmdType() {
+        return cmdType;
+    }
 }

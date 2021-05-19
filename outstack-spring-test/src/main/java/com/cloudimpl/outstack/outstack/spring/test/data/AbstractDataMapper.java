@@ -27,7 +27,6 @@ public abstract class AbstractDataMapper<T> {
     }
 
     private void scanFields(Class<T> entityType) {
-
         this.fieldMap = Arrays.stream(entityType.getDeclaredFields())
                 .peek(e -> e.setAccessible(true))
                 .collect(Collectors.toMap(Field::getName, Function.identity()));
@@ -60,5 +59,9 @@ public abstract class AbstractDataMapper<T> {
 
     public Class<T> getEntityType() {
         return entityType;
+    }
+
+    public Map<String, Field> getFieldMap() {
+        return fieldMap;
     }
 }

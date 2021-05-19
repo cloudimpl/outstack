@@ -9,16 +9,16 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- *
- * @author nuwan
  * @param <T>
+ * @author nuwan
  */
-public abstract class EventRepository<T extends RootEntity> implements QueryOperations<T>{
+public abstract class EventRepository<T extends RootEntity> implements QueryOperations<T> {
 
     public static final String TID_PREFIX = "id-";
     private final Class<T> rootType;
@@ -27,40 +27,37 @@ public abstract class EventRepository<T extends RootEntity> implements QueryOper
     private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;
     protected final ResourceHelper resourceHelper;
     protected final String version;
+
     public EventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
         this.version = Entity.getVersion(rootType);
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
-        this.mapTxCheckpoints = new ResourceCache<>(1000,Duration.ofHours(1));
+        this.mapTxCheckpoints = new ResourceCache<>(1000, Duration.ofHours(1));
         this.eventStream = eventStream;
         //this.eventStream.flux().publishOn(Schedulers.parallel()).doOnNext(this::onEvent).subscribe();
     }
 
-//    public void publish(EventTxList txList) {
+    //    public void publish(EventTxList txList) {
 //        txList.getEvents().forEach(this::publish);
 //    }
     public String generateTid() {
-        return TID_PREFIX+UUID.randomUUID().toString();
+        return TID_PREFIX + UUID.randomUUID().toString();
     }
 
     public abstract void saveTx(EntityContextProvider.Transaction transaction);
-    
+
 //    public <K extends Entity> K loadEntityWithClone(String resourceName) {
 //         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);
 //    }
-    
+
     public abstract <T extends Entity> T applyEvent(Event event);
-    
-    public <K extends Entity,C extends ChildEntity<T>> Optional<K> loadEntityWithClone(Class<T> rootType,String id,Class<C> childType,String childId,String tenantId)
-    {
-        if(childType == null)
-        {
-            return getRootById(rootType, id, tenantId).map(e->e.cloneEntity());
-        }
-        else
-        {
-            return getChildById(rootType, id, childType, childId, tenantId).map(e->e.cloneEntity());
+
+    public <K extends Entity, C extends ChildEntity<T>> Optional<K> loadEntityWithClone(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
+        if (childType == null) {
+            return getRootById(rootType, id, tenantId).map(Entity::cloneEntity);
+        } else {
+            return getChildById(rootType, id, childType, childId, tenantId).map(Entity::cloneEntity);
         }
     }
 }

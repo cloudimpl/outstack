@@ -2,14 +2,15 @@
 Feature: Sign Up Feature
   Background:
     Given testing CreateOrganization functionality of Organization
-    Given with organizationData for
+    Given organization data
       | orgName         | website            |
-      | Xventure Org.   | www.xventure.io    |
-      | Microsoft       | www.microsoft.com  |
-      | Apple Inc.      | www.apple.com      |
+      | orgxventure     | www.xventure.io    |
+      | microsoft       | www.microsoft.com  |
 
-  Scenario: Valid Registration Form Information
-    Given testing CreateOrganization functionality of Organization
+  Scenario: Create Organization with Existing Organization Name
+    When user creates an organization with name microsoft
+    Then Request should be rejected
 
-
-  
+  Scenario: Create Organization with New Organization Name
+    When user creates an organization with name xventure and website www.xventure.org
+    Then Request should be successful

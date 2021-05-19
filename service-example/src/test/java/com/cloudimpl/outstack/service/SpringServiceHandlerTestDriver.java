@@ -6,13 +6,16 @@
 package com.cloudimpl.outstack.service;
 
 import com.cloudimpl.outstack.domain.example.Organization;
-import com.cloudimpl.outstack.outstack.spring.test.ResourceLoader;
+import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.outstack.spring.test.data.TableDataMapper;
-import com.cloudimpl.outstack.runtime.EntityCommandHandler;
-import com.cloudimpl.outstack.runtime.Handler;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.outstack.spring.test.runtime.TestContext;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.service.example.CreateOrganization;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+import org.springframework.util.Assert;
 
 import java.util.List;
 import java.util.Map;
@@ -22,25 +25,65 @@ import java.util.Map;
  */
 public class SpringServiceHandlerTestDriver {
 
-    public static ResourceLoader resourceLoader = new ResourceLoader();
-
-    private Handler<Organization> organizationHandler;
+    private TestContext<Organization> testContext;
+    private String organizationName;
 
     @Given("testing {word} functionality of {word}")
     public void initHandler(String handlerName, String entity) {
-        Class<? extends EntityCommandHandler> commandHandlerType = resourceLoader.getMapCmdHandlers().get(handlerName);
-        Class<? extends Entity> entityType = resourceLoader.getMapEntities().get(entity);
-
+        this.testContext = new TestContext<>(Organization.class);
+        testContext.initialize(handlerName, entity);
         System.out.println("handler :" + handlerName + " for entity : " + entity);
     }
 
-    @Given("with organizationData for")
+    @Given("organization data")
     public void withOrganizationDataFor(DataTable dataTable) {
         List<Map<String, String>> maps = dataTable.asMaps(String.class, String.class);
+
         TableDataMapper<Organization> dataMapper = new TableDataMapper<>(Organization.class);
 
-        List<Organization> organizations = dataMapper.mapData(maps);
+        CreateOrganization createOrganization = new CreateOrganization();
+        List<Organization> entities = dataMapper.mapData(maps);
+        for (Organization organization: entities) {
+            OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder()
+                    .withOrgName(organization.getOrgName())
+                    .withVersion("V1")
+                    .build();
+            testContext.executeCommand(createOrganization, organizationCreateRequest);
+        }
+    }
 
-        System.out.println(organizations);
+    @When("user creates an organization with name {word}")
+    public void aboveOrganizationDetailsWhenUserCreatesAnOrganizationWithName(String organizationName) {
+        try {
+            OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder().withOrgName(organizationName).withVersion("V1").build();
+            CreateOrganization createOrganization = new CreateOrganization();
+            testContext.executeCommand(createOrganization, organizationCreateRequest);
+        } catch (RuntimeException e) {
+            testContext.setRuntimeException(e);
+        }
+    }
+
+    @Then("Request should be rejected")
+    public void requestShouldBeRejected() {
+        Assert.isTrue(testContext.hasExceptionThrown(DomainEventException.class));
+    }
+
+    @When("user creates an organization with name {word} and website {word}")
+    public void userCreatesAnOrganizationWithNameAndWebsite(String organizationName, String website) {
+        try {
+            OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder()
+                    .withOrgName(organizationName)
+                    .withWebsite(website)
+                    .withVersion("V1").build();
+            CreateOrganization createOrganization = new CreateOrganization();
+            testContext.executeCommand(createOrganization, organizationCreateRequest);
+        } catch (RuntimeException e) {
+            testContext.setRuntimeException(e);
+        }
+    }
+
+    @Then("Request should be successful")
+    public void requestShouldBeSuccessful() {
+        Assert.isTrue(!testContext.hasExceptionThrown(RuntimeException.class));
     }
 }

@@ -26,7 +26,7 @@ public class ResourceLoader {
     private final Map<String, Class<? extends Entity>> mapEntities = new HashMap<>();
     private final Map<String, Class<? extends Event>> mapEvents = new HashMap<>();
     private final Map<String, Class<? extends Command>> mapCommands = new HashMap<>();
-    private final Map<String, Class<? extends EntityCommandHandler>> mapCmdHandlers = new HashMap<>();
+    private final Map<String, Class<? extends EntityCommandHandler<? extends Entity, ? extends Command, ?>>> mapCmdHandlers = new HashMap<>();
     private final Map<String, Class<? extends EntityEventHandler>> mapEvtHandlers = new HashMap<>();
     
     public ResourceLoader() {
@@ -68,7 +68,7 @@ public class ResourceLoader {
     private void loadCmdHandlers() {
         ClassInfoList controlClasses = getScanResult().getSubclasses(EntityCommandHandler.class.getName());
         for (Class<?> type : controlClasses.loadClasses()) {
-            mapCmdHandlers.put(type.getSimpleName(), (Class<? extends EntityCommandHandler>) type);
+            mapCmdHandlers.put(type.getSimpleName(), (Class<? extends EntityCommandHandler<? extends Entity, ? extends Command, ?>>) type);
         }
     }
     
@@ -91,7 +91,7 @@ public class ResourceLoader {
         return mapCommands;
     }
 
-    public Map<String, Class<? extends EntityCommandHandler>> getMapCmdHandlers() {
+    public Map<String, Class<? extends EntityCommandHandler<? extends Entity, ? extends Command, ?>>> getMapCmdHandlers() {
         return mapCmdHandlers;
     }
 

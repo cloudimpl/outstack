@@ -1,11 +1,10 @@
 package com.cloudimpl.outstack.domain.example;
 
-import javax.validation.constraints.NotBlank;
-import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.cloudimpl.outstack.domain.example.Tenant;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 
 public class TenantCreated extends Event<Tenant> {
