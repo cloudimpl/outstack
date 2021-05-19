@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.common;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
@@ -29,9 +30,14 @@ public class FluxProcessor<T> {
     private final List<FluxSink<T>> list;
     private final Flux<T> flux;
     public FluxProcessor() {
+       this(t->{});
+    }
+    
+    public FluxProcessor(Consumer<FluxSink<T>> consumer) {
         list = new CopyOnWriteArrayList<>();
         flux = Flux.<T>create(emitter->{
             System.out.println("subscription added:"+Thread.currentThread().getName());
+            consumer.accept(emitter);
             list.add(emitter);
             emitter.onCancel(()->this.remove(emitter));
             emitter.onDispose(()->this.remove(emitter));

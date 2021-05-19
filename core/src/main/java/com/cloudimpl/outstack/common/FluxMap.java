@@ -25,7 +25,7 @@ public class FluxMap<K, V> {
 
     private final Map<K, V> map;
     private final SingleFluxProcessor<Item<K, V>> itemProcessor;
-    private final Flux<Event<K, V>> flux;
+    //private final Flux<Event<K, V>> flux;
     private final FluxProcessor<Event<K, V>> publisher;
     public static final Scheduler defaultSched = Schedulers.newSingle("fluxmap",true);
     
@@ -37,12 +37,13 @@ public class FluxMap<K, V> {
         map = new ConcurrentHashMap<>();
         itemProcessor = new SingleFluxProcessor<>(this::onEmitter);
         itemProcessor.flux().subscribeOn(scheduler).doOnNext(this::onItem).subscribe();
-        publisher = new FluxProcessor<>();
-        flux = Flux.fromIterable(map.entrySet()).subscribeOn(scheduler).map(e -> new Event<>(Event.Type.ADD, e.getKey(), e.getValue())).concatWith(publisher.flux().publishOn(Schedulers.parallel()));
+        publisher = new FluxProcessor<>(sink->map.entrySet().forEach(e->{
+            sink.next(new Event<>(Event.Type.ADD, e.getKey(), e.getValue()));} ));
+       // flux = Flux.fromIterable(map.entrySet()).subscribeOn(scheduler).map(e -> new Event<>(Event.Type.ADD, e.getKey(), e.getValue())).concatWith(publisher.flux().publishOn(Schedulers.parallel()));
     }
 
     public Flux<Event<K, V>> flux() {
-        return flux;
+        return publisher.flux();
     }
 
     public Collection<V> values() {
@@ -116,8 +117,8 @@ public class FluxMap<K, V> {
         map.put("key1", "value1");
         map.put("key2", "value1");
         map.put("key3", "value1");
-        Disposable hnd1 = map.flux.doOnNext(e -> System.out.println(Thread.currentThread().getName() + ":" + e)).subscribe();
-        Disposable hnd2 = map.flux.doOnNext(e -> System.out.println(Thread.currentThread().getName() + "->" + e)).subscribe();
+        Disposable hnd1 = map.flux().doOnNext(e -> System.out.println(Thread.currentThread().getName() + ":" + e)).subscribe();
+        Disposable hnd2 = map.flux().doOnNext(e -> System.out.println(Thread.currentThread().getName() + "->" + e)).subscribe();
         Disposable hnd3 = Flux.interval(Duration.ofSeconds(1)).flatMap(i->map.put("bar"+i, "i"+i).switchIfEmpty(Mono.just("emptydddd").doOnNext(e->System.out.println(e)))).subscribe();
         Thread.sleep(10000);
         map.remove("key1");
