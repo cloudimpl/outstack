@@ -8,6 +8,7 @@ package com.cloudimpl.outstack.spring.controller;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ValidationErrorException;
+import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
@@ -19,11 +20,13 @@ import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundExcept
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -272,6 +275,22 @@ public class Controller {
         return Flux.interval(Duration.ofSeconds(1)).map(i -> "tick" + i + "\n");
     }
 
+    @GetMapping(value = "/streams/{context}/{version}/{rootEntity}/{rootId}")
+    @SuppressWarnings("unused")
+    private Flux<String> getRootEntityStream(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
+
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String query = DomainModelDecoder.decode(contentType).orElse("Get" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withVersion(version)
+                .withQuery(action.getName())
+                .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+        return cluster.requestStream(serviceDesc.getServiceName(), request).map(s->GsonCodec.encode(s)).onErrorMap(this::onError);
+    }
+    
     private SpringServiceDescriptor getServiceCmdDescriptor(String context, String version, String rootTypePlural) {
         return cluster.getServiceDescriptorContextManager()
                 .getCmdServiceDescriptorManager(context, version)

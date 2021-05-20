@@ -63,7 +63,7 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         I cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
         EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), cmd.tenantId(),false);
-        EntityContext<T> context = tx.getContext(enityType);
+        EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
         context.setTx(tx);
         R reply = apply(context, (I) cmd);
         tx.setReply(reply);

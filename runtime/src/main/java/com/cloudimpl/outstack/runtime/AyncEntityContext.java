@@ -28,7 +28,8 @@ public class AyncEntityContext<T extends RootEntity> extends RootEntityContext<T
     
     public <C extends ChildEntity<T>> C create(Class<C> type,String id, Event<C> event)
     {
-        return (C) getTx().getContext(type).asChildContext().create(id, event);
+        ChildEntityContext childContext = (ChildEntityContext) getTx().getContext(type);
+        return (C) childContext.asChildContext().create(id, event);
     }
     
     

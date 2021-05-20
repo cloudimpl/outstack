@@ -17,8 +17,8 @@ package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import reactor.core.publisher.Mono;
 
 /**
@@ -27,11 +27,10 @@ import reactor.core.publisher.Mono;
  * @param <T>
  * @param <C>
  */
-public abstract class AsyncEntityCommandHandler<T extends Entity,C extends  Command> extends EntityCommandHandler<T, C, Mono>{
+public abstract class AsyncEntityCommandHandler<T extends RootEntity,C extends  Command,R> extends EntityCommandHandler<T, C, Mono<R>>{
 
     
-    @Override
-    public EntityContext<T>  emit(EntityContextProvider contextProvider,ICommand input)
+    public Mono<EntityContext<T>>  emitAsync(EntityContextProvider contextProvider,ICommand input)
     {
         if(!contextProvider.getVersion().equals(input.version()))
         {
@@ -40,10 +39,8 @@ public abstract class AsyncEntityCommandHandler<T extends Entity,C extends  Comm
         C cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
         EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), cmd.tenantId(),true);
-        EntityContext<T> context = tx.getContext(enityType);
+        EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
         context.setTx(tx);
-        Mono reply = apply(context, (C) cmd);
-        tx.setReply(reply);
-        return context;
+       return apply(context, (C)cmd).doOnNext(r->tx.setReply(r)).map(r->context);
     }
 }

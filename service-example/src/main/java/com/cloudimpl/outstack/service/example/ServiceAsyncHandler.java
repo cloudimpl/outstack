@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.service.config;
+package com.cloudimpl.outstack.service.example;
 
+import com.cloudimpl.outstack.domain.example.Organization;
+import com.cloudimpl.outstack.domain.example.OrganizationCreated;
+import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.runtime.AsyncEntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
-import com.cloudimpl.outstack.runtime.configs.ConfigGroupEntity;
-import com.cloudimpl.outstack.runtime.configs.CreateConfigRequest;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
-public class CreateConfigHandler extends AsyncEntityCommandHandler<ConfigGroupEntity, CreateConfigRequest,String>{
+public class ServiceAsyncHandler extends AsyncEntityCommandHandler<Organization, OrganizationCreateRequest,Organization>{
 
     @Override
-    protected Mono<String> execute(EntityContext<ConfigGroupEntity> context, CreateConfigRequest command) {
-        return Mono.just("hello");
+    protected Mono execute(EntityContext<Organization> context, OrganizationCreateRequest command) {
+        return Mono.just(context.create(command.getOrgName(), new OrganizationCreated(command.getWebsite()+"xxxxxx", command.getOrgName())));
     }
     
 }

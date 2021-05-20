@@ -224,4 +224,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     public <R extends RootEntity> AyncEntityContext<R> asAsyncEntityContext() {
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public <R extends RootEntity> AsyncRootEntityQueryContext<R> asAsyncQueryContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
 }

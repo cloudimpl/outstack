@@ -87,20 +87,27 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
         } else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
-
     }
 
     private Publisher applyCommand(ICommand cmd) {
         try {
-            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd)) //TODO do the asyn sybscription
-                    .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                    .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
-                    .flatMap(ct -> resolveReply(ct.getTx().getReply()));
+            EntityCommandHandler handler = getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase()));
+            if (AsyncEntityCommandHandler.class.isInstance(handler)) {
+                Mono<EntityContext> mono = AsyncEntityCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd);
+                return mono.doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
+                        .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                        .flatMap(ct -> resolveReply(ct.getTx().getReply()));
+            } else {
+                return Mono.just(handler.emit(contextProvider, cmd))
+                        .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
+                        .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                        .flatMap(ct -> resolveReply(ct.getTx().getReply()));
+            }
+
         } catch (Throwable thr) {
             thr.printStackTrace();
             return Mono.error(thr);
         }
-
     }
 
     private Mono resolveReply(Object reply) {
