@@ -215,7 +215,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (leftPrim.isNumber() && rightPrim.isNumber()) {
             return leftPrim.getAsBigDecimal().compareTo(rightPrim.getAsBigDecimal());
         } else if (leftPrim.isString() && rightPrim.isString()) {
-            return leftPrim.getAsString().compareTo(rightPrim.getAsString());
+            return leftPrim.getAsString().compareToIgnoreCase(rightPrim.getAsString());
         } else if (leftPrim.isBoolean() && rightPrim.isBoolean()) {
             return Boolean.compare(leftPrim.getAsBoolean(), rightPrim.getAsBoolean());
         }
