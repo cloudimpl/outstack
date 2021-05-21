@@ -21,7 +21,7 @@ import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.spring.component.SpringQueryService;
 import com.cloudimpl.outstack.spring.domain.CommandHandlerEntity;
-import com.cloudimpl.outstack.spring.domain.MicroService;
+import com.cloudimpl.outstack.spring.domain.ServiceModule;
 import com.cloudimpl.outstack.spring.domain.QueryHandlerEntity;
 
 /**
@@ -30,10 +30,10 @@ import com.cloudimpl.outstack.spring.domain.QueryHandlerEntity;
  */
 @CloudFunction(name = "MicroServiceQueryService")
 @Router(routerType = RouterType.ROUND_ROBIN)
-public class MicroServiceQueryService extends SpringQueryService<MicroService>{
+public class MicroServiceQueryService extends SpringQueryService<ServiceModule>{
     static
     {
-        $$(MicroService.class);
+        $$(ServiceModule.class);
         $$(CommandHandlerEntity.class);
         $$(QueryHandlerEntity.class);
     }

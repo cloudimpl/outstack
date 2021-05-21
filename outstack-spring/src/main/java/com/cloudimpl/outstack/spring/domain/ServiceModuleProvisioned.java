@@ -23,32 +23,45 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class EventHandlerRegistered extends Event<EventHandlerEntity>{
+public class ServiceModuleProvisioned extends Event<ServiceModule>{
+    private final String  serviceName;
     private final String rootEntity;
-    private final String handlerName;
-    private final String entityName;
+    private final String  version;
+    private final String  apiContext;
+    private final boolean tenantService;
 
-    public EventHandlerRegistered(String handlerName, String entityName,String rootEntity) {
+    public ServiceModuleProvisioned(String serviceName,String rootEntity, String version,String apiContext, boolean tenantService) {
+        this.serviceName = serviceName;
         this.rootEntity = rootEntity;
-        this.handlerName = handlerName;
-        this.entityName = entityName;
+        this.version = version;
+        this.apiContext = apiContext;
+        this.tenantService = tenantService;
     }
 
-    public String getHandlerName() {
-        return handlerName;
-    }
-
-    public String getEntityName() {
-        return entityName;
+    public String getServiceName() {
+        return serviceName;
     }
 
     public String getRootEntity() {
         return rootEntity;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
+    public String getApiContext() {
+        return apiContext;
+    }
+
+    public boolean isTenantService() {
+        return tenantService;
+    }
+    
+    
     @Override
     public Class<? extends Entity> getOwner() {
-        return EventHandlerEntity.class;
+        return ServiceModule.class;
     }
 
     @Override
@@ -58,12 +71,12 @@ public class EventHandlerRegistered extends Event<EventHandlerEntity>{
 
     @Override
     public String entityId() {
-        return handlerName;
+        return this.rootEntity;
     }
 
     @Override
     public String rootEntityId() {
-        return rootEntity;
+        return this.rootEntity;
     }
     
 }

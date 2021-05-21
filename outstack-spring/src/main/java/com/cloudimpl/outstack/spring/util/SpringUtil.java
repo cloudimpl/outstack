@@ -43,7 +43,7 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        SpringServiceDescriptor srvDesc = getServiceDescription(resourceHelper.getApiContext(), func.name(), funcType);
+        SpringServiceDescriptor srvDesc = getServiceDescription(resourceHelper.getApiContext(),resourceHelper.getDomainOwner(),resourceHelper.getDomainContext(), func.name(), funcType);
         attr.put("serviceMeta", GsonCodec.encode(srvDesc));
         //attr.put("plural", value)
         return new ServiceMeta(funcType, new CloudFunctionMeta(srvDesc.getServiceName(), ""), router, attr);
@@ -56,17 +56,17 @@ public class SpringUtil {
         Objects.requireNonNull(func);
         Util.classForName(funcType.getName()); //TODO check class loading issue
         Map<String, String> attr = new HashMap<>();
-        SpringServiceDescriptor srvDesc = getQueryServiceDescription(resourceHelper.getApiContext(), func.name(), funcType);
+        SpringServiceDescriptor srvDesc = getQueryServiceDescription(resourceHelper.getApiContext(),resourceHelper.getDomainOwner(),resourceHelper.getDomainContext(), func.name(), funcType);
         attr.put("serviceQueryMeta", GsonCodec.encode(srvDesc));
         //attr.put("plural", value)
         return new ServiceMeta(funcType, new CloudFunctionMeta(srvDesc.getServiceName(), ""), router, attr);
     }
 
-    public static SpringServiceDescriptor getServiceDescription(String appContext, String serviceName, Class<? extends SpringService> serviceType) {
+    public static SpringServiceDescriptor getServiceDescription(String appContext,String domainOwner,String domainContext, String serviceName, Class<? extends SpringService> serviceType) {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends CommandHandler<?>>> handlers = SpringService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,domainOwner,domainContext,domainOwner+"/"+domainContext+"/"+entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
         handlers.stream().filter(h -> EntityCommandHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityCommandHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
@@ -106,11 +106,11 @@ public class SpringUtil {
         return desc;
     }
 
-    public static SpringServiceDescriptor getQueryServiceDescription(String appContext, String serviceName, Class<? extends SpringQueryService> serviceType) {
+    public static SpringServiceDescriptor getQueryServiceDescription(String appContext,String domainOwner,String domainContext, String serviceName, Class<? extends SpringQueryService> serviceType) {
         Class<? extends RootEntity> rootType = Util.extractGenericParameter(serviceType, SpringQueryService.class, 0);
         EntityMeta entityMeta = rootType.getAnnotation(EntityMeta.class);
         Collection<Class<? extends Handler<?>>> handlers = SpringQueryService.handlers(rootType);
-        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext, entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
+        SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,domainOwner,domainContext,domainOwner+"/"+domainContext+"/"+ entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.hasTenant(rootType));
         handlers.stream().filter(h -> EntityQueryHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityQueryHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);

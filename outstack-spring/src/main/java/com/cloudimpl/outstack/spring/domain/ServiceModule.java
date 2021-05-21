@@ -14,8 +14,8 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "MicroServices",version = "v1")
-public class MicroService extends RootEntity {
+@EntityMeta(plural = "ServiceModules",version = "v1")
+public class ServiceModule extends RootEntity {
 
     private final String rootEntity;
     private  String serviceName;
@@ -23,7 +23,7 @@ public class MicroService extends RootEntity {
     private boolean tenantService;
     private String apiContext;
 
-    public MicroService(String rootEntity) {
+    public ServiceModule(String rootEntity) {
         this.rootEntity = rootEntity;
     }
 
@@ -52,18 +52,18 @@ public class MicroService extends RootEntity {
         return rootEntity;
     }
 
-    private void applyEvent(MicroServiceProvisioned microServiceProvisioned) {
-        this.serviceName = microServiceProvisioned.getServiceName();
-        this.version = microServiceProvisioned.getVersion();
-        this.tenantService = microServiceProvisioned.isTenantService();
-        this.apiContext = microServiceProvisioned.getApiContext();
+    private void applyEvent(ServiceModuleProvisioned serviceModuleProvisioned) {
+        this.serviceName = serviceModuleProvisioned.getServiceName();
+        this.version = serviceModuleProvisioned.getVersion();
+        this.tenantService = serviceModuleProvisioned.isTenantService();
+        this.apiContext = serviceModuleProvisioned.getApiContext();
     }
 
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "MicroServiceProvisioned": {
-                applyEvent((MicroServiceProvisioned) event);
+            case "ServiceModuleProvisioned": {
+                applyEvent((ServiceModuleProvisioned) event);
                 break;
             }
             default: {

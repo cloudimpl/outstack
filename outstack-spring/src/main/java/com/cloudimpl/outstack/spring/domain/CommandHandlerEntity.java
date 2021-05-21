@@ -24,7 +24,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
  * @author nuwan
  */
 @EntityMeta(plural = "CommandHandlers",version = "v1")
-public class CommandHandlerEntity extends ChildEntity<MicroService>{
+public class CommandHandlerEntity extends ChildEntity<ServiceModule>{
     private String handlerName;
     private String entityName;
 
@@ -41,8 +41,8 @@ public class CommandHandlerEntity extends ChildEntity<MicroService>{
     }
     
     @Override
-    public Class<MicroService> rootType() {
-        return MicroService.class;
+    public Class<ServiceModule> rootType() {
+        return ServiceModule.class;
     }
 
     @Override

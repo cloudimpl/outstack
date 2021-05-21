@@ -16,61 +16,50 @@
 package com.cloudimpl.outstack.spring.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
-import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 
 /**
  *
  * @author nuwan
  */
-@EntityMeta(plural = "EventHandlers",version = "v1")
-public class EventHandlerEntity extends ChildEntity<ServiceModule>{
-    private String handlerName;
-    private String entityName;
+public class ServiceModuleRef extends ChildEntity<DomainContext> {
 
-    public EventHandlerEntity(String handlerName) {
-        this.handlerName = handlerName;
+    private final String serviceRef;
+
+    public ServiceModuleRef(String serviceRef) {
+        this.serviceRef = serviceRef;
     }
 
-    public String getHandlerName() {
-        return handlerName;
-    }
-
-    public String getEntityName() {
-        return entityName;
-    }
-    
     @Override
-    public Class<ServiceModule> rootType() {
-        return ServiceModule.class;
+    public Class<DomainContext> rootType() {
+        return DomainContext.class;
     }
 
     @Override
     public String entityId() {
-        return handlerName;
+        return serviceRef;
     }
 
-    private void applyEvent(EventHandlerRegistered evtHandlerRegistered)
-    {
-        this.handlerName = evtHandlerRegistered.getHandlerName();
-        this.entityName = evtHandlerRegistered.getEntityName();
+    private void applyEvent(ServiceModuleRefCreated refCreated) {
+
     }
-    
+
     @Override
     protected void apply(Event event) {
-        switch(event.getClass().getSimpleName())
-        {
-            case "EventHandlerRegistered":
-            {
-                applyEvent((EventHandlerRegistered)event);
+        switch (event.getClass().getSimpleName()) {
+            case "ServiceModuleRefCreated": {
                 break;
+            }
+            default: {
+                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT, "unhandled event:" + event.getClass().getName());
             }
         }
     }
 
     @Override
     public String idField() {
-        return "handlerName";
+        return "serviceRef";
     }
-    
+
 }

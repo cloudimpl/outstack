@@ -53,7 +53,7 @@ public class QueryHandlerRegistered extends Event<CommandHandlerEntity>{
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return MicroService.class;
+        return ServiceModule.class;
     }
 
     @Override

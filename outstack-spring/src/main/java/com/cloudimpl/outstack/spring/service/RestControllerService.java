@@ -25,8 +25,8 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.domain.CommandHandlerRegistered;
 import com.cloudimpl.outstack.spring.domain.EventHandlerRegistered;
-import com.cloudimpl.outstack.spring.domain.MicroService;
-import com.cloudimpl.outstack.spring.domain.MicroServiceProvisioned;
+import com.cloudimpl.outstack.spring.domain.ServiceModule;
+import com.cloudimpl.outstack.spring.domain.ServiceModuleProvisioned;
 import com.cloudimpl.outstack.spring.domain.QueryHandlerRegistered;
 import com.cloudimpl.outstack.spring.util.SpringUtil;
 import java.util.Collection;
@@ -47,14 +47,14 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private ServiceDescriptorVersionManager serviceQieryManager;
     private ResourceHelper resourceHelper;
     private ILogger logger;
-    private EventRepositoy<MicroService> eventRepo;
+    private EventRepositoy<ServiceModule> eventRepo;
 
     @Inject
     public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
             ResourceHelper resourceHelper,
             ServiceDescriptorContextManager serviceManager, EventRepositoryFactory eventRepoFactory, ILogger logger) {
         this.logger = logger.createSubLogger(RestControllerService.class);
-        this.eventRepo = eventRepoFactory.createRepository(MicroService.class);
+        this.eventRepo = eventRepoFactory.createRepository(ServiceModule.class);
         this.resourceHelper = resourceHelper;
         this.serviceFlux = serviceFlux;
         this.serviceManager = serviceManager;
@@ -110,20 +110,20 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
     private void addEntities(SpringServiceDescriptor desc) {
 
-        MicroService service = eventRepo.getRootById(MicroService.class, desc.getRootType(), null).orElse(createMicroService(desc));
+        ServiceModule service = eventRepo.getRootById(ServiceModule.class, desc.getRootType(), null).orElse(createMicroService(desc));
         addActions(service.id(), desc.getRootType(), desc, desc.getRootActions());
         desc.entityDescriptors().forEach(ed -> {
             addActions(service.id(), ed.getName(), desc, desc.getChildActions(ed.getName()));
         });
     }
 
-    private MicroService createMicroService(SpringServiceDescriptor desc) {
+    private ServiceModule createMicroService(SpringServiceDescriptor desc) {
         String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(resourceHelper + ":" + desc.getRootType());
-        MicroServiceProvisioned provisioned = new MicroServiceProvisioned(desc.getServiceName(), desc.getRootType(), desc.getVersion(), desc.getApiContext(), desc.isTenantService());
+        ServiceModuleProvisioned provisioned = new ServiceModuleProvisioned(desc.getServiceName(), desc.getRootType(), desc.getVersion(), desc.getApiContext(), desc.isTenantService());
         provisioned.setId(id);
         provisioned.setRootId(id);
         provisioned.setAction(Event.Action.CREATE);
-         EntityHelper.setVersion(provisioned, Entity.getVersion(MicroService.class));
+         EntityHelper.setVersion(provisioned, Entity.getVersion(ServiceModule.class));
         return eventRepo.applyEvent(provisioned);
     }
 
@@ -134,7 +134,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
-            EntityHelper.setVersion(event, Entity.getVersion(MicroService.class));
+            EntityHelper.setVersion(event, Entity.getVersion(ServiceModule.class));
             eventRepo.applyEvent(event);
         });
 
@@ -144,7 +144,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
-            EntityHelper.setVersion(event, Entity.getVersion(MicroService.class));
+            EntityHelper.setVersion(event, Entity.getVersion(ServiceModule.class));
             eventRepo.applyEvent(event);
         });
 
@@ -154,7 +154,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
-             EntityHelper.setVersion(event, Entity.getVersion(MicroService.class));
+             EntityHelper.setVersion(event, Entity.getVersion(ServiceModule.class));
             eventRepo.applyEvent(event);
         });
     }

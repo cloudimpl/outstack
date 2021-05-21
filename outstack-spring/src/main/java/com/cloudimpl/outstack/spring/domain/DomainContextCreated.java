@@ -23,60 +23,48 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class MicroServiceProvisioned extends Event<MicroService>{
-    private final String  serviceName;
-    private final String rootEntity;
-    private final String  version;
-    private final String  apiContext;
-    private final boolean tenantService;
+public class DomainContextCreated extends Event<DomainContext> {
 
-    public MicroServiceProvisioned(String serviceName,String rootEntity, String version,String apiContext, boolean tenantService) {
-        this.serviceName = serviceName;
-        this.rootEntity = rootEntity;
-        this.version = version;
-        this.apiContext = apiContext;
-        this.tenantService = tenantService;
+    private final String domainId;
+    private final String domainOwner;
+    private final String domainContext;
+
+    public DomainContextCreated(String domainId, String domainOwner, String domainContext) {
+        this.domainId = domainId;
+        this.domainOwner = domainOwner;
+        this.domainContext = domainContext;
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public String getDomainId() {
+        return domainId;
     }
 
-    public String getRootEntity() {
-        return rootEntity;
+    public String getDomainOwner() {
+        return domainOwner;
     }
 
-    public String getVersion() {
-        return version;
+    public String getDomainContext() {
+        return domainContext;
     }
 
-    public String getApiContext() {
-        return apiContext;
-    }
-
-    public boolean isTenantService() {
-        return tenantService;
-    }
-    
-    
     @Override
     public Class<? extends Entity> getOwner() {
-        return MicroService.class;
+        return DomainContext.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return MicroService.class;
+        return DomainContext.class;
     }
 
     @Override
     public String entityId() {
-        return this.rootEntity;
+        return domainId;
     }
 
     @Override
     public String rootEntityId() {
-        return this.rootEntity;
+        return domainId;
     }
-    
+
 }

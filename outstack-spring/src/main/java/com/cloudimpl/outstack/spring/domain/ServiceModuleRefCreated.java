@@ -23,47 +23,43 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class EventHandlerRegistered extends Event<EventHandlerEntity>{
-    private final String rootEntity;
-    private final String handlerName;
-    private final String entityName;
+public class ServiceModuleRefCreated extends Event<ServiceModuleRef>{
 
-    public EventHandlerRegistered(String handlerName, String entityName,String rootEntity) {
-        this.rootEntity = rootEntity;
-        this.handlerName = handlerName;
-        this.entityName = entityName;
+    private final String serviceModuleRef;
+    private final String domainId;
+
+    public ServiceModuleRefCreated(String serviceModuleRef, String domainId) {
+        this.serviceModuleRef = serviceModuleRef;
+        this.domainId = domainId;
     }
 
-    public String getHandlerName() {
-        return handlerName;
+    public String getServiceModuleRef() {
+        return serviceModuleRef;
     }
 
-    public String getEntityName() {
-        return entityName;
+    public String getDomainId() {
+        return domainId;
     }
-
-    public String getRootEntity() {
-        return rootEntity;
-    }
-
+    
+    
     @Override
     public Class<? extends Entity> getOwner() {
-        return EventHandlerEntity.class;
+        return ServiceModuleRef.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return ServiceModule.class;
+        return DomainContext.class;
     }
 
     @Override
     public String entityId() {
-        return handlerName;
+        return serviceModuleRef;
     }
 
     @Override
     public String rootEntityId() {
-        return rootEntity;
+        return domainId;
     }
     
 }
