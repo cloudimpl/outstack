@@ -11,3 +11,7 @@ outstack:
           endpoint: http://localhost:1234
           leaderTable : LeaderTable 
 
+spring:
+  main:
+    web-application-type: reactive
+    
