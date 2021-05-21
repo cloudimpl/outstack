@@ -37,8 +37,6 @@ import reactor.core.publisher.Mono;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.ResponseEntity.created;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -59,7 +57,6 @@ public class Controller {
     @PostMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> createRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
-        return doAuth().flatMap(token->{
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElse("Create" + rootType);
@@ -70,7 +67,6 @@ public class Controller {
                 .withVersion(version)
                 .withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r->this.onRootEntityCreation(context, version, rootEntity, r));
-        });
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
@@ -363,13 +359,5 @@ public class Controller {
         params.remove("size");
         params.remove("sort");
         return params;
-    }
-    
-    @GetMapping("/doAuth")
-    private Mono<AbstractAuthenticationToken> doAuth()
-    {
-        return ReactiveSecurityContextHolder
-                .getContext()
-                .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err->err.printStackTrace());
     }
 }

@@ -1,56 +1,102 @@
-package com.cloudimpl.outstack.spring.security;
-
-import java.io.IOException;
-import java.security.cert.CertificateException;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-@Configuration
-@EnableWebFluxSecurity
-@EnableConfigurationProperties(SecurityProperties.class)
-public class SecurityConfig {
-
-    @Bean
-    //@SneakyThrows
-    RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
-
-        try {
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(securityProperties.getPublicKeyFile().getInputStream());
-            return RSAPublicKey.class.cast(cert.getPublicKey());
-        } catch (CertificateException | IOException ex) {
-            Logger.getLogger(SecurityConfig.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
-
-    @Bean
-    JwtBearerTokenAuthenticationManager authenticationManager(RSAPublicKey publicKey) {
-        return new JwtBearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
-    }
-
-    @Bean
-    SecurityWebFilterChain securityWebFilterChain(
-            ServerHttpSecurity http,
-            SecurityProperties securityProperties) {
-            http
-                .authorizeExchange()
-                .anyExchange().authenticated()
-                .and()
-                .oauth2ResourceServer()
-                .jwt()
-                .authenticationManager(authenticationManager(tokenVerificationKey(securityProperties)));
-        return http.build();
-    }
-}
+///*
+// * To change this license header, choose License Headers in Project Properties.
+// * To change this template file, choose Tools | Templates
+// * and open the template in the editor.
+// */
+//package com.cloudimpl.outstack.spring.security;
+//
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.context.annotation.Bean;
+//import org.springframework.context.annotation.Configuration;
+//import org.springframework.context.annotation.Primary;
+//import org.springframework.http.server.reactive.ServerHttpRequest;
+//import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
+//import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+//import org.springframework.security.config.web.server.ServerHttpSecurity;
+//import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+//import org.springframework.security.web.server.SecurityWebFilterChain;
+//import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+//import org.springframework.web.server.ServerWebExchange;
+//
+//
+///**
+// *
+// * @author nuwan
+// */
+//@Configuration
+//@EnableWebFluxSecurity
+//public class SecurityConfig {
+//
+//    @Autowired
+//    ReactiveAuthenticationManagerResolver<ServerWebExchange> authenticationManagerResolver;
+//     
+//    @Bean
+//    SecurityWebFilterChain springWebFilterChain(ServerHttpSecurity http) {
+//        return http
+//                .cors()
+//                .and()
+//                .csrf().disable()
+//                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+//               	.authorizeExchange((exchanges) -> 
+//				exchanges
+//					.pathMatchers("/login","/error","/logout").permitAll()
+//					.anyExchange().authenticated()
+//			)
+//                .httpBasic().disable()
+//	        .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver))
+//                .formLogin()
+//                .loginPage("/login")
+//                .and()
+//                .logout()
+//                .logoutUrl("/logout")
+//                .and()
+//                .build();
+//    }
+//
+//    //in case you want to encrypt password
+//    @Bean
+//    public BCryptPasswordEncoder passwordEncoder() {
+//        return new BCryptPasswordEncoder();
+//    }
+//
+//}
+////@Component
+////public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
+////	
+////	private final PasswordEncoder passwordEncoder;
+////	
+////        @Autowired
+////        private ReactiveUserDetailsService userDetailService;
+////        
+////	public WebSecurityConfig(PasswordEncoder passwordEncoder) {
+////		this.passwordEncoder = passwordEncoder;
+////	}
+////	
+////	@Override
+////	protected void configure(HttpSecurity http) throws Exception {
+////		http
+////				.cors()
+////				.and()
+////				.csrf().disable()
+////				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+////				.and()
+////				.authorizeRequests(configurer ->
+////						configurer
+////								.antMatchers(
+////										"/error",
+////										"/login"
+////								)
+////								.permitAll()
+////								.anyRequest()
+////								.authenticated()
+////				)
+////				.exceptionHandling().disable()
+////				.oauth2ResourceServer(OAuth2ResourceServerConfigurer::jwt);
+////	}
+////	
+////	@Bean
+////	//@Override
+////	protected ReactiveUserDetailsService userDetailsService() {
+////		return userDetailService;
+////	}
+////}
