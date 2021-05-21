@@ -2,7 +2,6 @@ package com.cloudimpl.outstack.spring.security;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
-import lombok.SneakyThrows;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -45,11 +44,8 @@ public class SecurityConfig {
     SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
             SecurityProperties securityProperties) {
-        http
+            http
                 .authorizeExchange()
-               // .pathMatchers("/**")
-               // .authenticated()
-                //.hasAuthority("global")
                 .anyExchange().authenticated()
                 .and()
                 .oauth2ResourceServer()

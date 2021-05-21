@@ -15,29 +15,30 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import java.util.Collection;
 import java.util.Collections;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
 
 /**
  *
  * @author nuwan
  */
-public class JwtAuthenticationToken extends AbstractAuthenticationToken{
+public class JwtAuthenticatedToken extends AbstractAuthenticationToken{
 
-    public JwtAuthenticationToken(JwtToken token) {
+    String token;
+    public JwtAuthenticatedToken(JwtToken token,String credential) {
         super(Collections.EMPTY_SET);
+        this.token = credential;
+        setAuthenticated(true);
     }
 
     @Override
     public Object getCredentials() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return this.token;
     }
 
     @Override
     public Object getPrincipal() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new UserDetail("nuwan");
     }
     
 }
