@@ -216,6 +216,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             return leftPrim.getAsBigDecimal().compareTo(rightPrim.getAsBigDecimal());
         } else if (leftPrim.isString() && rightPrim.isString()) {
             return leftPrim.getAsString().compareTo(rightPrim.getAsString());
+        } else if (leftPrim.isBoolean() && rightPrim.isBoolean()) {
+            return Boolean.compare(leftPrim.getAsBoolean(), rightPrim.getAsBoolean());
         }
         throw new RepositoryException("unsupported data type for sorting . {0} : {1} ", leftJson, rightJson);
     }
@@ -242,8 +244,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                         if (!jsonPrim.getAsString().toLowerCase().endsWith(entry.getValue().substring(1).toLowerCase())) {
                             return false;
                         }
-                    }
-                    else if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
+                    } else if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
                         if (!jsonPrim.getAsString().toLowerCase().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1).toLowerCase())) {
                             return false;
                         }
@@ -330,9 +331,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         Stream<Event<K>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
         if (technicald) {
             stream = stream.filter(e -> e.getEntityTRN().equals(rn));
-        }
-        else
-        {
+        } else {
             stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
         Collection<Event<K>> cols = stream.map(e -> (Event<K>) e)
