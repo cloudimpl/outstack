@@ -15,7 +15,9 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
-import com.cloudimpl.outstack.runtime.iam.PolicyStatement.EffectType;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.Event;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -23,16 +25,19 @@ import java.util.Collections;
  *
  * @author nuwan
  */
-public class PolicyStatementDescriptor {
+public class PolicyStatementDescriptor extends ChildEntity<PolicyStatementGroup> {
+
+    public enum EffectType {
+        ALLOW, DENY
+    }
 
     private final String sid;
-    private final EffectType effect;
-    private final Collection<ActionDescriptor> actions;
-    private final Collection<ResourceDescriptor> resources;
+    private  EffectType effect;
+    private  Collection<ActionDescriptor> actions;
+    private  Collection<ResourceDescriptor> resources;
 
-    public PolicyStatementDescriptor(String sid, EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
+    public PolicyStatementDescriptor(String sid) {
         this.sid = sid;
-        this.effect = effect;
         this.actions = Collections.unmodifiableCollection(actions);
         this.resources = Collections.unmodifiableCollection(resources);
     }
@@ -56,5 +61,43 @@ public class PolicyStatementDescriptor {
     public boolean isActionMatched(String action) {
         return actions.stream().filter(ad -> ad.isActionMatched(action)).findFirst().isPresent();
     }
+
+    @Override
+    public Class<PolicyStatementGroup> rootType() {
+        return PolicyStatementGroup.class;
+    }
+
+    @Override
+    public String entityId() {
+        return sid;
+    }
+
+    private void applyEvent(PolicyStatementCreated stmtCreated)
+    {
+        this.effect = stmtCreated.getEffect();
+        this.actions = stmtCreated.getActions();
+        this.resources = stmtCreated.getResources();
+    }
     
+    @Override
+    protected void apply(Event event) {
+        switch(event.getClass().getSimpleName())
+        {
+            case "PolicyStatementCreated":
+            {
+                applyEvent((PolicyStatementCreated)event);
+                break;
+            }
+            default:
+            {
+                 throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT, "unhandled event:" + event.getClass().getName());
+            }
+        }
+    }
+
+    @Override
+    public String idField() {
+        return "sid";
+    }
+
 }

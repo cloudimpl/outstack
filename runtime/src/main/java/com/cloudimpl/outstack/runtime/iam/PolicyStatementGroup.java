@@ -13,48 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.iam;
 
-import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
  */
-@EntityMeta(plural = "ServiceModuleRefs",version = "v1")
-public class ServiceModuleRef extends ChildEntity<DomainContext> {
+public class PolicyStatementGroup extends RootEntity implements ITenantOptional{
 
-    private final String serviceRef;
+    private final String rootType;
 
-    public ServiceModuleRef(String serviceRef) {
-        this.serviceRef = serviceRef;
+    public PolicyStatementGroup(String rootType) {
+        this.rootType = rootType;
     }
 
-    @Override
-    public Class<DomainContext> rootType() {
-        return DomainContext.class;
+    public String getRootType() {
+        return rootType;
     }
 
     @Override
     public String entityId() {
-        return serviceRef;
+        return rootType;
     }
 
-    public String getServiceRef() {
-        return serviceRef;
-    }
-
-    private void applyEvent(ServiceModuleRefCreated refCreated) {
+    private void applyEvent(PolicyStatementCreated policyStmtCreated) {
 
     }
 
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "ServiceModuleRefCreated": {
+            case "PolicyStatementCreated": {
+                applyEvent((PolicyStatementCreated) event);
                 break;
             }
             default: {
@@ -65,7 +60,7 @@ public class ServiceModuleRef extends ChildEntity<DomainContext> {
 
     @Override
     public String idField() {
-        return "serviceRef";
+        return "rootType";
     }
 
 }

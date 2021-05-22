@@ -32,14 +32,14 @@ public class StatementContext {
         this.mapAttr.put(MessageFormat.format("'\\{'{0}'\\}'", attr), value);
     }
     
-    public PolicyStatement parse(PolicyStatement statment)
+    public PolicyStatementRequest parse(PolicyStatementRequest statment)
     {
         String current = GsonCodec.encode(statment);
         for(Map.Entry<String,String> attr: mapAttr.entrySet())
         {
             current = current.replaceAll(attr.getKey(), attr.getValue());
         }
-        return GsonCodec.decode(PolicyStatement.class, current);
+        return GsonCodec.decode(PolicyStatementRequest.class, current);
     }
     
 }

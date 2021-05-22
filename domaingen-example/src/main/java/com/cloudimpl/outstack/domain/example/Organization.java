@@ -1,6 +1,7 @@
 package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import javax.validation.constraints.NotBlank;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -9,14 +10,21 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
 
 @EntityMeta(plural="organizations",version="V1")
-public class Organization extends RootEntity {
+public class Organization extends RootEntity implements ITenantOptional {
+    private final String tenantId ;
     private String website ;
     @NotBlank(message = "orgName field cannot be blank in Organization entity")
     @NotEmpty(message = "orgName field cannot be empty or null in Organization entity")
     private final String orgName ;
 
-    public Organization(String orgName) {
+    public Organization(String orgName, String tenantId) {
         this.orgName = orgName ;
+        this.tenantId = tenantId ;
+    }
+
+    @Override
+    public String getTenantId() {
+        return this.tenantId ;
     }
 
     public String getWebsite() {

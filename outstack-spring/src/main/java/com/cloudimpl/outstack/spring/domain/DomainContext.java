@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.spring.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
@@ -23,6 +24,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
+@EntityMeta(plural = "DomainContexts",version = "v1")
 public class DomainContext extends RootEntity {
 
     private String domainId;
@@ -33,6 +35,19 @@ public class DomainContext extends RootEntity {
         this.domainId = domainId;
     }
 
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    
     @Override
     public String entityId() {
         return domainId;

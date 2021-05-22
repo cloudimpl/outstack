@@ -25,7 +25,7 @@ public class MemEventRepositoryFactory implements EventRepositoryFactory {
     }
 
     @Override
-    public <T extends RootEntity> EventRepositoy<T> createRepository(Class<T> rootType) {
+    public <T extends RootEntity> EventRepositoy<T> createOrGetRepository(Class<T> rootType) {
         return (EventRepositoy<T>) mapRepos.computeIfAbsent(rootType,type->new MemEventRepository<>((Class<T>)type,this.helper, null));
     }
 

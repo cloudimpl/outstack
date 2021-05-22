@@ -36,7 +36,7 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     private final ServiceProvider<T,CloudMessage> serviceProvider;
     public SpringService(EventRepositoryFactory factory) {
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
-        serviceProvider = new ServiceProvider<>(root,factory.createRepository(root),factory::createRepository);
+        serviceProvider = new ServiceProvider<>(root,factory.createOrGetRepository(root),factory::createOrGetRepository);
         HANDLERS.stream()
                 .filter(h->SpringService.filter(root, h))
                 .filter(h->EntityCommandHandler.class.isAssignableFrom(h))

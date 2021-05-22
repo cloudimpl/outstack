@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.runtime.domainspec;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.util.TimeUtils;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.JsonObject;
 
 /**
@@ -15,6 +16,7 @@ import com.google.gson.JsonObject;
  */
 public abstract class Entity implements IResource {
 
+    @JsonProperty
     private String _id;
     private final Meta _meta = new Meta();
 
@@ -22,7 +24,6 @@ public abstract class Entity implements IResource {
         this._meta.setVersion(this.getClass().getAnnotation(EntityMeta.class).version());
     }
 
-    
     final void setTid(String id) {
         this._id = id;
     }
@@ -33,8 +34,19 @@ public abstract class Entity implements IResource {
 
     public abstract String entityId();
 
-    public final boolean hasTenant() {
-        return this instanceof ITenant;
+    @JsonProperty
+    public final TenantRequirement getTenantRequirement() {
+        if (ITenant.class.isInstance(this)) {
+            return TenantRequirement.TENANT_REQUIRED;
+        } else if (ITenantOptional.class.isInstance(this)) {
+            return TenantRequirement.TENANT_OPTIONAL;
+        }
+        return TenantRequirement.NONE;
+    }
+
+    public  String getTenantId()
+    {
+        return null;
     }
 
     public final boolean isRoot() {
@@ -66,7 +78,7 @@ public abstract class Entity implements IResource {
     public static void checkTenantEligibility(Class<? extends Entity> type, String tenantId) {
         if (EntityHelper.hasTenant(type) && tenantId == null) {
             throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_AVAILABLE, "tenantId is null for entity creation");
-        } else if (!EntityHelper.hasTenant(type) && tenantId != null) {
+        } else if ((!EntityHelper.hasTenant(type) && !EntityHelper.hasOptionalTenant(type)) && tenantId != null) {
             throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_APPLICABLE, "tenantId is not applicable for entity creation");
         }
     }
@@ -75,10 +87,10 @@ public abstract class Entity implements IResource {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
-    public static String getVersion(Class<? extends Entity> entityType){
+    public static String getVersion(Class<? extends Entity> entityType) {
         return entityType.getAnnotation(EntityMeta.class).version();
     }
-    
+
     public final Meta getMeta() {
         return _meta;
     }
@@ -93,7 +105,7 @@ public abstract class Entity implements IResource {
         private long createdDate;
         private long updatedDate;
         private String version;
-        
+
         protected void setCreatedDate(long createdDate) {
             this.createdDate = createdDate;
         }
@@ -102,10 +114,10 @@ public abstract class Entity implements IResource {
             this.updatedDate = updatedDate;
         }
 
-        protected void setVersion(String version){
+        protected void setVersion(String version) {
             this.version = version;
         }
-        
+
         public String getCreatedDate() {
             return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(createdDate));
         }
@@ -114,17 +126,15 @@ public abstract class Entity implements IResource {
             return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(updatedDate));
         }
 
-        public String getVersion(){
+        public String getVersion() {
             return version;
         }
-        
-        public long createdDate()
-        {
+
+        public long createdDate() {
             return this.createdDate;
         }
-        
-        public long updatedDate()
-        {
+
+        public long updatedDate() {
             return this.updatedDate;
         }
     }

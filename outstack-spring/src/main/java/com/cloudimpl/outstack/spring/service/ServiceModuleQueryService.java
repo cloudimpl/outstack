@@ -28,9 +28,9 @@ import com.cloudimpl.outstack.spring.domain.QueryHandlerEntity;
  *
  * @author nuwan
  */
-@CloudFunction(name = "MicroServiceQueryService")
-@Router(routerType = RouterType.ROUND_ROBIN)
-public class MicroServiceQueryService extends SpringQueryService<ServiceModule>{
+@CloudFunction(name = "ServiceModuleQueryService")
+@Router(routerType = RouterType.LOCAL)
+public class ServiceModuleQueryService extends SpringQueryService<ServiceModule>{
     static
     {
         $$(ServiceModule.class);
@@ -38,7 +38,7 @@ public class MicroServiceQueryService extends SpringQueryService<ServiceModule>{
         $$(QueryHandlerEntity.class);
     }
     
-    public MicroServiceQueryService(EventRepositoryFactory factory) {
+    public ServiceModuleQueryService(EventRepositoryFactory factory) {
         super(factory);
     }
     

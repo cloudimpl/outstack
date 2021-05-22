@@ -87,6 +87,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             }
         }
         System.out.println("entity: " + e);
+        System.out.println("event: " + event);
         long nextSeq = getCheckpoint(event.getRootEntityTRN()).getSeq() + 1;
         event.setSeqNum(nextSeq);
         getCheckpoint(event.getRootEntityTRN()).setSeq(nextSeq);

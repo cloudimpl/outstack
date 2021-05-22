@@ -115,7 +115,7 @@ public class Injector {
   private Constructor getInjectableConstructorOrDefault(Class<?> clazz) {
     Constructor<?>[] constructors = clazz.getConstructors();
     Constructor injectableConstructor = Arrays.asList(constructors).stream()
-        .filter(constructor -> isInjectable(constructor)).findFirst().orElse(constructors[0]);
+        .filter(constructor -> isInjectable(constructor)).findFirst().orElseGet(()->constructors[0]);
     return injectableConstructor;
   }
 

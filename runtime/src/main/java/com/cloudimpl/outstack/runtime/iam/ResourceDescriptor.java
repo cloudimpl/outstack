@@ -23,7 +23,9 @@ public class ResourceDescriptor {
 
     public enum ResourceScope {
         NONE,
-        ALL, //* | /RootEntity/**
+        GLOBAL, //*
+        VERSION_ONLY,
+        ALL, //RootEntity/**
         ALL_ROOT_ID_ONLY, //RootEntity/*
         ALL_ROOT_ID_CHILD_TYPE_ONLY, //RootEntity/*/ChildType/*
         ROOT_ID_CHILD_TYPE_ONLY,// /RootEntity/1234/ChildType/*
