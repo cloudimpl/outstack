@@ -9,12 +9,12 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class MockEntityContextProvider<T extends RootEntity> extends EntityContextProvider<T> {
+public class TestEntityContextProvider<T extends RootEntity> extends EntityContextProvider<T> {
 
     private EntityContext<?> context;
     private Transaction<T> transaction;
 
-    public MockEntityContextProvider(Class<T> type, EntityProvider entityProvider, Supplier<String> idGenerator,
+    public TestEntityContextProvider(Class<T> type, EntityProvider entityProvider, Supplier<String> idGenerator,
                                      QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         super(type, entityProvider, idGenerator, queryOperation, queryOperationSelector);
     }

@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.runtime.CommandHandler;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityEventHandler;
+import com.cloudimpl.outstack.runtime.EventRepository;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ServiceProvider;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -39,19 +40,14 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     private final ServiceProvider<T, CloudMessage> serviceProvider;
 
     public SpringService(EventRepositoryFactory factory) {
-        Class<T> root = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
-        serviceProvider = new ServiceProvider<>(root, factory.createRepository(root), factory::createRepository);
-        HANDLERS.stream()
-                .filter(h -> SpringService.filter(root, h))
-                .filter(h -> EntityCommandHandler.class.isAssignableFrom(h))
-                .forEach(e -> serviceProvider.registerCommandHandler((Class<? extends EntityCommandHandler>) e));
-        HANDLERS.stream()
-                .filter(h -> SpringService.filter(root, h))
-                .filter(h -> EntityEventHandler.class.isAssignableFrom(h))
-                .forEach(e -> serviceProvider.registerEventHandler((Class<? extends EntityEventHandler>) e));
+        Class<T> rootType = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
+        this.serviceProvider = new ServiceProvider<>(rootType, factory.createRepository(rootType), factory::createRepository);
+        registerHandlers(rootType);
+    }
 
-        CMD_ENTITIES.stream().filter(e -> SpringQueryService.filterEntity(root, e))
-                .forEach(e -> serviceProvider.registerDefaultCmdHandlersForEntity(e));
+    public SpringService(Class<T> rootType, EventRepositoryFactory factory) {
+        this.serviceProvider = new ServiceProvider<>(rootType, factory.createRepository(rootType), factory::createRepository);
+        registerHandlers(rootType);
     }
 
     public static void $(Class<? extends CommandHandler<?>> handler) {
@@ -83,5 +79,22 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
 
     public static Collection<Class<? extends Entity>> cmdEntities(Class<? extends RootEntity> rootType) {
         return CMD_ENTITIES.stream().filter(h -> filterEntity(rootType, h)).collect(Collectors.toList());
+    }
+
+    private void registerHandlers(Class<T> rootType) {
+        HANDLERS.stream()
+                .filter(h -> SpringService.filter(rootType, h))
+                .filter(h -> EntityCommandHandler.class.isAssignableFrom(h))
+                .forEach(e -> serviceProvider.registerCommandHandler((Class<? extends EntityCommandHandler>) e));
+        HANDLERS.stream()
+                .filter(h -> SpringService.filter(rootType, h))
+                .filter(h -> EntityEventHandler.class.isAssignableFrom(h))
+                .forEach(e -> serviceProvider.registerEventHandler((Class<? extends EntityEventHandler>) e));
+        CMD_ENTITIES.stream().filter(e -> SpringQueryService.filterEntity(rootType, e))
+                .forEach(e -> serviceProvider.registerDefaultCmdHandlersForEntity(e));
+    }
+
+    public ServiceProvider<T, CloudMessage> getServiceProvider() {
+        return serviceProvider;
     }
 }

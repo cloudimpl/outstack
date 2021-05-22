@@ -13,19 +13,20 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 /**
- *
- * @author nuwan
  * @param <T>
+ * @author nuwan
  */
 public class ServiceProvider<T extends RootEntity, R> implements Function<Object, Publisher<?>> {
 
@@ -35,15 +36,14 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final EventRepository<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
 
-    public ServiceProvider(Class<T> rootType, EventRepository<T> eventRepository, Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    public ServiceProvider(Class<T> rootType, EventRepository<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(rootType,this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository,queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(rootType, this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
-
         validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityCommandHandler.class, 0));
         EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
         if (exist != null) {
@@ -64,7 +64,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     public Optional<EntityCommandHandler> getCmdHandler(String name) {
         return Optional.ofNullable(mapCmdHandlers.get(name.toLowerCase()));
     }
-    
+
     public static void validateHandler(String name, Class<? extends RootEntity> rootType, Class<? extends Entity> type) {
         if (RootEntity.isMyType(type)) {
             if (type != rootType) {
@@ -84,25 +84,22 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
         if (ICommand.class.isInstance(input)) {
             return applyCommand((ICommand) input);
-        }else {
+        } else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
-
     }
 
     private Publisher applyCommand(ICommand cmd) {
-        try
-        {
-            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
-                .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction)ct.getTx(), ct.getEvents()))
-                .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction)ct.getTx()))
-                .map(ct -> ct.getTx().getReply());
-        }catch(Throwable thr)
-        {
+        try {
+            return Mono.just(getCmdHandler(cmd.commandHandlerName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandHandlerName().toLowerCase())).emit(contextProvider, cmd))
+                    .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
+                    .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                    .map(ct -> ct.getTx().getReply());
+        } catch (Throwable thr) {
             thr.printStackTrace();
             return Mono.error(thr);
         }
-        
+
     }
 
     public void applyEvent(Event event) {

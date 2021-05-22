@@ -43,7 +43,7 @@ public class CommandWrapper implements ICommand {
     }
 
     @Override
-    public final String commandName() {
+    public final String commandHandlerName() {
         return command;
     }
     

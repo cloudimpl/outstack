@@ -10,7 +10,7 @@ package com.cloudimpl.outstack.runtime.domainspec;
  * @author nuwan
  */
 public interface ICommand {
-    String commandName();
+    String commandHandlerName();
     String version();
     <T extends Command> T unwrap(Class<T> type);
 }

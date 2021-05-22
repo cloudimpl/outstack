@@ -9,4 +9,4 @@ outstack:
         status: active
         configs:
           endpoint: http://localhost:1234
-          leaderTable : LeaderTable 
+          leaderTable : LeaderTable

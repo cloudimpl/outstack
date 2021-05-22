@@ -10,7 +10,7 @@ import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.outstack.spring.test.data.TableDataMapper;
 import com.cloudimpl.outstack.outstack.spring.test.runtime.TestContext;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.service.example.CreateOrganization;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
@@ -25,12 +25,12 @@ import java.util.Map;
  */
 public class SpringServiceHandlerTestDriver {
 
-    private TestContext<Organization> testContext;
+    private TestContext<? extends RootEntity> testContext;
     private String organizationName;
 
     @Given("testing {word} functionality of {word}")
     public void initHandler(String handlerName, String entity) {
-        this.testContext = new TestContext<>(Organization.class);
+        this.testContext = new TestContext<>();
         testContext.initialize(handlerName, entity);
         System.out.println("handler :" + handlerName + " for entity : " + entity);
     }
@@ -41,25 +41,28 @@ public class SpringServiceHandlerTestDriver {
 
         TableDataMapper<Organization> dataMapper = new TableDataMapper<>(Organization.class);
 
-        CreateOrganization createOrganization = new CreateOrganization();
         List<Organization> entities = dataMapper.mapData(maps);
         for (Organization organization: entities) {
             OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder()
                     .withOrgName(organization.getOrgName())
+                    .withCommandHandlerName("CreateOrganization")
                     .withVersion("V1")
                     .build();
-            testContext.executeCommand(createOrganization, organizationCreateRequest);
+            testContext.executeCommand(organizationCreateRequest);
         }
     }
 
     @When("user creates an organization with name {word}")
     public void aboveOrganizationDetailsWhenUserCreatesAnOrganizationWithName(String organizationName) {
         try {
-            OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder().withOrgName(organizationName).withVersion("V1").build();
-            CreateOrganization createOrganization = new CreateOrganization();
-            testContext.executeCommand(createOrganization, organizationCreateRequest);
+            OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder()
+                    .withOrgName(organizationName)
+                    .withVersion("V1")
+                    .withCommandHandlerName("CreateOrganization")
+                    .build();
+            testContext.executeCommand(organizationCreateRequest);
         } catch (RuntimeException e) {
-            testContext.setRuntimeException(e);
+            testContext.setContextException(e);
         }
     }
 
@@ -74,11 +77,12 @@ public class SpringServiceHandlerTestDriver {
             OrganizationCreateRequest organizationCreateRequest = OrganizationCreateRequest.builder()
                     .withOrgName(organizationName)
                     .withWebsite(website)
-                    .withVersion("V1").build();
-            CreateOrganization createOrganization = new CreateOrganization();
-            testContext.executeCommand(createOrganization, organizationCreateRequest);
+                    .withVersion("V1")
+                    .withCommandHandlerName("CreateOrganization")
+                    .build();
+            testContext.executeCommand(organizationCreateRequest);
         } catch (RuntimeException e) {
-            testContext.setRuntimeException(e);
+            testContext.setContextException(e);
         }
     }
 

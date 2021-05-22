@@ -31,5 +31,7 @@ public class OrganizationService extends SpringService<Organization>{
     public OrganizationService(EventRepositoryFactory eventRepoFactory) {
         super(eventRepoFactory);
     }
+
+
     
 }
