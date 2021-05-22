@@ -204,8 +204,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         JsonObject rightJson = GsonCodec.encodeToJson(right).getAsJsonObject();
         JsonElement leftEl = leftJson.get(name);
         JsonElement rightEl = rightJson.get(name);
-        if (leftEl == null || rightEl == null) {
-            throw new RepositoryException("null not supported for sorting: " + name + " field");
+        if (leftEl == null && rightEl == null) {
+            //throw new RepositoryException("null not supported for sorting: " + name + " field");
+            return 0;
+        }
+        else if(leftEl == null && rightEl != null) {
+            return 1;
+        }
+        else if(leftEl != null && rightEl == null){
+            return -1;
         }
         if (!leftEl.isJsonPrimitive() || !rightEl.isJsonPrimitive()) {
             throw new RepositoryException("only primitive types supported for sorting");

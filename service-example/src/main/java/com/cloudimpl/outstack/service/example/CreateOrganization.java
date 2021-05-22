@@ -21,7 +21,7 @@ public class CreateOrganization extends EntityCommandHandler<Organization, Organ
     @Override
     protected Organization execute(EntityContext<Organization> context, OrganizationCreateRequest command) {
         //Optional<Tenant> tenant = context.<Organization>asRootContext().getChildEntityById(Tenant.class, "xxx");
-        return context.create(command.getOrgName(), new OrganizationCreated("xxx", command.getOrgName()));
+        return context.create(command.getOrgName(), new OrganizationCreated(command.getWebsite(), command.getOrgName()));
     }
  
 }
