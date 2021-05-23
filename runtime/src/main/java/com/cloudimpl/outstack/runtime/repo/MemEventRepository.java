@@ -311,11 +311,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
         Stream<Event<T>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
         if (technicalId) {
-            stream = stream.filter(e -> e.getRootEntityTRN().equals(rn));
+            stream = stream.filter(e -> e.getEntityRN().equals(rn));
         } else {
-            stream = stream.filter(e -> e.getRootEntityRN().equals(rn));
+            stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
         Collection<Event<T>> cols = stream.map(e -> (Event<T>) e)
+                
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         return onPageable(cols, paging);
