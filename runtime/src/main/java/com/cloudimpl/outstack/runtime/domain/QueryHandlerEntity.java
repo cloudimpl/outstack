@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 
@@ -64,6 +65,9 @@ public class QueryHandlerEntity extends ChildEntity<ServiceModule>{
             {
                 applyEvent((QueryHandlerRegistered)event);
                 break;
+            }
+            default: {
+                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT, "unhandled event:" + event.getClass().getName());
             }
         }
     }

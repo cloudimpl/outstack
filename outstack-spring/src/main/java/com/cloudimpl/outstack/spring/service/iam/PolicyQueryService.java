@@ -21,21 +21,20 @@ import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.domain.Policy;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRef;
-import com.cloudimpl.outstack.spring.component.SpringService;
+import com.cloudimpl.outstack.spring.component.SpringQueryService;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "PolicyService")
+@CloudFunction(name = "PolicyQueryService")
 @Router(routerType = RouterType.ROUND_ROBIN)
-public class PolicyService extends SpringService<Policy>{
+public class PolicyQueryService extends SpringQueryService<Policy>{
     static{
-        $(CreatePolicy.class);
         $$(Policy.class);
         $$(PolicyStatementRef.class);
     }
-    public PolicyService(EventRepositoryFactory factory) {
+    public PolicyQueryService(EventRepositoryFactory factory) {
         super(factory);
     }
     

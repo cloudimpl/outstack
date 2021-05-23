@@ -19,43 +19,47 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 
 /**
  *
  * @author nuwan
  */
-@EntityMeta(plural = "ServiceModuleRefs",version = "v1")
-public class ServiceModuleRef extends ChildEntity<DomainContext> {
+@EntityMeta(plural = "PolicyStatementRefs" , version = "v1")
+public class PolicyStatementRef extends ChildEntity<Policy> implements ITenantOptional{
+    private final String policyStatementRef;
+    private final String tenantId;
 
-    private final String serviceRef;
-
-    public ServiceModuleRef(String serviceRef) {
-        this.serviceRef = serviceRef;
+    public PolicyStatementRef(String policyStatementRef, String tenantId) {
+        this.policyStatementRef = policyStatementRef;
+        this.tenantId = tenantId;
     }
-
+    
     @Override
-    public Class<DomainContext> rootType() {
-        return DomainContext.class;
+    public Class<Policy> rootType() {
+        return Policy.class;
     }
 
     @Override
     public String entityId() {
-        return serviceRef;
-    }
-
-    public String getServiceRef() {
-        return serviceRef;
-    }
-
-    private void applyEvent(ServiceModuleRefCreated refCreated) {
-
+        return policyStatementRef;
     }
 
     @Override
+    public String getTenantId() {
+        return tenantId;
+    }
+    
+    private void applyEvent(PolicyStatementRefCreated created)
+    {
+        
+    }
+    
+    @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "ServiceModuleRefCreated": {
-                applyEvent((ServiceModuleRefCreated)event);
+            case "PolicyStatementRefCreated": {
+                applyEvent((PolicyStatementRefCreated)event);
                 break;
             }
             default: {
@@ -66,7 +70,7 @@ public class ServiceModuleRef extends ChildEntity<DomainContext> {
 
     @Override
     public String idField() {
-        return "serviceRef";
+        return "PolicyRef";
     }
-
+    
 }

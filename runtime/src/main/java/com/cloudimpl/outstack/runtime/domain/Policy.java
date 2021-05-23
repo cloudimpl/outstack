@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -24,6 +25,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
+@EntityMeta(plural = "Policies" , version = "v1")
 public class Policy extends RootEntity implements ITenantOptional {
 
     private final String policyName;
