@@ -80,17 +80,15 @@ public class TestContext<T extends RootEntity> {
         }
     }
 
-    public void executeCommand(ICommand command) {
+    public Object executeCommand(ICommand command) {
         Object block = Mono.from(springService.getServiceProvider().apply(command))
                 .doOnError(e -> {
                     this.contextException = (Exception) e;
                 })
                 .doOnNext(e -> {
-                    System.out.println(GsonCodec.encode(e));
                 })
-
                 .block();
-        System.out.println(block);
+        return block;
     }
 
     public String getEntityVersion() {
