@@ -15,28 +15,21 @@
  */
 package com.cloudimpl.outstack.spring.service.iam;
 
-import com.cloudimpl.outstack.common.RouterType;
-import com.cloudimpl.outstack.core.annon.CloudFunction;
-import com.cloudimpl.outstack.core.annon.Router;
-import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
-
-import com.cloudimpl.outstack.spring.component.SpringService;
+import com.cloudimpl.outstack.runtime.EntityCommandHandler;
+import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.domain.Policy;
+import com.cloudimpl.outstack.runtime.domain.PolicyCreateRequest;
+import com.cloudimpl.outstack.runtime.domain.PolicyCreated;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "PolicyStatementService")
-@Router(routerType = RouterType.ROUND_ROBIN)
-public class PolicyStatementService extends SpringService<PolicyStatement> {
+public class CreatePolicy extends EntityCommandHandler<Policy, PolicyCreateRequest, Policy>{
 
-    static {
-        $(CreatePolicyStatement.class);
+    @Override
+    protected Policy execute(EntityContext<Policy> context, PolicyCreateRequest command) {
+        return context.create(command.getPolicyName(), new PolicyCreated(command.getPolicyName()));
     }
-
-    public PolicyStatementService(EventRepositoryFactory factory) {
-        super(factory);
-    }
-
+    
 }

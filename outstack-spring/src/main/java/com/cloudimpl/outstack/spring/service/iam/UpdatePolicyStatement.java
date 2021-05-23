@@ -30,14 +30,14 @@ import java.util.stream.Collectors;
  *
  * @author nuwan
  */
-public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatement,PolicyStatementRequest,PolicyStatement>{
+public class UpdatePolicyStatement extends EntityCommandHandler<PolicyStatement,PolicyStatementRequest,PolicyStatement>{
 
     @Override
     protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
         
         PolicyStatementCreated stmt = parseStatement(command);
         PolicyStatemetParser.validate((RootEntityContext<PolicyStatement>) context, stmt);
-        return context.create(stmt.getSid(), stmt);
+        return context.update(stmt.getSid(), stmt);
     }
     
     private static PolicyStatementCreated parseStatement(PolicyStatementRequest req)

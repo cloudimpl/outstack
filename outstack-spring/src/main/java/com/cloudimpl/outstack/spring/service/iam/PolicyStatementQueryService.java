@@ -19,7 +19,7 @@ import com.cloudimpl.outstack.common.RouterType;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.spring.component.SpringQueryService;
 
 /**

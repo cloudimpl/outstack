@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.runtime.iam;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.util.Collection;
 
 /**
  *
  * @author nuwan
  */
-public class PolicyStatementCreated extends Event<PolicyStatement> {
+public class PolicyStatementUpdated extends Event<PolicyStatement> {
 
     private final String sid;
     private final PolicyStatement.EffectType effect;
     private final Collection<ActionDescriptor> actions;
     private final Collection<ResourceDescriptor> resources;
 
-    public PolicyStatementCreated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
+    public PolicyStatementUpdated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
         this.sid = sid;
         this.effect = effect;
         this.actions = actions;

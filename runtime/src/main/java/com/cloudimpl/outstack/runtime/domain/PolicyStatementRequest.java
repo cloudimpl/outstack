@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.runtime.iam;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatement.EffectType;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatement.EffectType;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.runtime.iam;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
@@ -21,6 +21,8 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -85,6 +87,13 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
         this.resources = stmtCreated.getResources();
     }
     
+    private void applyEvent(PolicyStatementUpdated stmtUpdated)
+    {
+        this.effect = stmtUpdated.getEffect();
+        this.actions = stmtUpdated.getActions();
+        this.resources = stmtUpdated.getResources();
+    }
+    
     @Override
     protected void apply(Event event) {
         switch(event.getClass().getSimpleName())
@@ -92,6 +101,11 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
             case "PolicyStatementCreated":
             {
                 applyEvent((PolicyStatementCreated)event);
+                break;
+            }
+            case "PolicyStatementUpdated":
+            {
+                applyEvent((PolicyStatementUpdated)event);
                 break;
             }
             default:

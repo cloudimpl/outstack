@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;

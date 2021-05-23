@@ -15,6 +15,9 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
 import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.domain.CommandHandlerEntity;
 import com.cloudimpl.outstack.runtime.domain.QueryHandlerEntity;
@@ -63,7 +66,6 @@ public class PolicyStatemetParser {
 
     private static String validateCrossResourceUsage(RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
 
-        
         String rootType = null;
         for (ResourceDescriptor desc : resources) {
             switch (desc.getResourceScope()) {
@@ -81,7 +83,10 @@ public class PolicyStatemetParser {
                     } else if (!rootType.equalsIgnoreCase(desc.getRootType())) {
                         throw new PolicyValidationError("cross resources reference not allowed");
                     }
-                    
+                    if(!serviceModule.getVersion().equals(desc.getVersion()))
+                    {
+                        throw new PolicyValidationError("invalid resource version: "+desc.getVersion());
+                    }
                     if(serviceModule.getTenancy() == TenantRequirement.REQUIRED && !desc.isTenantResource())
                     {
                          throw new PolicyValidationError(rootType+" is a tenant resource, non tenant resource pattern not allowed");
