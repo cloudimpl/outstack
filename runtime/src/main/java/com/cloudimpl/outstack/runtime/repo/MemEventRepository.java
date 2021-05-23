@@ -311,7 +311,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
         Stream<Event<T>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
         if (technicalId) {
-            stream = stream.filter(e -> e.getEntityRN().equals(rn));
+            stream = stream.filter(e -> e.getEntityTRN().equals(rn));
         } else {
             stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
