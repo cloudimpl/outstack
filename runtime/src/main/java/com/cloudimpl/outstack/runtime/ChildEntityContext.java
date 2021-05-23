@@ -204,7 +204,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     }
 
     @Override
-    public <R extends RootEntity> AyncEntityContext<R> asAsyncEntityContext() {
+    public <R extends RootEntity> AsyncEntityContext<R> asAsyncEntityContext() {
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }
 

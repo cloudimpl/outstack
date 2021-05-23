@@ -15,18 +15,28 @@
  */
 package com.cloudimpl.outstack.spring.service.iam;
 
+import com.cloudimpl.outstack.common.RouterType;
+import com.cloudimpl.outstack.core.annon.CloudFunction;
+import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatementGroup;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatement;
+
 import com.cloudimpl.outstack.spring.component.SpringService;
 
 /**
  *
  * @author nuwan
  */
-public class PolicyStatementService extends SpringService<PolicyStatementGroup>{
-    
+@CloudFunction(name = "PolicyStatementService")
+@Router(routerType = RouterType.ROUND_ROBIN)
+public class PolicyStatementService extends SpringService<PolicyStatement> {
+
+    static {
+        $(CreatePolicyStatement.class);
+    }
+
     public PolicyStatementService(EventRepositoryFactory factory) {
         super(factory);
     }
-    
+
 }

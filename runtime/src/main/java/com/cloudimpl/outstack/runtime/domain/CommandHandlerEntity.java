@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
@@ -23,12 +23,12 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "EventHandlers",version = "v1")
-public class EventHandlerEntity extends ChildEntity<ServiceModule>{
+@EntityMeta(plural = "CommandHandlers",version = "v1")
+public class CommandHandlerEntity extends ChildEntity<ServiceModule>{
     private String handlerName;
     private String entityName;
 
-    public EventHandlerEntity(String handlerName) {
+    public CommandHandlerEntity(String handlerName) {
         this.handlerName = handlerName;
     }
 
@@ -50,19 +50,19 @@ public class EventHandlerEntity extends ChildEntity<ServiceModule>{
         return handlerName;
     }
 
-    private void applyEvent(EventHandlerRegistered evtHandlerRegistered)
+    private void applyEvent(CommandHandlerRegistered cmdHandlerRegistered)
     {
-        this.handlerName = evtHandlerRegistered.getHandlerName();
-        this.entityName = evtHandlerRegistered.getEntityName();
+        this.handlerName = cmdHandlerRegistered.getHandlerName();
+        this.entityName = cmdHandlerRegistered.getEntityName();
     }
     
     @Override
     protected void apply(Event event) {
         switch(event.getClass().getSimpleName())
         {
-            case "EventHandlerRegistered":
+            case "CommandHandlerRegistered":
             {
-                applyEvent((EventHandlerRegistered)event);
+                applyEvent((CommandHandlerRegistered)event);
                 break;
             }
         }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -23,12 +23,12 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class QueryHandlerRegistered extends Event<CommandHandlerEntity>{
+public class EventHandlerRegistered extends Event<EventHandlerEntity>{
     private final String rootEntity;
     private final String handlerName;
     private final String entityName;
 
-    public QueryHandlerRegistered(String handlerName, String entityName,String rootEntity) {
+    public EventHandlerRegistered(String handlerName, String entityName,String rootEntity) {
         this.rootEntity = rootEntity;
         this.handlerName = handlerName;
         this.entityName = entityName;
@@ -48,7 +48,7 @@ public class QueryHandlerRegistered extends Event<CommandHandlerEntity>{
 
     @Override
     public Class<? extends Entity> getOwner() {
-        return QueryHandlerEntity.class;
+        return EventHandlerEntity.class;
     }
 
     @Override

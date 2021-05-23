@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -52,6 +53,6 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
     }
 
     public <T extends ChildEntity<R>> Collection<T> getChildsByType(Class<T> childType) {
-        return getChildsByType(childType, null).getItems();
+        return getChildsByType(childType, Query.PagingRequest.EMPTY).getItems();
     }
 }

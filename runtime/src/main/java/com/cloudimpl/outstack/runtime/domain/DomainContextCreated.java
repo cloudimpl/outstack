@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.runtime.iam;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -23,36 +23,48 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class PolicyStatementGroupCreated extends Event<PolicyStatementGroup> {
+public class DomainContextCreated extends Event<DomainContext> {
 
-    private final String rootType;
+    private final String domainId;
+    private final String domainOwner;
+    private final String domainContext;
 
-    public PolicyStatementGroupCreated(String rootType) {
-        this.rootType = rootType;
+    public DomainContextCreated(String domainId, String domainOwner, String domainContext) {
+        this.domainId = domainId;
+        this.domainOwner = domainOwner;
+        this.domainContext = domainContext;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
     }
 
     @Override
     public Class<? extends Entity> getOwner() {
-        return PolicyStatementGroup.class;
+        return DomainContext.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return PolicyStatementGroup.class;
-    }
-
-    public String getRootType() {
-        return rootType;
+        return DomainContext.class;
     }
 
     @Override
     public String entityId() {
-        return rootType;
+        return domainId;
     }
 
     @Override
     public String rootEntityId() {
-        return rootType;
+        return domainId;
     }
 
 }

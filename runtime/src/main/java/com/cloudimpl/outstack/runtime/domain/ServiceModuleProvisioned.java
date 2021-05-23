@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 
 /**
  *
@@ -28,14 +29,14 @@ public class ServiceModuleProvisioned extends Event<ServiceModule>{
     private final String rootEntity;
     private final String  version;
     private final String  apiContext;
-    private final boolean tenantService;
+    private final TenantRequirement tenancy;
 
-    public ServiceModuleProvisioned(String serviceName,String rootEntity, String version,String apiContext, boolean tenantService) {
+    public ServiceModuleProvisioned(String serviceName,String rootEntity, String version,String apiContext, TenantRequirement tenancy) {
         this.serviceName = serviceName;
         this.rootEntity = rootEntity;
         this.version = version;
         this.apiContext = apiContext;
-        this.tenantService = tenantService;
+        this.tenancy = tenancy;
     }
 
     public String getServiceName() {
@@ -54,8 +55,8 @@ public class ServiceModuleProvisioned extends Event<ServiceModule>{
         return apiContext;
     }
 
-    public boolean isTenantService() {
-        return tenantService;
+    public TenantRequirement getTenancy() {
+        return tenancy;
     }
     
     

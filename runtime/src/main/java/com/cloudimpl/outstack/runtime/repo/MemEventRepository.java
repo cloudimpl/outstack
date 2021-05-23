@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -185,10 +186,20 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public synchronized ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
-        if (Entity.hasTenant(rootType)) {
-            trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
-        } else {
-            trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
+        TenantRequirement tenantReq = Entity.checkTenantRequirement(rootType);
+       switch (tenantReq) {
+            case REQUIRED:
+                trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
+                break;
+            case OPTIONAL:
+                if (tenantId != null) {
+                    trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
+                } else {
+                    trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
+                }   break;
+            default:
+                trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
+                break;
         }
         String fqtrn = trn;
         Collection<T> filterCollection = mapEntites.entrySet().stream()

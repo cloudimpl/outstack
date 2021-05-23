@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
  */
-public class EventHandlerRegistered extends Event<EventHandlerEntity>{
-    private final String rootEntity;
-    private final String handlerName;
-    private final String entityName;
+@EntityMeta(plural = "QueryHandlers",version = "v1")
+public class QueryHandlerEntity extends ChildEntity<ServiceModule>{
+    private String handlerName;
+    private String entityName;
 
-    public EventHandlerRegistered(String handlerName, String entityName,String rootEntity) {
-        this.rootEntity = rootEntity;
+    public QueryHandlerEntity(String handlerName) {
         this.handlerName = handlerName;
-        this.entityName = entityName;
     }
 
     public String getHandlerName() {
@@ -41,18 +39,9 @@ public class EventHandlerRegistered extends Event<EventHandlerEntity>{
     public String getEntityName() {
         return entityName;
     }
-
-    public String getRootEntity() {
-        return rootEntity;
-    }
-
+    
     @Override
-    public Class<? extends Entity> getOwner() {
-        return EventHandlerEntity.class;
-    }
-
-    @Override
-    public Class<? extends RootEntity> getRootOwner() {
+    public Class<ServiceModule> rootType() {
         return ServiceModule.class;
     }
 
@@ -61,9 +50,27 @@ public class EventHandlerRegistered extends Event<EventHandlerEntity>{
         return handlerName;
     }
 
+    private void applyEvent(QueryHandlerRegistered queryHandlerRegistered)
+    {
+        this.handlerName = queryHandlerRegistered.getHandlerName();
+        this.entityName = queryHandlerRegistered.getEntityName();
+    }
+    
     @Override
-    public String rootEntityId() {
-        return rootEntity;
+    protected void apply(Event event) {
+        switch(event.getClass().getSimpleName())
+        {
+            case "QueryHandlerRegistered":
+            {
+                applyEvent((QueryHandlerRegistered)event);
+                break;
+            }
+        }
+    }
+
+    @Override
+    public String idField() {
+        return "handlerName";
     }
     
 }

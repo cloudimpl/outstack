@@ -119,10 +119,12 @@ public abstract class Query implements IQuery {
 
     public static class PagingRequest {
 
+        public static final PagingRequest EMPTY = new PagingRequest(0, Integer.MAX_VALUE, Collections.EMPTY_LIST, Collections.EMPTY_MAP);
         private final int pageNum;
         private final int pageSize;
         private final List<Order> orders;
         private final Map<String,String> params;
+        
         public PagingRequest(int pageNum, int pageSize, List<Order> orders,Map<String,String> params) {
             this.pageNum = pageNum;
             this.pageSize = pageSize;

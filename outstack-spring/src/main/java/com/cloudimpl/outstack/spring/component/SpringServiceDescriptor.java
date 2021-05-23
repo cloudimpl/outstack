@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.spring.component;
 
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,20 +24,20 @@ public class SpringServiceDescriptor {
     private final Map<String, EntityDescriptor> mapDescriptors;
     private final EntityDescriptor rootDesc;
     private final String version;
-    private final boolean isTenant;
+    private final TenantRequirement tenancy;
     private final String serviceName;
     private final String domainOwner;
     private final String domainContext;
     private final String apiContext;
 
-    public SpringServiceDescriptor(String apiContext, String domainOwner, String domainContext, String serviceName, String rootType, String version, String plural, boolean isTenant) {
+    public SpringServiceDescriptor(String apiContext, String domainOwner, String domainContext, String serviceName, String rootType, String version, String plural, TenantRequirement tenancy) {
         this.apiContext = apiContext;
         this.serviceName = serviceName;
         this.domainContext = domainContext;
         this.domainOwner = domainOwner;
         this.rootDesc = new EntityDescriptor(rootType, plural);
         this.version = version;
-        this.isTenant = isTenant;
+        this.tenancy = tenancy;
         this.rootActions = new HashMap<>();
         this.childActions = new HashMap<>();
         this.mapDescriptors = new HashMap<>();
@@ -72,8 +73,8 @@ public class SpringServiceDescriptor {
         map.put(action.getName(), action);
     }
 
-    public boolean isTenantService() {
-        return isTenant;
+    public TenantRequirement getTenancy() {
+        return tenancy;
     }
 
     public Optional<EntityDescriptor> getEntityDescriptorByPlural(String plural) {
@@ -95,11 +96,7 @@ public class SpringServiceDescriptor {
     public String getServiceName() {
         return serviceName;
     }
-
-    public boolean isIsTenant() {
-        return isTenant;
-    }
-
+    
     public String getDomainOwner() {
         return domainOwner;
     }

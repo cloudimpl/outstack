@@ -18,11 +18,11 @@ public abstract class RootEntity extends Entity {
     @Override
     public final String getBRN() {
         switch (getTenantRequirement()) {
-            case TENANT_REQUIRED: {
-                return makeRN(this.getClass(), getMeta().getVersion(), id(), getTenantId());
+            case REQUIRED: {
+                return makeRN(this.getClass(), getMeta().getVersion(), entityId(), getTenantId());
             }
             default: {
-                return makeRN(this.getClass(), getMeta().getVersion(), id(), getTenantId());
+                return makeRN(this.getClass(), getMeta().getVersion(), entityId(), getTenantId());
             }
         }
     }
@@ -30,7 +30,7 @@ public abstract class RootEntity extends Entity {
     @Override
     public final String getTRN() {
         switch (getTenantRequirement()) {
-            case TENANT_REQUIRED: {
+            case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
                 return makeTRN(this.getClass(), getMeta().getVersion(), id(), getTenantId());
             }
@@ -43,12 +43,12 @@ public abstract class RootEntity extends Entity {
     public <T extends ChildEntity> T createChildEntity(Class<T> type, String entityId, String id) {
         T t;
         switch (getTenantRequirement()) {
-            case TENANT_REQUIRED: {
+            case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
                 t = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, ITenant.class.cast(this).getTenantId()));
                 break;
             }
-            case TENANT_OPTIONAL: {
+            case OPTIONAL: {
                 t = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, getTenantId()));
                 break;
             }
@@ -63,11 +63,21 @@ public abstract class RootEntity extends Entity {
 
     public static <T extends RootEntity> T create(Class<T> type, String entityId, String tenantId, String tid) {
         T root;
-        if (hasTenant(type)) {
-            root = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, tenantId));
-        } else {
-            root = Util.createObject(type, new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
+        TenantRequirement req = checkTenantRequirement(type);
+        switch (req) {
+            case REQUIRED:
+            {
+                Objects.requireNonNull(tenantId);
+            }
+            case OPTIONAL: {
+                root = Util.createObject(type, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, tenantId));
+                break;
+            }
+            default: {
+                root = Util.createObject(type, new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
+            }
         }
+        
         EntityHelper.updateId(root, tid);
         return root;
     }

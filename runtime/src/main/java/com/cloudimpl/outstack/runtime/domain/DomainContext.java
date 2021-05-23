@@ -13,48 +13,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
-import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
  */
-@EntityMeta(plural = "ServiceModuleRefs",version = "v1")
-public class ServiceModuleRef extends ChildEntity<DomainContext> {
+@EntityMeta(plural = "DomainContexts",version = "v1")
+public class DomainContext extends RootEntity {
 
-    private final String serviceRef;
+    private String domainId;
+    private String domainOwner;
+    private String domainContext;
 
-    public ServiceModuleRef(String serviceRef) {
-        this.serviceRef = serviceRef;
+    public DomainContext(String domainId) {
+        this.domainId = domainId;
     }
 
-    @Override
-    public Class<DomainContext> rootType() {
-        return DomainContext.class;
+    public String getDomainId() {
+        return domainId;
     }
 
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    
     @Override
     public String entityId() {
-        return serviceRef;
+        return domainId;
     }
 
-    public String getServiceRef() {
-        return serviceRef;
-    }
-
-    private void applyEvent(ServiceModuleRefCreated refCreated) {
-
+    private void applyEvent(DomainContextCreated domainContextCreated) {
+        this.domainContext = domainContextCreated.getDomainContext();
+        this.domainOwner = domainContextCreated.getDomainOwner();
     }
 
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "ServiceModuleRefCreated": {
+            case "DomainContextCreated": {
+                applyEvent((DomainContextCreated) event);
                 break;
             }
             default: {
@@ -65,7 +73,7 @@ public class ServiceModuleRef extends ChildEntity<DomainContext> {
 
     @Override
     public String idField() {
-        return "serviceRef";
+        return "domainId";
     }
 
 }

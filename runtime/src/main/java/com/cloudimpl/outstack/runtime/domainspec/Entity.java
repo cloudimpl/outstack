@@ -37,15 +37,14 @@ public abstract class Entity implements IResource {
     @JsonProperty
     public final TenantRequirement getTenantRequirement() {
         if (ITenant.class.isInstance(this)) {
-            return TenantRequirement.TENANT_REQUIRED;
+            return TenantRequirement.REQUIRED;
         } else if (ITenantOptional.class.isInstance(this)) {
-            return TenantRequirement.TENANT_OPTIONAL;
+            return TenantRequirement.OPTIONAL;
         }
         return TenantRequirement.NONE;
     }
 
-    public  String getTenantId()
-    {
+    public String getTenantId() {
         return null;
     }
 
@@ -80,6 +79,16 @@ public abstract class Entity implements IResource {
             throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_AVAILABLE, "tenantId is null for entity creation");
         } else if ((!EntityHelper.hasTenant(type) && !EntityHelper.hasOptionalTenant(type)) && tenantId != null) {
             throw new DomainEventException(DomainEventException.ErrorCode.TENANT_ID_NOT_APPLICABLE, "tenantId is not applicable for entity creation");
+        }
+    }
+
+    public static TenantRequirement checkTenantRequirement(Class<? extends Entity> type) {
+        if (ITenant.class.isAssignableFrom(type)) {
+            return TenantRequirement.REQUIRED;
+        } else if (ITenantOptional.class.isAssignableFrom(type)) {
+            return TenantRequirement.OPTIONAL;
+        } else {
+            return TenantRequirement.NONE;
         }
     }
 

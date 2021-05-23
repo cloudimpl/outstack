@@ -15,3 +15,7 @@ spring:
   main:
     web-application-type: reactive
     
+server:
+  error:
+    include-message: always
+    

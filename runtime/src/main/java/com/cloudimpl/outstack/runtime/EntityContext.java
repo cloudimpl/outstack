@@ -104,7 +104,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     
     public abstract <R extends RootEntity> RootEntityContext<R> asRootContext();
 
-    public abstract <R extends RootEntity> AyncEntityContext<R> asAsyncEntityContext();
+    public abstract <R extends RootEntity> AsyncEntityContext<R> asAsyncEntityContext();
 
     public abstract <R extends RootEntity,K extends ChildEntity<R>> ChildEntityContext<R,K> asChildContext() ;
     

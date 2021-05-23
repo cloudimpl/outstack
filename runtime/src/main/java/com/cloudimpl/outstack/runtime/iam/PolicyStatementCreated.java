@@ -24,17 +24,15 @@ import java.util.Collection;
  *
  * @author nuwan
  */
-public class PolicyStatementCreated extends Event<PolicyStatementDescriptor> {
+public class PolicyStatementCreated extends Event<PolicyStatement> {
 
     private final String sid;
-    private final String rootType;
-    private final PolicyStatementDescriptor.EffectType effect;
+    private final PolicyStatement.EffectType effect;
     private final Collection<ActionDescriptor> actions;
     private final Collection<ResourceDescriptor> resources;
 
-    public PolicyStatementCreated(String sid, String rootType,PolicyStatementDescriptor.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
+    public PolicyStatementCreated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
         this.sid = sid;
-        this.rootType = rootType;
         this.effect = effect;
         this.actions = actions;
         this.resources = resources;
@@ -43,12 +41,8 @@ public class PolicyStatementCreated extends Event<PolicyStatementDescriptor> {
     public String getSid() {
         return sid;
     }
-
-    public String getRootType() {
-        return rootType;
-    }
-
-    public PolicyStatementDescriptor.EffectType getEffect() {
+    
+    public PolicyStatement.EffectType getEffect() {
         return effect;
     }
 
@@ -67,12 +61,12 @@ public class PolicyStatementCreated extends Event<PolicyStatementDescriptor> {
     
     @Override
     public Class<? extends Entity> getOwner() {
-        return PolicyStatementDescriptor.class;
+        return PolicyStatement.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return PolicyStatementGroup.class;
+        return PolicyStatement.class;
     }
 
     @Override
@@ -82,7 +76,7 @@ public class PolicyStatementCreated extends Event<PolicyStatementDescriptor> {
 
     @Override
     public String rootEntityId() {
-        return rootType;
+        return sid;
     }
 
 }

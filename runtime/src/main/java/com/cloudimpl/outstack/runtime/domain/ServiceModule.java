@@ -3,12 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 
 /**
  *
@@ -20,7 +21,7 @@ public class ServiceModule extends RootEntity {
     private final String rootEntity;
     private  String serviceName;
     private String version;
-    private boolean tenantService;
+    private TenantRequirement tenancy;
     private String apiContext;
 
     public ServiceModule(String rootEntity) {
@@ -35,8 +36,8 @@ public class ServiceModule extends RootEntity {
         return version;
     }
 
-    public boolean isTenantService() {
-        return this.tenantService;
+    public TenantRequirement getTenancy() {
+        return this.tenancy;
     }
 
     public String getApiContext() {
@@ -55,7 +56,7 @@ public class ServiceModule extends RootEntity {
     private void applyEvent(ServiceModuleProvisioned serviceModuleProvisioned) {
         this.serviceName = serviceModuleProvisioned.getServiceName();
         this.version = serviceModuleProvisioned.getVersion();
-        this.tenantService = serviceModuleProvisioned.isTenantService();
+        this.tenancy = serviceModuleProvisioned.getTenancy();
         this.apiContext = serviceModuleProvisioned.getApiContext();
     }
 

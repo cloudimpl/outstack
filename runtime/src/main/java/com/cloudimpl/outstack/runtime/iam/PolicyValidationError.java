@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.runtime.domainspec;
+package com.cloudimpl.outstack.runtime.iam;
+
+import com.cloudimpl.outstack.runtime.ValidationErrorException;
 
 /**
  *
  * @author nuwan
  */
-public enum TenantRequirement {
-    REQUIRED,
-    OPTIONAL,
-    NONE
+public class PolicyValidationError extends ValidationErrorException {
+
+    public PolicyValidationError(String msg) {
+        super(msg);
+    }
+    
 }

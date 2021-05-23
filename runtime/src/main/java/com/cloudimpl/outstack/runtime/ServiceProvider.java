@@ -106,7 +106,12 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
         } catch (Throwable thr) {
             thr.printStackTrace();
-            return Mono.error(thr);
+            // return Mono.error(thr);
+//            if (RuntimeException.class.isInstance(thr)) {
+//                throw thr;
+//            }
+              throw thr;
+           // throw new RuntimeException(thr);
         }
     }
 

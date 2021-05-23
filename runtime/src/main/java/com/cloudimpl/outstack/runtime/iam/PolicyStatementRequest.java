@@ -17,7 +17,7 @@ package com.cloudimpl.outstack.runtime.iam;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatementDescriptor.EffectType;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatement.EffectType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -122,7 +122,7 @@ public class PolicyStatementRequest extends Command {
                 + "resources:[\"v1/**\"]"
                 + "}";
         PolicyStatementRequest stmt = GsonCodec.decode(PolicyStatementRequest.class, json);
-        PolicyStatementCreated pd = PolicyStatemetParser.parseStatement("",stmt);
+        PolicyStatementCreated pd = PolicyStatemetParser.parseStatement(stmt);
         System.out.println("");
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -23,48 +23,47 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class DomainContextCreated extends Event<DomainContext> {
+public class CommandHandlerRegistered extends Event<CommandHandlerEntity>{
+    private final String handlerName;
+    private final String entityName;
+    private final String rootEntity;
 
-    private final String domainId;
-    private final String domainOwner;
-    private final String domainContext;
-
-    public DomainContextCreated(String domainId, String domainOwner, String domainContext) {
-        this.domainId = domainId;
-        this.domainOwner = domainOwner;
-        this.domainContext = domainContext;
+    public CommandHandlerRegistered(String handlerName, String entityName,String rootEntity) {
+        this.handlerName = handlerName;
+        this.entityName = entityName;
+        this.rootEntity = rootEntity;
     }
 
-    public String getDomainId() {
-        return domainId;
+    public String getHandlerName() {
+        return handlerName;
     }
 
-    public String getDomainOwner() {
-        return domainOwner;
+    public String getEntityName() {
+        return entityName;
     }
 
-    public String getDomainContext() {
-        return domainContext;
+    public String getRootEntity() {
+        return rootEntity;
     }
 
     @Override
     public Class<? extends Entity> getOwner() {
-        return DomainContext.class;
+        return CommandHandlerEntity.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return DomainContext.class;
+        return ServiceModule.class;
     }
 
     @Override
     public String entityId() {
-        return domainId;
+        return handlerName;
     }
 
     @Override
     public String rootEntityId() {
-        return domainId;
+        return rootEntity;
     }
-
+    
 }

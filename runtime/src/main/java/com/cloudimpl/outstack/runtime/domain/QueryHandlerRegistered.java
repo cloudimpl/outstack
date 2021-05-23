@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -23,43 +23,47 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class ServiceModuleRefCreated extends Event<ServiceModuleRef>{
+public class QueryHandlerRegistered extends Event<CommandHandlerEntity>{
+    private final String rootEntity;
+    private final String handlerName;
+    private final String entityName;
 
-    private final String serviceModuleRef;
-    private final String domainId;
-
-    public ServiceModuleRefCreated(String serviceModuleRef, String domainId) {
-        this.serviceModuleRef = serviceModuleRef;
-        this.domainId = domainId;
+    public QueryHandlerRegistered(String handlerName, String entityName,String rootEntity) {
+        this.rootEntity = rootEntity;
+        this.handlerName = handlerName;
+        this.entityName = entityName;
     }
 
-    public String getServiceModuleRef() {
-        return serviceModuleRef;
+    public String getHandlerName() {
+        return handlerName;
     }
 
-    public String getDomainId() {
-        return domainId;
+    public String getEntityName() {
+        return entityName;
     }
-    
-    
+
+    public String getRootEntity() {
+        return rootEntity;
+    }
+
     @Override
     public Class<? extends Entity> getOwner() {
-        return ServiceModuleRef.class;
+        return QueryHandlerEntity.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return DomainContext.class;
+        return ServiceModule.class;
     }
 
     @Override
     public String entityId() {
-        return serviceModuleRef;
+        return handlerName;
     }
 
     @Override
     public String rootEntityId() {
-        return domainId;
+        return rootEntity;
     }
     
 }

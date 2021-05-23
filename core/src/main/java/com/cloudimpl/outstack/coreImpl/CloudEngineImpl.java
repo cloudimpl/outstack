@@ -69,8 +69,9 @@ public class CloudEngineImpl implements CloudEngine {
     public <T> Mono<T> requestReply(String topic, Object request) {
         try {
             CloudMessage cloudMsg = buildMsg(topic, request);
-            return routerRepository.router(topic).route(cloudMsg).flatMap(service -> service
-                    .requestReply(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())));
+            return (Mono<T>) routerRepository.router(topic).route(cloudMsg).flatMap(service -> service
+                    .requestReply(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())))
+                    .doOnError(err->System.out.println("err:"+err.getMessage()));
         } catch (Exception ex) {
             return Mono.error(ex);
         }

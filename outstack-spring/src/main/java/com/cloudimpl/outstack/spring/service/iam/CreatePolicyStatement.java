@@ -17,11 +17,12 @@ package com.cloudimpl.outstack.spring.service.iam;
 
 import com.cloudimpl.outstack.runtime.AsyncEntityCommandHandler;
 import com.cloudimpl.outstack.runtime.AsyncRootEntityQueryContext;
-import com.cloudimpl.outstack.runtime.AyncEntityContext;
+import com.cloudimpl.outstack.runtime.AsyncEntityContext;
+import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.iam.PolicyStatementCreated;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatementDescriptor;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatementGroup;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatement;
 import com.cloudimpl.outstack.runtime.iam.PolicyStatementRequest;
 import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
@@ -34,27 +35,19 @@ import reactor.core.publisher.Mono;
  *
  * @author nuwan
  */
-public class PolicyStatementsHandler extends AsyncEntityCommandHandler<PolicyStatementGroup,PolicyStatementRequest,PolicyStatementDescriptor>{
+public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatement,PolicyStatementRequest,PolicyStatement>{
 
     @Override
-    protected Mono<PolicyStatementDescriptor> execute(EntityContext<PolicyStatementGroup> context, PolicyStatementRequest command) {
+    protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
         
-        PolicyStatementCreated stmt = parseStatement(command.getRootType(), command);
-       // stmt.
-        AyncEntityContext<PolicyStatementGroup> async =  context.asAsyncEntityContext();
-        
-        Optional<PolicyStatementGroup> stmtGroup = context.<PolicyStatementGroup>asAsyncEntityContext().getEntity();
-        if(stmtGroup.isEmpty())
-        {
-            
-           // async.create(command.getRootType(), event)
-        }
-        return null;
+        PolicyStatementCreated stmt = parseStatement(command);
+        PolicyStatemetParser.validate((RootEntityContext<PolicyStatement>) context, stmt);
+        return context.create(stmt.getSid(), stmt);
     }
     
-    private static PolicyStatementCreated parseStatement(String rootType,PolicyStatementRequest req)
+    private static PolicyStatementCreated parseStatement(PolicyStatementRequest req)
     {
-        return PolicyStatemetParser.parseStatement(rootType, req);
+        return PolicyStatemetParser.parseStatement(req);
     }
     
     private static void checkResourceConstrains(Collection<ResourceDescriptor> resources)
@@ -65,4 +58,6 @@ public class PolicyStatementsHandler extends AsyncEntityCommandHandler<PolicySta
             
         }
     }
+    
+    
 }

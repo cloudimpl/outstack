@@ -88,7 +88,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
                 if (async) {
-                    return (Z)new AyncEntityContext(rootType,
+                    return (Z)new AsyncEntityContext(rootType,
                             rootTid, tenantId,
                             Optional.of((EntityProvider) this::loadEntity),
                             idGenerator, Optional.of((CRUDOperations) this),

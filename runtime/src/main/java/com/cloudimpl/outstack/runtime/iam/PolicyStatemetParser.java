@@ -15,8 +15,15 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
+import com.cloudimpl.outstack.runtime.RootEntityContext;
+import com.cloudimpl.outstack.runtime.domain.CommandHandlerEntity;
+import com.cloudimpl.outstack.runtime.domain.QueryHandlerEntity;
+import com.cloudimpl.outstack.runtime.domain.ServiceModule;
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -30,7 +37,7 @@ public class PolicyStatemetParser {
     public static Pattern RESOURCE_NAME_PATTERN = Pattern.compile("[a-zA-Z_$][a-zA-Z\\d_$]*"); //("[a-zA-Z]+[_[a-zA-Z0-9]]+");
     public static Pattern RESOURCE_ID_PATTERN = Pattern.compile("[a-zA-Z0-9_$][a-zA-Z0-9_-]*|\\{[a-zA-Z0-9_$][a-zA-Z0-9._-]*\\}");
 
-    public static PolicyStatementCreated parseStatement(String rootType,PolicyStatementRequest stmt) {
+    public static PolicyStatementCreated parseStatement(PolicyStatementRequest stmt) {
         if (stmt.getEffect() == null) {
             throw new PolicyStatementException("policy statement effectType is null");
         }
@@ -43,7 +50,76 @@ public class PolicyStatemetParser {
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
         }
-        return new PolicyStatementCreated(stmt.getSid(), rootType,stmt.getEffect(), actions, resources);
+        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), actions, resources);
+    }
+
+    public static void validate(RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
+        String rootType = validateCrossResourceUsage(context, event.getResources());
+        if (rootType == null) {
+            rootType = "*";
+        }
+        validateActions(context, rootType, event.getActions());
+    }
+
+    private static String validateCrossResourceUsage(RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
+
+        
+        String rootType = null;
+        for (ResourceDescriptor desc : resources) {
+            switch (desc.getResourceScope()) {
+                case ALL:
+                case ALL_ROOT_ID_CHILD_ID_ONLY:
+                case ALL_ROOT_ID_CHILD_TYPE_ONLY:
+                case ALL_ROOT_ID_ONLY:
+                case ROOT_ID_CHILD_ID_ONLY:
+                case ROOT_ID_CHILD_TYPE_ONLY:
+                case ROOT_ID_ONLY: {
+                    ServiceModule serviceModule = context.getEntityQueryProvider(ServiceModule.class, desc.getRootType()).getRoot().orElseThrow(() -> new PolicyValidationError("resource " + desc.getRootType() + " not found"));
+                    if (rootType == null) {
+                        rootType = desc.getRootType();
+
+                    } else if (!rootType.equalsIgnoreCase(desc.getRootType())) {
+                        throw new PolicyValidationError("cross resources reference not allowed");
+                    }
+                    
+                    if(serviceModule.getTenancy() == TenantRequirement.REQUIRED && !desc.isTenantResource())
+                    {
+                         throw new PolicyValidationError(rootType+" is a tenant resource, non tenant resource pattern not allowed");
+                    }
+                    else if(serviceModule.getTenancy() == TenantRequirement.NONE && desc.isTenantResource())
+                    {
+                        throw new PolicyValidationError(rootType+" is a non tenant resource, tenant resource pattern not allowed");
+                    }
+                    break;
+                }
+            }
+        }
+        return rootType;
+    }
+
+    private static void validateActions(RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> actions) {
+       
+        List<String> actionsList = new LinkedList<>();
+        if (!rootType.equals("*")) {
+             ServiceModule service = context.getEntityQueryProvider(ServiceModule.class, rootType).getRoot().get();
+            context.getEntityQueryProvider(ServiceModule.class, service.id()).getChildsByType(CommandHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
+            context.getEntityQueryProvider(ServiceModule.class, service.id()).getChildsByType(QueryHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
+        }
+
+        for (ActionDescriptor action : actions) {
+            switch (action.getActionScope()) {
+                case EXACT_NAME: {
+                    if (rootType.contains("*")) {
+                        throw new PolicyValidationError("action definitions not allowed for wild card resource type");
+                    }
+                    actionsList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource action " + action.getName() + " not found"));
+                    break;
+                }
+                default: {
+
+                }
+            }
+        }
     }
 
     public static ResourceDescriptor parse(String resourceDesc) {
@@ -85,15 +161,13 @@ public class PolicyStatemetParser {
 
         ResourceDescriptor.Builder builder = ResourceDescriptor.builder();
         builder.withTenantId(parts[1]).withTenantScope(tenantScope);
-        if(parts[2].equals("**"))
-        {
+        if (parts[2].equals("**")) {
             checkCount(3, parts.length, "invalid tenant resource pattern. {0}", resourceDesc);
             return builder.withResourceScope(ResourceDescriptor.ResourceScope.GLOBAL).withVersion(parts[2]).build();
         }
         validateResourceName(parts[2], "version");
         builder.withVersion(parts[2]);
-        if(parts[3].equals("**"))
-        {
+        if (parts[3].equals("**")) {
             checkCount(4, parts.length, "invalid tenant resource pattern. {0}", resourceDesc);
             return builder.withResourceScope(ResourceDescriptor.ResourceScope.VERSION_ONLY).withRootType(parts[3]).build();
         }
@@ -155,8 +229,7 @@ public class PolicyStatemetParser {
         }
         checkMinCount(2, parts.length, "invalid resource pattern. {0}", resourceDesc);
         validateResourceName(parts[0], "version");
-        if(parts[1].equals("**"))
-        {
+        if (parts[1].equals("**")) {
             checkCount(2, parts.length, "invalid resource pattern. {0}", resourceDesc);
             return builder.withVersion(parts[0]).withResourceScope(ResourceDescriptor.ResourceScope.VERSION_ONLY).build();
         }
@@ -166,7 +239,7 @@ public class PolicyStatemetParser {
 
         builder.withVersion(parts[0]);
         builder.withRootType(parts[1]);
-        
+
         if (parts[2].equals("*")) {
             resourceScope = ResourceDescriptor.ResourceScope.ALL_ROOT_ID_ONLY;
         } else if (parts[2].equals("**")) {

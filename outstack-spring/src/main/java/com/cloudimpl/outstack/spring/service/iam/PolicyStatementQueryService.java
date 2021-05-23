@@ -13,31 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.service;
+package com.cloudimpl.outstack.spring.service.iam;
 
 import com.cloudimpl.outstack.common.RouterType;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatement;
 import com.cloudimpl.outstack.spring.component.SpringQueryService;
-import com.cloudimpl.outstack.runtime.domain.DomainContext;
-import com.cloudimpl.outstack.runtime.domain.ServiceModuleRef;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "DomainContextQueryService")
-@Router(routerType = RouterType.LOCAL)
-public class DomainContextQueryService extends SpringQueryService<DomainContext>{
-    static
-    {
-        $$(DomainContext.class);
-        $$(ServiceModuleRef.class);
+@CloudFunction(name = "PolicyStatementQueryService")
+@Router(routerType = RouterType.ROUND_ROBIN)
+public class PolicyStatementQueryService extends SpringQueryService<PolicyStatement> {
+
+    static {
+        $$(PolicyStatement.class);
     }
-    
-    public DomainContextQueryService(EventRepositoryFactory factory) {
+
+    public PolicyStatementQueryService(EventRepositoryFactory factory) {
         super(factory);
     }
-    
+
 }

@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.domain;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 
@@ -23,54 +24,48 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "CommandHandlers",version = "v1")
-public class CommandHandlerEntity extends ChildEntity<ServiceModule>{
-    private String handlerName;
-    private String entityName;
+@EntityMeta(plural = "ServiceModuleRefs",version = "v1")
+public class ServiceModuleRef extends ChildEntity<DomainContext> {
 
-    public CommandHandlerEntity(String handlerName) {
-        this.handlerName = handlerName;
+    private final String serviceRef;
+
+    public ServiceModuleRef(String serviceRef) {
+        this.serviceRef = serviceRef;
     }
 
-    public String getHandlerName() {
-        return handlerName;
-    }
-
-    public String getEntityName() {
-        return entityName;
-    }
-    
     @Override
-    public Class<ServiceModule> rootType() {
-        return ServiceModule.class;
+    public Class<DomainContext> rootType() {
+        return DomainContext.class;
     }
 
     @Override
     public String entityId() {
-        return handlerName;
+        return serviceRef;
     }
 
-    private void applyEvent(CommandHandlerRegistered cmdHandlerRegistered)
-    {
-        this.handlerName = cmdHandlerRegistered.getHandlerName();
-        this.entityName = cmdHandlerRegistered.getEntityName();
+    public String getServiceRef() {
+        return serviceRef;
     }
-    
+
+    private void applyEvent(ServiceModuleRefCreated refCreated) {
+
+    }
+
     @Override
     protected void apply(Event event) {
-        switch(event.getClass().getSimpleName())
-        {
-            case "CommandHandlerRegistered":
-            {
-                applyEvent((CommandHandlerRegistered)event);
+        switch (event.getClass().getSimpleName()) {
+            case "ServiceModuleRefCreated": {
                 break;
+            }
+            default: {
+                throw new DomainEventException(DomainEventException.ErrorCode.UNHANDLED_EVENT, "unhandled event:" + event.getClass().getName());
             }
         }
     }
 
     @Override
     public String idField() {
-        return "handlerName";
+        return "serviceRef";
     }
-    
+
 }

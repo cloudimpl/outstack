@@ -17,7 +17,10 @@ package com.cloudimpl.outstack.runtime.iam;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -25,7 +28,8 @@ import java.util.Collections;
  *
  * @author nuwan
  */
-public class PolicyStatementDescriptor extends ChildEntity<PolicyStatementGroup> {
+@EntityMeta(plural = "PolicyStatements" , version = "v1")
+public class PolicyStatement extends RootEntity implements ITenantOptional{
 
     public enum EffectType {
         ALLOW, DENY
@@ -35,11 +39,12 @@ public class PolicyStatementDescriptor extends ChildEntity<PolicyStatementGroup>
     private  EffectType effect;
     private  Collection<ActionDescriptor> actions;
     private  Collection<ResourceDescriptor> resources;
-
-    public PolicyStatementDescriptor(String sid) {
+    private final String tenantId;
+    public PolicyStatement(String sid,String tenantId) {
         this.sid = sid;
-        this.actions = Collections.unmodifiableCollection(actions);
-        this.resources = Collections.unmodifiableCollection(resources);
+        this.tenantId = tenantId;
+        this.actions = Collections.EMPTY_LIST;
+        this.resources = Collections.EMPTY_LIST;
     }
 
     public Collection<ActionDescriptor> getActions() {
@@ -58,13 +63,14 @@ public class PolicyStatementDescriptor extends ChildEntity<PolicyStatementGroup>
         return sid;
     }
 
+    @Override
+    public String getTenantId()
+    {
+        return this.tenantId;
+    }
+    
     public boolean isActionMatched(String action) {
         return actions.stream().filter(ad -> ad.isActionMatched(action)).findFirst().isPresent();
-    }
-
-    @Override
-    public Class<PolicyStatementGroup> rootType() {
-        return PolicyStatementGroup.class;
     }
 
     @Override

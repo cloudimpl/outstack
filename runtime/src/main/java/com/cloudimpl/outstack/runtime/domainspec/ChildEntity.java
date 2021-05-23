@@ -30,7 +30,7 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
     @Override
     public String getTRN() {
         switch (getTenantRequirement()) {
-            case TENANT_REQUIRED: {
+            case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
                 return makeTRN(rootType(), getMeta().getVersion(), rootId(), getClass(), id(), getTenantId());
             }
@@ -43,12 +43,12 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
     @Override
     public String getBRN() {
         switch (getTenantRequirement()) {
-            case TENANT_REQUIRED: {
+            case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
                 return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), ITenant.class.cast(this).getTenantId());
             }
             default: {
-                return makeRN(rootType(), getMeta().getCreatedDate(), rootId(), getClass(), entityId(), getTenantId());
+                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), getTenantId());
             }
         }
     }
