@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.service.iam;
+package com.cloudimpl.outstack.service.user;
 
 import com.cloudimpl.outstack.common.RouterType;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
+import com.cloudimpl.outstack.domain.example.User;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.domain.Policy;
-import com.cloudimpl.outstack.runtime.domain.PolicyStatementRef;
-import com.cloudimpl.outstack.spring.component.SpringService;
+import com.cloudimpl.outstack.spring.component.SpringQueryService;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "PolicyService")
+@CloudFunction(name = "UserQueryService")
 @Router(routerType = RouterType.ROUND_ROBIN)
-public class PolicyService extends SpringService<Policy>{
+public class UserQueryService extends SpringQueryService<User>{
     static{
-        $(CreatePolicy.class);
-        $(CreatePolicyStatementRef.class);
-        $$(Policy.class);
-        $$(PolicyStatementRef.class);
+        $$(User.class);
     }
-    public PolicyService(EventRepositoryFactory factory) {
+    public UserQueryService(EventRepositoryFactory factory) {
         super(factory);
     }
     

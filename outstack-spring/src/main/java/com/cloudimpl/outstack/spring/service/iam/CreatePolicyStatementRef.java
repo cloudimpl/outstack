@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.spring.service.iam;
 
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.domain.Policy;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRef;
@@ -33,7 +34,7 @@ public class CreatePolicyStatementRef extends EntityCommandHandler<PolicyStateme
     @Override
     protected PolicyStatementRef execute(EntityContext<PolicyStatementRef> context, PolicyStatementRefRequest command) {
         PolicyStatement stmt = context.getEntityQueryProvider(PolicyStatement.class,command.getPolicyStmtName()).getRoot().orElseThrow(()->new PolicyValidationError("policy statement "+command.getPolicyStmtName()+" not found"));
-        return context.<Policy,PolicyStatementRef>asChildContext().create(stmt.id(),new PolicyStatementRefCreated(command.getPolicyName(),stmt.id()));
+        return context.<Policy,PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()),new PolicyStatementRefCreated(command.getPolicyName(),EntityIdHelper.idToRefId(stmt.id())));
     }
 
    
