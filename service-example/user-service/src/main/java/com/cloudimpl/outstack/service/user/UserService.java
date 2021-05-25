@@ -15,6 +15,9 @@
  */
 package com.cloudimpl.outstack.service.user;
 
+import com.cloudimpl.outstack.common.RouterType;
+import com.cloudimpl.outstack.core.annon.CloudFunction;
+import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.domain.example.User;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.spring.component.SpringService;
@@ -23,6 +26,8 @@ import com.cloudimpl.outstack.spring.component.SpringService;
  *
  * @author nuwan
  */
+@CloudFunction(name = "UserService")
+@Router(routerType = RouterType.ROUND_ROBIN)
 public class UserService extends SpringService<User>{
     static{
         $(CreateUser.class);

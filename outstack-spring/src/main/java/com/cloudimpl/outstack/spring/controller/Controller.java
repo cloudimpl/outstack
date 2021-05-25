@@ -17,18 +17,15 @@ import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
+import io.rsocket.exceptions.ApplicationErrorException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.reactivestreams.Publisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-import org.springframework.hateoas.server.reactive.WebFluxLinkBuilder;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,7 +43,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
@@ -64,18 +60,18 @@ public class Controller {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
     private Mono<Object> createRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
-         return doAuth().flatMap(token -> {
-        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-        String rootType = serviceDesc.getRootType();
-        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
-        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
-        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-        CommandWrapper request = CommandWrapper.builder()
-                .withCommand(action.getName()).withPayload(body)
-                .withVersion(version)
-                .withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onRootEntityCreation(context, version, rootEntity, r));
-           });
+        return doAuth().flatMap(token -> {
+            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+            String rootType = serviceDesc.getRootType();
+            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
+            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
+            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+            CommandWrapper request = CommandWrapper.builder()
+                    .withCommand(action.getName()).withPayload(body)
+                    .withVersion(version)
+                    .withTenantId(tenantId).build();
+            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onRootEntityCreation(context, version, rootEntity, r));
+        });
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})

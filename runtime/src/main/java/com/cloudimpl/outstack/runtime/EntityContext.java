@@ -26,10 +26,10 @@ public abstract class EntityContext<T extends Entity> implements Context {
     private final String tenantId;
     protected final Class<T> entityType;
     private final List<Event> events;
-    private final Optional<EntityProvider<? extends RootEntity>> entitySupplier;
+    protected final Optional<EntityProvider<? extends RootEntity>> entitySupplier;
     protected final Supplier<String> idGenerator;
     protected final Optional<CRUDOperations> crudOperations;
-    private final QueryOperations<?> queryOperation;
+    protected final QueryOperations<?> queryOperation;
     protected final Optional<Consumer<Event>> eventPublisher;
     protected EntityContextProvider.ReadOnlyTransaction tx;
     protected final Consumer<Object> validator;
@@ -112,4 +112,5 @@ public abstract class EntityContext<T extends Entity> implements Context {
     {
         return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType),rootType,id,getTenantId());
     }
+    
 }

@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -13,12 +14,19 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.internal.LinkedTreeMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -34,6 +42,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
+    private final static ObjectMapper objectMapper = new ObjectMapper();
 
     public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
@@ -84,6 +93,8 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
         if (ICommand.class.isInstance(input)) {
             return applyCommand((ICommand) input);
+        } else if (LinkedTreeMap.class.isInstance(input)) {
+            return applyCommand(GsonCodec.decodeTree(CommandWrapper.class, (LinkedTreeMap) input));
         } else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
@@ -96,22 +107,24 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
                 Mono<EntityContext> mono = AsyncEntityCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd);
                 return mono.doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
                         .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
-                        .flatMap(ct -> resolveReply(ct.getTx().getReply()));
+                        .flatMap(ct -> resolveReply(ct.getTx().getReply()))
+                        .map(r -> encode(cmd, r));
             } else {
                 return Mono.just(handler.emit(contextProvider, cmd))
                         .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
                         .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
-                        .flatMap(ct -> resolveReply(ct.getTx().getReply()));
+                        .flatMap(ct -> resolveReply(ct.getTx().getReply()))
+                        .map(r -> encode(cmd, r));
             }
 
         } catch (Throwable thr) {
             thr.printStackTrace();
-            // return Mono.error(thr);
+            return Mono.error(thr);
 //            if (RuntimeException.class.isInstance(thr)) {
 //                throw thr;
 //            }
-              throw thr;
-           // throw new RuntimeException(thr);
+            //  throw thr;
+            // throw new RuntimeException(thr);
         }
     }
 
@@ -120,6 +133,16 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
             return (Mono) reply;
         } else {
             return Mono.just(reply);
+        }
+    }
+
+    private Object encode(ICommand cmd, Object reply) {
+        if (CommandWrapper.class.isInstance(cmd)) {
+            //return objectMapper.writeValueAsString(reply);
+            return objectMapper.convertValue(reply, LinkedHashMap.class);
+
+        } else {
+            return reply;
         }
     }
 

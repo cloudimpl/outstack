@@ -5,20 +5,26 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.ICommand;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultGetEventsQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.internal.LinkedTreeMap;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -33,7 +39,8 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
     private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
-
+    private final static ObjectMapper objectMapper = new ObjectMapper();
+    
     public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.eventRepository = eventRepository;
@@ -78,6 +85,8 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
         try {
             if (IQuery.class.isInstance(input)) {
                 return applyQuery((IQuery) input);
+            } else if (LinkedTreeMap.class.isInstance(input)) {
+                return applyQuery(GsonCodec.decodeTree(QueryWrapper.class, (LinkedTreeMap) input));
             } else {
                 return Mono.error(() -> new CommandException("invalid input received. {0}", input));
             }
@@ -91,12 +100,28 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
     private Publisher applyQuery(IQuery query) {
         EntityQueryHandler queryHandler = getQueryHandler(query.queryName()).orElseThrow(() -> new QueryException("query {0} not found", query.queryName().toLowerCase()));
         if (AsyncEntityQueryHandler.class.isInstance(queryHandler)) {
-            return AsyncEntityQueryHandler.class.cast(queryHandler).emitAsync(contextProvider, query);
+            Publisher ret =  AsyncEntityQueryHandler.class.cast(queryHandler).emitAsync(contextProvider, query);
+            if(ret instanceof Mono)
+            {
+                return Mono.from(ret).map(e->encode(query, e));
+            }else
+            {
+                return Flux.from(ret).map(e->encode(query, e));
+            }
         } else {
-            return Mono.just(queryHandler.emit(contextProvider, query));
+            return Mono.just(queryHandler.emit(contextProvider, query)).map(e->encode(query, e));
         }
     }
 
+     protected static  Object encode(IQuery query, Object reply) {
+        if (QueryWrapper.class.isInstance(query)) {
+            //return objectMapper.writeValueAsString(reply);
+            return objectMapper.convertValue(reply, LinkedHashMap.class);
+
+        } else {
+            return reply;
+        }
+    }
     public void validate(Predicate<String> pred, String name, String error) {
         if (pred.test(name)) {
             throw new ServiceProviderException(error);

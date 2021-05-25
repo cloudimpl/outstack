@@ -20,6 +20,8 @@ import com.cloudimpl.outstack.domain.example.UserCreated;
 import com.cloudimpl.outstack.domain.example.command.UserCreateReq;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 
 /**
  *
@@ -29,7 +31,13 @@ public class CreateUser extends EntityCommandHandler<User, UserCreateReq, User>{
 
     @Override
     protected User execute(EntityContext<User> context, UserCreateReq command) {
-        return context.create(command.getUsername(), new UserCreated(command.getUsername(), command.getUsername()));
+        String tenantId = context.getTenantId();
+        if(tenantId != null)
+        {
+            User nonTenantUser = context.<User>asRootContext().asNonTenantContext(command.getUsername()).getEntity().orElseThrow(()->new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"user {0} not found", command.getUsername()));
+            return context.create(EntityIdHelper.idToRefId(nonTenantUser.id()), new UserCreated(EntityIdHelper.idToRefId(nonTenantUser.id()), command.getPassword()));
+        }
+        return context.create(command.getUsername(), new UserCreated(command.getUsername(), command.getPassword()));
     }
     
 }

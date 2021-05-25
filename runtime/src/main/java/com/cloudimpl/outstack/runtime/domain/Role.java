@@ -25,38 +25,26 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "Policies" , version = "v1")
-public class Policy extends RootEntity implements ITenantOptional {
+@EntityMeta(plural = "Roles" , version = "v1")
+public class Role extends RootEntity implements ITenantOptional {
 
-    private String policyContext;
-    private final String policyName;
-    private final String tenantId;
+    private final String roleName;
 
-    public Policy(String policyName, String tenantId) {
-        this.policyName = policyName;
-        this.tenantId = tenantId;
+    public Role(String roleName) {
+        this.roleName = roleName;
     }
 
-    public String getPolicyName() {
-        return policyName;
-    }
-
-    @Override
-    public String getTenantId() {
-        return tenantId;
+    public String getRoleName() {
+        return roleName;
     }
 
     @Override
     public String entityId() {
-        return policyName;
+        return roleName;
     }
 
-    public String getPolicyContext() {
-        return policyContext;
-    }
+    private void applyEvent(PolicyCreated created) {
 
-    private void applyEvent(PolicyCreated policyCreated) {
-        this.policyContext = policyCreated.getPolicyContext();
     }
 
     @Override
@@ -74,6 +62,7 @@ public class Policy extends RootEntity implements ITenantOptional {
 
     @Override
     public String idField() {
-        return "policyName";
+        return "roleName";
     }
+
 }

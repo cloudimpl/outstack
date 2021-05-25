@@ -43,5 +43,7 @@
      </build>
     <modules>
         <module>user-service</module>
+        <module>App</module>
+        <module>api-gateway</module>
     </modules>
 </project>

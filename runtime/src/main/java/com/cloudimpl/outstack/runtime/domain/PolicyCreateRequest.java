@@ -24,13 +24,19 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
 public class PolicyCreateRequest extends Command {
 
     private final String policyName;
+    private final String policyContext;
     public PolicyCreateRequest(Builder builder) {
         super(builder);
         this.policyName = builder.policyName;
+        this.policyContext = builder.policyContext;
     }
 
     public String getPolicyName() {
         return policyName;
+    }
+
+    public String getPolicyContext() {
+        return policyContext;
     }
 
     public static Builder builder()
@@ -41,6 +47,13 @@ public class PolicyCreateRequest extends Command {
     public static final class Builder extends Command.Builder {
 
         private String policyName; 
+        private String policyContext;
+        
+        public Builder withPolicyContext(String policyContext)
+        {
+            this.policyContext = policyContext;
+            return this;
+        }
         
         public Builder withPolicyName(String policyName)
         {

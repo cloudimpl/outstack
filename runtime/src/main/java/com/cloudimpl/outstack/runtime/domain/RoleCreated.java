@@ -23,37 +23,36 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-public class PolicyCreated extends Event<Policy> {
+public class RoleCreated extends Event<Role>{
 
-    private final String policyName;
-    private final String policyContext;
-    public PolicyCreated(String policyName,String policyContext) {
-        this.policyName = policyName;
-        this.policyContext = policyContext;                                                                                                                                                                                                                             
+    private final String roleName;
+
+    public RoleCreated(String roleName) {
+        this.roleName = roleName;
     }
 
+    public String getRoleName() {
+        return roleName;
+    }
+    
     @Override
     public Class<? extends Entity> getOwner() {
-        return Policy.class;
+        return Role.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return Policy.class;
-    }
-
-    public String getPolicyContext() {
-        return policyContext;
+        return Role.class;
     }
 
     @Override
     public String entityId() {
-        return policyName;
+        return roleName;
     }
 
     @Override
     public String rootEntityId() {
-        return policyName;
+        return roleName;
     }
-
+    
 }

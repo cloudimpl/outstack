@@ -1,7 +1,6 @@
 package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
-import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import javax.validation.constraints.NotBlank;
 import com.cloudimpl.outstack.domain.example.Organization;
 import com.cloudimpl.outstack.domain.example.TenantCreated;
@@ -11,21 +10,14 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
 
 @EntityMeta(plural="tenants",version="v1")
-public class Tenant extends ChildEntity<Organization> implements ITenantOptional {
-    private final String tenantId ;
+public class Tenant extends ChildEntity<Organization> {
     private String endpoint ;
     @NotEmpty(message = "tenantName field cannot be empty or null in Tenant entity")
     @NotBlank(message = "tenantName field cannot be blank in Tenant entity")
     private final String tenantName ;
 
-    public Tenant(String tenantName, String tenantId) {
+    public Tenant(String tenantName) {
         this.tenantName = tenantName ;
-        this.tenantId = tenantId ;
-    }
-
-    @Override
-    public String getTenantId() {
-        return this.tenantId ;
     }
 
     public String getEndpoint() {

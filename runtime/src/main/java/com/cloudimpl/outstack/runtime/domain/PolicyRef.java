@@ -15,55 +15,56 @@
  */
 package com.cloudimpl.outstack.runtime.domain;
 
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
-import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
  */
-@EntityMeta(plural = "Policies" , version = "v1")
-public class Policy extends RootEntity implements ITenantOptional {
-
-    private String policyContext;
-    private final String policyName;
+@EntityMeta(plural = "PolicyRef" , version = "v1")
+public class PolicyRef extends ChildEntity<Policy> implements ITenantOptional{
+    private final String policyRef;
     private final String tenantId;
-
-    public Policy(String policyName, String tenantId) {
-        this.policyName = policyName;
+    
+    public PolicyRef(String policyRef,String tenantId) {
+        this.policyRef = policyRef;
         this.tenantId = tenantId;
     }
+    
+    @Override
+    public Class<Policy> rootType() {
+        return Policy.class;
+    }
 
-    public String getPolicyName() {
-        return policyName;
+    @Override
+    public String entityId() {
+        return policyRef;
+    }
+
+    public String getPolicyRef() {
+        return policyRef;
     }
 
     @Override
     public String getTenantId() {
         return tenantId;
     }
-
+ 
+    private void applyEvent(PolicyRefCreated event)
+    {
+    }
+    
     @Override
-    public String entityId() {
-        return policyName;
-    }
-
-    public String getPolicyContext() {
-        return policyContext;
-    }
-
-    private void applyEvent(PolicyCreated policyCreated) {
-        this.policyContext = policyCreated.getPolicyContext();
-    }
-
-    @Override
-    protected void apply(Event event) {
-        switch (event.getClass().getSimpleName()) {
-            case "PolicyCreated": {
-                applyEvent((PolicyCreated) event);
+    protected void apply(Event event) { 
+        switch(event.getClass().getName())
+        {
+            case "PolicyRefCreated":
+            {
+                applyEvent((PolicyRefCreated)event);
                 break;
             }
             default: {
@@ -74,6 +75,7 @@ public class Policy extends RootEntity implements ITenantOptional {
 
     @Override
     public String idField() {
-        return "policyName";
+        return "policyRef";
     }
+    
 }

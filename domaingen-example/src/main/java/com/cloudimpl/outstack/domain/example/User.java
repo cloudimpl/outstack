@@ -1,22 +1,29 @@
 package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import javax.validation.constraints.NotBlank;
-import com.cloudimpl.outstack.domain.example.UserCreated;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
 
 @EntityMeta(plural="users",version="v1")
-public class User extends RootEntity {
+public class User extends RootEntity implements ITenantOptional {
+    private final String tenantId ;
     private String password ;
     @NotEmpty(message = "username field cannot be empty or null in User entity")
     @NotBlank(message = "username field cannot be blank in User entity")
     private final String username ;
 
-    public User(String username) {
+    public User(String username, String tenantId) {
         this.username = username ;
+        this.tenantId = tenantId ;
+    }
+
+    @Override
+    public String getTenantId() {
+        return this.tenantId ;
     }
 
     public String getPassword() {
