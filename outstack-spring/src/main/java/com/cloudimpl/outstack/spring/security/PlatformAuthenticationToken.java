@@ -15,31 +15,47 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import java.util.Collections;
+import java.util.Collection;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 /**
  *
  * @author nuwan
  */
-public class JwtAuthenticatedToken extends AbstractAuthenticationToken{
+public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
 
-    String token;
-    public JwtAuthenticatedToken(JwtToken token,String credential) {
-        super(Collections.EMPTY_SET);
-        this.token = credential;
-        setAuthenticated(true);
+    private final String principal;
+    private final String tenantId;
+    private final String context;
+    private final UserDetail userDetail;
+    public PlatformAuthenticationToken(String context, String principal, String tenantId, Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
+        super(authorities);
+        this.context = context;
+        this.principal = principal;
+        this.tenantId = tenantId;
+        this.userDetail = userDetail;
+    }
+
+    public String getUserId() {
+        return principal;
+    }
+
+    public String tenantId() {
+        return tenantId;
+    }
+
+    public String context() {
+        return context;
     }
 
     @Override
     public Object getCredentials() {
-        return this.token;
+        return null;
     }
 
     @Override
     public Object getPrincipal() {
-       // return new UserDetail("nuwan");
-       return null;
+        return principal;
     }
-    
+
 }

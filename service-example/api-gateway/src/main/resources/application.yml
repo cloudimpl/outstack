@@ -5,6 +5,12 @@ outstack:
     cluster:
       servicePort: 11000
       gossipPort: 13000
+    apiGateway:
+      authEndpoint:
+        domainOwner: cloudimpl
+        domainContext: example
+        version: version
+        serviceName: UserService
     providers:
       - name : com.cloudimpl.outstack.collection.CollectionProvider
         impl: com.cloudimpl.outstack.collection.MemCollectionProvider

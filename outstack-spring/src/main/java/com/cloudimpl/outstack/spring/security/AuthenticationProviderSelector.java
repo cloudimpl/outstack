@@ -15,31 +15,12 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import java.util.Collections;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationProvider;
 
 /**
  *
  * @author nuwan
  */
-public class JwtAuthenticatedToken extends AbstractAuthenticationToken{
-
-    String token;
-    public JwtAuthenticatedToken(JwtToken token,String credential) {
-        super(Collections.EMPTY_SET);
-        this.token = credential;
-        setAuthenticated(true);
-    }
-
-    @Override
-    public Object getCredentials() {
-        return this.token;
-    }
-
-    @Override
-    public Object getPrincipal() {
-       // return new UserDetail("nuwan");
-       return null;
-    }
-    
+public interface AuthenticationProviderSelector {
+    public AuthenticationProvider select(PlatformAuthenticationToken token);
 }

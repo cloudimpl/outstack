@@ -26,15 +26,21 @@ import org.springframework.security.core.userdetails.UserDetails;
  */
 public class UserDetail implements UserDetails{
 
-    private String user;
-    public UserDetail(String user) {
+    private final String user;
+    private final boolean active;
+    private final boolean locked;
+    private final Collection<PlatformGrantedAuthority> authorities;
+    public UserDetail(String user,boolean active,boolean locked,Collection<PlatformGrantedAuthority> authorities) {
         this.user = user;
+        this.active = active;
+        this.locked = locked;
+        this.authorities = authorities;
     }
 
     
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.EMPTY_LIST;
+    public Collection<PlatformGrantedAuthority> getAuthorities() {
+        return authorities;
     }
 
     @Override
@@ -54,7 +60,7 @@ public class UserDetail implements UserDetails{
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !locked;
     }
 
     @Override
@@ -64,7 +70,7 @@ public class UserDetail implements UserDetails{
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return active;
     }
     
 }

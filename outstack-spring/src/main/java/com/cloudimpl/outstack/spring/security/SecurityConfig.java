@@ -15,42 +15,53 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.web.server.ServerWebExchange;
 
 @Configuration
 @EnableWebFluxSecurity
 @EnableConfigurationProperties(SecurityProperties.class)
 public class SecurityConfig {
 
-    @Bean
-    //@SneakyThrows
-    RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
+    @Autowired
+    ReactiveAuthenticationManagerResolver<ServerWebExchange> authenticationManagerResolver;
 
-        try {
-            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(securityProperties.getPublicKeyFile().getInputStream());
-            return RSAPublicKey.class.cast(cert.getPublicKey());
-        } catch (CertificateException | IOException ex) {
-            Logger.getLogger(SecurityConfig.class.getName()).log(Level.SEVERE, null, ex);
-            throw new RuntimeException(ex);
-        }
-    }
-
-    @Bean
-    JwtBearerTokenAuthenticationManager authenticationManager(RSAPublicKey publicKey) {
-        return new JwtBearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
-    }
-
+//    @Bean
+//    //@SneakyThrows
+//    RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
+//
+//        try {
+//            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+//            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(securityProperties.getPublicKeyFile().getInputStream());
+//            return RSAPublicKey.class.cast(cert.getPublicKey());
+//        } catch (CertificateException | IOException ex) {
+//            Logger.getLogger(SecurityConfig.class.getName()).log(Level.SEVERE, null, ex);
+//            throw new RuntimeException(ex);
+//        }
+//    }
+//    @Bean
+//    BearerTokenAuthenticationManager authenticationManager(RSAPublicKey publicKey) {
+//        return new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
+//    }
     @Bean
     SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
             SecurityProperties securityProperties) {
-            http
+        http.csrf().disable()
                 .authorizeExchange()
+                //.pathMatchers("/swagger-ui.html").permitAll()
                 .anyExchange().authenticated()
                 .and()
-                .oauth2ResourceServer()
-                .jwt()
-                .authenticationManager(authenticationManager(tokenVerificationKey(securityProperties)));
+                .httpBasic().and()
+                .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver));
+        // .jwt()
+        ///  .authenticationManager(new BasicTokenAuthenticationManager());
         return http.build();
     }
+
 }
