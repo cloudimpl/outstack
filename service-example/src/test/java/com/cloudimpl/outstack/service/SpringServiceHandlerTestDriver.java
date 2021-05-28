@@ -26,7 +26,6 @@ import java.util.Map;
 public class SpringServiceHandlerTestDriver {
 
     private TestContext<? extends RootEntity> testContext;
-    private String organizationName;
 
     @Given("testing {word} functionality of {word}")
     public void initHandler(String handlerName, String entity) {
