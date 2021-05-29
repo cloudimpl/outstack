@@ -40,6 +40,9 @@ public class AuthenticationService {
 
     @Value("${outstack.api-gateway.authService.serviceName:@Null}")
     private String serviceName;
+    
+    @Value("${outstack.api-gateway.authService.pkceEnable:false}")
+    private boolean pkceEnable;
 
     @Autowired
     Cluster cluster;
@@ -58,6 +61,17 @@ public class AuthenticationService {
         return cluster.requestReply(authService, userDetailReq).map(o -> UserLoginResponse.class.cast(o)).map(this::onAuth).onErrorMap(err -> new PlatformAuthenticationException("user login error", err));
     }
 
+    public Mono<AuthorizeResponse> authorize(String responseType,String clientId,String redirectUri,
+            String scope,String state,String codeChallenge,
+            String codeChallengeMethod,String audience,String accessType)
+    {
+        if((codeChallenge == null || codeChallengeMethod == null) && pkceEnable)
+        {
+            return Mono.error(new PlatformAuthenticationException("PKCE mandatory", null));
+        }
+        return null;
+    }
+    
     private PlatformAuthenticationToken onAuth(UserLoginResponse resp) {
        // resp.getStmts().str
        // UserDetail user = new UserDetail(resp.getUserId(), resp.isActive(), resp.isLocked(), resp.getStmts());

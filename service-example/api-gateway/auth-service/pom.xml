@@ -3,12 +3,9 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.cloudimpl.outstack</groupId>
-        <artifactId>service-example</artifactId>
+        <artifactId>api-gateway</artifactId>
         <version>3.0</version>
     </parent>
-    <artifactId>api-gateway</artifactId>
-    <packaging>pom</packaging>
-    <modules>
-        <module>auth-service</module>
-    </modules>
+    <artifactId>auth-service</artifactId>
+    <packaging>jar</packaging>
 </project>

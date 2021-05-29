@@ -15,8 +15,6 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
@@ -44,6 +42,8 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
 //    RSAPublicKey publicKey;
     @Override
     public Mono<ReactiveAuthenticationManager> resolve(ServerWebExchange c) {
+        String path = c.getRequest().getPath().pathWithinApplication().value();
+        System.out.println("path:"+path);
         c.getRequest().getHeaders().forEach((k, l) -> System.out.println(k + ":" + l));
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         String authorization = c.getRequest().getHeaders().getOrEmpty("Authorization").stream().findFirst().orElseThrow(() -> new PlatformAuthenticationException("Authorization not found", null));

@@ -21,6 +21,8 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.web.server.ServerWebExchange;
 
 @Configuration
@@ -54,10 +56,14 @@ public class SecurityConfig {
             SecurityProperties securityProperties) {
         http.csrf().disable()
                 .authorizeExchange()
-                //.pathMatchers("/swagger-ui.html").permitAll()
+                .pathMatchers("/authorize") 
+                .permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .httpBasic().and()
+                .formLogin()
+                .loginPage("/authorize")
+                .and()
                 .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver));
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());

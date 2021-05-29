@@ -9,11 +9,13 @@ import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Component;
 
 /**
  *
  * @author nuwan
  */
+@Component
 public class ServiceDescriptorContextManager {
     private final Map<String,ServiceDescriptorVersionManager> appContexts;
 

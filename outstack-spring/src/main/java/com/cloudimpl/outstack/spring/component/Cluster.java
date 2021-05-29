@@ -41,6 +41,7 @@ public class Cluster {
 
     private CloudNode node;
 
+    @Autowired
     private ServiceDescriptorContextManager serviceDescriptorContextMan;
 
     @Autowired
@@ -53,7 +54,7 @@ public class Cluster {
     public void init() {
         Injector injector = new Injector();
         configManager.setInjector(injector);
-        serviceDescriptorContextMan = new ServiceDescriptorContextManager();
+      //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
         ResourceHelper resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
         EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(configManager.getCluster().getGossipPort())

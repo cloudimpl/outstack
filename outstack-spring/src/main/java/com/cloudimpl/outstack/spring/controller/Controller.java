@@ -55,162 +55,146 @@ public class Controller {
 
     @Autowired
     Cluster cluster;
-
+    
     @PostMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
     private Mono<Object> createRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-            CommandWrapper request = CommandWrapper.builder()
-                    .withCommand(action.getName()).withPayload(body)
-                    .withVersion(version)
-                    .withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onRootEntityCreation(context, version, rootEntity, r));
-        });
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName()).withPayload(body)
+                .withVersion(version)
+                .withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onRootEntityCreation(context, version, rootEntity, r));
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> updateRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + rootType);
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-            CommandWrapper request = CommandWrapper.builder()
-                    .withCommand(action.getName())
-                    .withVersion(version)
-                    .withPayload(body)
-                    .withId(rootId)
-                    .withRootId(rootId).withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload(body)
+                .withId(rootId)
+                .withRootId(rootId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
     private Mono<Object> createChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-            SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + child.getName());
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-            CommandWrapper request = CommandWrapper.builder()
-                    .withCommand(action.getName())
-                    .withVersion(version)
-                    .withPayload(body)
-                    .withRootId(rootId)
-                    .withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
-        });
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload(body)
+                .withRootId(rootId)
+                .withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> updateChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @PathVariable String childId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-            SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + child.getName());
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-            CommandWrapper request = CommandWrapper.builder()
-                    .withCommand(action.getName())
-                    .withVersion(version)
-                    .withPayload(body)
-                    .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload(body)
+                .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> getRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withVersion(version)
-                    .withQuery(action.getName())
-                    .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withVersion(version)
+                .withQuery(action.getName())
+                .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/events", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> getRootEntityEvents(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity,
             @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
-        return doAuth().flatMap(token -> {
-            Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                    pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType + "Events");
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withVersion(version)
-                    .withQuery(action.getName())
-                    .withId(rootId).withRootId(rootId)
-                    .withTenantId(tenantId)
-                    .withPageRequest(pagingReq).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType + "Events");
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withVersion(version)
+                .withQuery(action.getName())
+                .withId(rootId).withRootId(rootId)
+                .withTenantId(tenantId)
+                .withPageRequest(pagingReq).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> getChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @PathVariable String childId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + child.getName());
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withQuery(action.getName())
-                    .withVersion(version)
-                    .withRootId(rootId)
-                    .withId(childId).withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withRootId(rootId)
+                .withId(childId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}/events", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> getChildEntityEvents(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity,
             @PathVariable String childId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
-        return doAuth().flatMap(token -> {
-            Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                    pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
 
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + child.getName() + "Events");
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withQuery(action.getName())
-                    .withVersion(version)
-                    .withRootId(rootId)
-                    .withId(childId)
-                    .withTenantId(tenantId)
-                    .withPageRequest(pagingReq)
-                    .build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + child.getName() + "Events");
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withRootId(rootId)
+                .withId(childId)
+                .withTenantId(tenantId)
+                .withPageRequest(pagingReq)
+                .build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
@@ -239,55 +223,49 @@ public class Controller {
     @SuppressWarnings("unused")
     private Mono<Object> listRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,
             @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
-        return doAuth().flatMap(token -> {
-            Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                    pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
 
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + rootType);
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withQuery(action.getName())
-                    .withVersion(version)
-                    .withTenantId(tenantId).withPageRequest(pagingReq).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withTenantId(tenantId).withPageRequest(pagingReq).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @DeleteMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> deleteChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @PathVariable String childId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-            SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + child.getName());
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource {0} creation not implemented", child.getName()));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-            CommandWrapper request = CommandWrapper.builder()
-                    .withCommand(action.getName())
-                    .withVersion(version)
-                    .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource {0} creation not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @DeleteMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     private Mono<Object> deleteRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return doAuth().flatMap(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + rootType);
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource {0} deletion not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
-            CommandWrapper request = CommandWrapper.builder()
-                    .withCommand(action.getName())
-                    .withVersion(version)
-                    .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("resource {0} deletion not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping("/stream")
@@ -299,18 +277,16 @@ public class Controller {
     @GetMapping(value = "/streams/{context}/{version}/{rootEntity}/{rootId}")
     @SuppressWarnings("unused")
     private Flux<String> getRootEntityStream(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return doAuth().flatMapMany(token -> {
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            String rootType = serviceDesc.getRootType();
-            String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withVersion(version)
-                    .withQuery(action.getName())
-                    .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
-            return cluster.requestStream(serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s)).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+        String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query).orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withVersion(version)
+                .withQuery(action.getName())
+                .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+        return cluster.requestStream(serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s)).onErrorMap(this::onError);
     }
 
     private SpringServiceDescriptor getServiceCmdDescriptor(String context, String version, String rootTypePlural) {
