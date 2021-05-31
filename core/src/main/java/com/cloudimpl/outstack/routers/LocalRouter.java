@@ -22,7 +22,7 @@ import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.RouterException;
-import com.cloudimpl.outstack.coreImpl.CloudServiceRegistry;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import reactor.core.publisher.Mono;
 
 /**
@@ -35,7 +35,7 @@ public class LocalRouter implements CloudRouter {
     private final String topic;
 
     @Inject
-    public LocalRouter(@Named("@topic") String topic, CloudServiceRegistry serviceRegistry) {
+    public LocalRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
         this.topic = topic;
         serviceRegistry.localFlux().filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic)).doOnNext(this::setService).subscribe();

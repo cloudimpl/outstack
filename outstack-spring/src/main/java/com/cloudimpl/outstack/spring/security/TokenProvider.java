@@ -15,10 +15,13 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import org.springframework.security.core.Authentication;
+import reactor.core.publisher.Mono;
+
 /**
  *
  * @author nuwan
  */
-public class AuthorizeResponse {
-    
+public interface TokenProvider {
+    Mono<Authentication> authenticate(PlatformAuthenticationToken authentication);
 }

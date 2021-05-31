@@ -11,34 +11,10 @@
     </head>
     <body>
         <div class="container">
-            <form class="form-signin" method="post" action="/login">
-                <input type="hidden"
-                       name="responseType"
-                       value=[[${auth.responseType}]]/>
-                <input type="hidden"
-                       name="clientId"
-                       value="${auth.clientId}"/>
-                <input type="hidden"
-                       name="redirect_uri"
-                       value="${auth.redirectUri}"/>
-                <input type="hidden"
-                       name="scope"
-                       value=[[${scope}]]/>
+            <form class="form-signin" method="post" th:action="@{/login}">
                 <input th:type="hidden"
-                       th:name=="scope"
-                       th:value="${scope}"/>
-                <input type="hidden"
-                       name="state"
-                       value="${auth.state}"/>
-                <input type="hidden"
-                       name="code_challenge"
-                       value="${auth.codeChallenge}"/>
-                 <input type="hidden"
-                       name="code_challenge_method"
-                       value="${auth.codeChallengeMethod}"/>
-                 <input type="hidden"
-                       name="audience"
-                       value="${auth.audience}"/>
+                       th:name="authKey"
+                       th:value="${authKey}"/>
                 <h2 class="form-signin-heading">Please sign in</h2>
                 <p>
                     <label for="username" class="sr-only">Username</label>

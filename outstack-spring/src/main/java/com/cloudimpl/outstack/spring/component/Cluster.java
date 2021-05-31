@@ -13,6 +13,7 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
@@ -87,6 +88,11 @@ public class Cluster {
         System.exit(-1);
     }
 
+    public ServiceRegistryReadOnly getServiceRegistry()
+    {
+        return this.node.getServiceRegistry();
+    }
+    
     public ServiceDescriptorContextManager getServiceDescriptorContextManager() {
         return serviceDescriptorContextMan;
     }

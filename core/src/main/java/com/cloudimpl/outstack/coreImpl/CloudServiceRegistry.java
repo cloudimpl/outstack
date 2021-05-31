@@ -6,7 +6,9 @@ package com.cloudimpl.outstack.coreImpl;
 
 import com.cloudimpl.outstack.common.FluxMap;
 import com.cloudimpl.outstack.core.CloudService;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.logger.ILogger;
+import java.util.Optional;
 import java.util.stream.Stream;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -17,7 +19,7 @@ import reactor.core.scheduler.Schedulers;
  *
  * @author nuwansa
  */
-public class CloudServiceRegistry {
+public class CloudServiceRegistry implements ServiceRegistryReadOnly{
 
     private final FluxMap<String, CloudService> services;
     private final FluxMap<String, LocalCloudService> localServices;
@@ -65,22 +67,27 @@ public class CloudServiceRegistry {
         services().filter(srv -> srv.memberId().equals(memberId)).forEach(srv -> unregister(srv.id()));
     }
 
+    @Override
     public Flux<FluxMap.Event<String, CloudService>> flux() {
         return services.flux();
     }
 
+    @Override
     public Flux<FluxMap.Event<String, LocalCloudService>> localFlux() {
         return localServices.flux();
     }
 
+    @Override
     public Stream<CloudService> services() {
         return services.values().stream();
     }
 
-    public CloudService findLocalByName(String name) {
-        return localServices.values().stream().filter(s -> s.name().equals(name)).findFirst().orElse(null);
+    @Override
+    public Optional<CloudService> findLocalByName(String name) {
+        return localServices.values().stream().filter(s -> s.name().equals(name)).findFirst().map(m->(CloudService)m);
     }
 
+    @Override
     public CloudService findLocal(String id) {
         CloudService service = localServices.get(id);
         if (service == null) {
@@ -89,6 +96,7 @@ public class CloudServiceRegistry {
         return service;
     }
 
+    @Override
     public CloudService findService(String id) {
         CloudService service = services.get(id);
         if (service == null) {
@@ -97,6 +105,7 @@ public class CloudServiceRegistry {
         return service;
     }
 
+    @Override
     public boolean isServiceExist(String id) {
         return services.get(id) != null;
     }

@@ -20,20 +20,21 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component("Basic")
 public class BasicTokenAuthenticationManager
-        implements ReactiveAuthenticationManager {
-
-    public BasicTokenAuthenticationManager() {
-    }
+       extends PlatformAuthenticationManager{
 
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
+      //  String authKey = getContext().<String>get("authKey").orElseThrow(()->new PlatformAuthenticationException("authKey not found", null));
         return Mono.justOrEmpty(authentication)
                 .filter(a->a instanceof UsernamePasswordAuthenticationToken)
   
                 .cast(UsernamePasswordAuthenticationToken.class)
-                .map(a->new PlatformAuthenticationToken("xx", "asda", null,Collections.EMPTY_LIST, null))
+                .doOnNext(s->System.out.println(s.getDetails()))
+                .doOnNext(s->System.out.println("auth:"+s.isAuthenticated()))
+             //   .map(a->new PlatformAuthenticationToken("xx", "asda", null,Collections.EMPTY_LIST, null))
                 .cast(Authentication.class)
                 .doOnNext(a->a.setAuthenticated(true))
+                
                 .onErrorMap(JwtException.class, this::onError);
     }
 
@@ -49,6 +50,11 @@ public class BasicTokenAuthenticationManager
                 HttpStatus.UNAUTHORIZED,
                 "Invalid Access Token",
                 "https://tools.ietf.org/html/rfc6750#section-3.1");
+    }
+
+    @Override
+    protected Mono<PlatformAuthenticationToken> convertToPlatformToken(Authentication autentication) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
 }

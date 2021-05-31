@@ -11,6 +11,7 @@ import com.cloudimpl.outstack.core.CloudFunction;
 import com.cloudimpl.outstack.core.CloudServiceDescriptor;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.le.LeaderElectionManager;
 import com.cloudimpl.outstack.logger.Logger;
@@ -45,7 +46,7 @@ public class CloudEngineImpl implements CloudEngine {
         rootLogger = injector.inject(Logger.class);
         this.elMan = injector.inject(LeaderElectionManager.class);
         this.serviceRegistry = new CloudServiceRegistry(rootLogger);
-        injector.bind(CloudServiceRegistry.class).to(serviceRegistry);
+        injector.bind(ServiceRegistryReadOnly.class).to(serviceRegistry);
         injector.nameBind("@serviceFlux",this.serviceRegistry.flux());
         injector.bind(Logger.class).to(rootLogger);
         injector.bind(ILogger.class).to(rootLogger);

@@ -11,6 +11,7 @@ import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.RouterException;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.lb.LBRequest;
 import com.cloudimpl.outstack.core.lb.LBResponse;
 import com.cloudimpl.outstack.coreImpl.CloudServiceRegistry;
@@ -29,10 +30,10 @@ public class DynamicRouter implements CloudRouter {
   private final CloudRouterDescriptor desc;
   private final Map<String, Mono<CloudService>> mapServices = new ConcurrentHashMap<>();
   private final BiFunction<String, Object, Mono> rrHnd;
-  private final CloudServiceRegistry registry;
+  private final ServiceRegistryReadOnly registry;
 
   @Inject
-  public DynamicRouter(@Named("@topic") String topic, CloudServiceRegistry serviceRegistry,
+  public DynamicRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry,
       CloudRouterDescriptor desc, @Named("RRHnd") BiFunction<String, Object, Mono> rrHnd) {
     this.topic = topic;
     this.desc = desc;

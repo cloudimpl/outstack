@@ -1,0 +1,52 @@
+/*
+ * Copyright 2021 nuwan.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.cloudimpl.outstack.spring.security;
+
+/**
+ *
+ * @author nuwan
+ */
+public class AuthenticationMeta {
+    private final PlatformAuthenticationToken.TokenFlow tokenFlow;
+    private final String authKey;
+    private final String tokenContext;
+    
+    public AuthenticationMeta(PlatformAuthenticationToken.TokenFlow tokenFlow, String authKey,String tokenContext) {
+        this.tokenFlow = tokenFlow;
+        this.authKey = authKey;
+        this.tokenContext = tokenContext;
+    }
+
+    public String getAuthKey() {
+        return authKey;
+    }
+
+    public String getTokenContext() {
+        return tokenContext;
+    }
+
+    public PlatformAuthenticationToken.TokenFlow getTokenFlow() {
+        return tokenFlow;
+    }
+
+    @Override
+    public String toString() {
+        return "AuthenticationMeta{" + "tokenFlow=" + tokenFlow + ", authKey=" + authKey + ", tokenContet=" + tokenContext + '}';
+    }
+
+    
+    
+}

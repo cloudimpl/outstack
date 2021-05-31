@@ -52,6 +52,9 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
         } else if (authorization.toLowerCase().startsWith("basic")) {
             return Mono.just(basicTokenAuthentication);
         }
+        else if (path.equals("/login")) {
+            return Mono.just(basicTokenAuthentication);
+        }
 //            return Mono.just(new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey)));
 //        }
         return Mono.error(() -> new PlatformAuthenticationException("unknown auth type:" + authorization, null));

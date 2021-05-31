@@ -16,8 +16,6 @@
 package com.cloudimpl.outstack.spring.security;
 
 import java.util.Collection;
-import java.util.Collections;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
@@ -29,12 +27,16 @@ public class UserDetail implements UserDetails{
     private final String user;
     private final boolean active;
     private final boolean locked;
+    private final String  successRedirectUrl;
+    private final String errorRedirectUrl;
     private final Collection<PlatformGrantedAuthority> authorities;
-    public UserDetail(String user,boolean active,boolean locked,Collection<PlatformGrantedAuthority> authorities) {
+    public UserDetail(String user,boolean active,boolean locked,Collection<PlatformGrantedAuthority> authorities,String successRedirectUrl,String errorRedirectUrl) {
         this.user = user;
         this.active = active;
         this.locked = locked;
         this.authorities = authorities;
+        this.successRedirectUrl = successRedirectUrl;
+        this.errorRedirectUrl = errorRedirectUrl;
     }
 
     
@@ -71,6 +73,14 @@ public class UserDetail implements UserDetails{
     @Override
     public boolean isEnabled() {
         return active;
+    }
+
+    public String getErrorRedirectUrl() {
+        return errorRedirectUrl;
+    }
+
+    public String getSuccessRedirectUrl() {
+        return successRedirectUrl;
     }
     
 }

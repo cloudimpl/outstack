@@ -13,10 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.security;
+package com.cloudimpl.outstack.spring.security.service;
 
 import com.cloudimpl.outstack.common.CloudMessage;
+import com.cloudimpl.outstack.core.CloudService;
+import com.cloudimpl.outstack.runtime.ResourceCache;
 import com.cloudimpl.outstack.spring.component.Cluster;
+import com.cloudimpl.outstack.spring.security.PlatformAuthenticationException;
+import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
+import com.cloudimpl.outstack.spring.security.UserLoginRequest;
+import com.cloudimpl.outstack.spring.security.UserLoginResponse;
+import java.security.SecureRandom;
+import java.time.Duration;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,7 +37,7 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  */
 @Component
-public class AuthenticationService {
+public class AuthenticationHelperService {
 
     @Value("${outstack.api-gateway.authService.domainOwner:@Null}")
     private String domainOwner;
@@ -40,7 +50,7 @@ public class AuthenticationService {
 
     @Value("${outstack.api-gateway.authService.serviceName:@Null}")
     private String serviceName;
-    
+
     @Value("${outstack.api-gateway.authService.pkceEnable:false}")
     private boolean pkceEnable;
 
@@ -48,6 +58,8 @@ public class AuthenticationService {
     Cluster cluster;
 
     private String authService = null;
+
+  //  private ResourceCache<AuthorizeRequest> requestCache = new ResourceCache<>(10000, Duration.ofMinutes(1));
 
     public Mono<PlatformAuthenticationToken> login(PlatformAuthenticationToken token) {
         if (domainOwner == null || domainContext == null || version == null || serviceName == null) {
@@ -61,20 +73,33 @@ public class AuthenticationService {
         return cluster.requestReply(authService, userDetailReq).map(o -> UserLoginResponse.class.cast(o)).map(this::onAuth).onErrorMap(err -> new PlatformAuthenticationException("user login error", err));
     }
 
-    public Mono<AuthorizeResponse> authorize(String responseType,String clientId,String redirectUri,
-            String scope,String state,String codeChallenge,
-            String codeChallengeMethod,String audience,String accessType)
-    {
-        if((codeChallenge == null || codeChallengeMethod == null) && pkceEnable)
-        {
+    public Mono<AuthorizeResponse> authorize(AuthorizeRequest req) {
+        if ((req.getCodeChallenge() == null || req.getCodeChallengeMethod() == null) && pkceEnable) {
             return Mono.error(new PlatformAuthenticationException("PKCE mandatory", null));
         }
+        return cluster.requestReply("AuthenticationService", CloudMessage.builder()
+                .withData(req).withKey(cluster.getServiceRegistry().findLocalByName("AuthenticationService").orElseThrow(() -> new PlatformAuthenticationException("auth service not found", null)).id()).build());
+//        CloudService service = cluster.getServiceRegistry().findLocalByName("AuthenticationService").orElseThrow(() -> new PlatformAuthenticationException("auth service not found", null));
+//        String authKey = UUID.randomUUID().toString() + "," + service.id();
+//        requestCache.put(authKey, req);
+//        return Mono.just(new AuthorizeResponse(authKey));
+    }
+
+    private PlatformAuthenticationToken onAuth(UserLoginResponse resp) {
+        // resp.getStmts().str
+        // UserDetail user = new UserDetail(resp.getUserId(), resp.isActive(), resp.isLocked(), resp.getStmts());
         return null;
     }
-    
-    private PlatformAuthenticationToken onAuth(UserLoginResponse resp) {
-       // resp.getStmts().str
-       // UserDetail user = new UserDetail(resp.getUserId(), resp.isActive(), resp.isLocked(), resp.getStmts());
-       return null;
+
+    public Mono<AuthorizeRequest> getAuthRequest(String key) {
+        if (key == null) {
+            return Mono.empty();
+        }
+        String[] keys = key.split(",");
+        if(keys.length != 2)
+        {
+            return Mono.error(() -> new PlatformAuthenticationException("invalid key", null));
+        }
+        return cluster.requestReply("AuthenticationService", CloudMessage.builder().withData(new AuthorizeKeyRequest(key)).withKey(keys[1]).build());
     }
 }

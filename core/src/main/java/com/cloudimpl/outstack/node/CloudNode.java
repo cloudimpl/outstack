@@ -14,6 +14,7 @@ import com.cloudimpl.outstack.core.CloudFunction;
 import com.cloudimpl.outstack.core.CloudServiceDescriptor;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.coreImpl.CloudEngine;
 import com.cloudimpl.outstack.coreImpl.CloudEngineImpl;
@@ -93,6 +94,11 @@ public class CloudNode implements MetadataCodec {
         return config;
     }
 
+    public ServiceRegistryReadOnly getServiceRegistry()
+    {
+        return engine.getServiceRegistry();
+    }
+    
     private String getNodeId() {
         String id = System.getenv("NODE_ID");
         if (id == null) {

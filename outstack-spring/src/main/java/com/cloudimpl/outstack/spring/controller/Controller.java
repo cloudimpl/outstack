@@ -364,4 +364,11 @@ public class Controller {
                 .getContext()
                 .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err -> err.printStackTrace());
     }
+    
+    @GetMapping("/hello")
+    private Mono<String> hello() {
+        return ReactiveSecurityContextHolder
+                .getContext()
+                .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err -> err.printStackTrace()).map(t->"hello "+t.getName());
+    }
 }

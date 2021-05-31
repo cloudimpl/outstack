@@ -19,36 +19,29 @@ package com.cloudimpl.outstack.spring.security.login;
  *
  * @author nuwan
  */
-import com.cloudimpl.outstack.spring.security.Movie;
-import java.util.Arrays;
+import com.cloudimpl.outstack.spring.security.service.AuthenticationHelperService;
+import com.cloudimpl.outstack.spring.security.service.AuthorizeRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.reactive.result.view.Rendering;
-import org.thymeleaf.spring5.context.webflux.IReactiveDataDriverContextVariable;
-import org.thymeleaf.spring5.context.webflux.ReactiveDataDriverContextVariable;
-import reactor.core.publisher.Flux;
+import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 @Controller
 public class LoginFormController {
 
-    @GetMapping({"/login"})
-    public Mono<String> login(final Model model) {
-
-        // loads 1 and display 1, stream data, data driven mode.
-            IReactiveDataDriverContextVariable reactiveDataDrivenMode =
-                new ReactiveDataDriverContextVariable(Flux.fromIterable(Arrays.asList(new Movie("zzz", 100))), 1);
-
-        model.addAttribute("movies", reactiveDataDrivenMode);
-
-        // classic, wait repository loaded all and display it.
-        //model.addAttribute("movies", movieRepository.findAll());
-        System.out.println("login called");
-        return Mono.just("loginForm");
-
+    @Autowired
+    private AuthenticationHelperService authService;
+    
+    @GetMapping("/login")
+    private Mono<String> auth(final Model model, @RequestParam(name = "id",required = false) String id) {
+           return authService.getAuthRequest(id)
+                   .map(req->id)
+                .switchIfEmpty(Mono.just(""))
+                .map(resp->model.addAttribute("authKey", resp)).map(m->"loginForm"); 
+        
     }
+
 
 }

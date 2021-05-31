@@ -17,12 +17,20 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
 
 @Configuration
@@ -33,6 +41,8 @@ public class SecurityConfig {
     @Autowired
     ReactiveAuthenticationManagerResolver<ServerWebExchange> authenticationManagerResolver;
 
+    @Autowired
+    ReactiveAuthenticationManager authenticationManager;
 //    @Bean
 //    //@SneakyThrows
 //    RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
@@ -50,20 +60,34 @@ public class SecurityConfig {
 //    BearerTokenAuthenticationManager authenticationManager(RSAPublicKey publicKey) {
 //        return new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
 //    }
+
+    public AuthenticationWebFilter authenticationFilter() {
+        AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
+        authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, "/login"));
+     //   authenticationFilter.setAuthenticationFailureHandler(this.authenticationFailureHandler);
+        authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
+        authenticationFilter.setAuthenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("/hello"));
+        return authenticationFilter;
+    }
+
     @Bean
     SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
             SecurityProperties securityProperties) {
-        http.csrf().disable()
+        http
+               
+                .csrf().disable()
                 .authorizeExchange()
-                .pathMatchers("/authorize") 
+                .pathMatchers("/login", "/authorize")
                 .permitAll()
                 .anyExchange().authenticated()
                 .and()
-                .httpBasic().and()
-                .formLogin()
-                .loginPage("/authorize")
+                .httpBasic()
                 .and()
+              //  .formLogin()
+             //   .loginPage("/login")
+             //   .and()
+                .addFilterAt(authenticationFilter(), SecurityWebFiltersOrder.FORM_LOGIN)
                 .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver));
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());

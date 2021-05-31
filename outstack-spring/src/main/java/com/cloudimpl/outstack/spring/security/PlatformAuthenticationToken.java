@@ -24,12 +24,22 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
  */
 public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
 
+    public enum TokenFlow {
+        AUTHENTICATION_FLOW,
+        TOKEN_FLOW,
+        AUTHORIZATION_FLOW
+    }
+    
+    public static final String TOKEN_CONTEXT_HEADER_NAME = "X-TokenContext";
+    
     private final String principal;
     private final String tenantId;
     private final String context;
     private final UserDetail userDetail;
-    public PlatformAuthenticationToken(String context, String principal, String tenantId, Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
+    private final TokenFlow tokenFlow;
+    public PlatformAuthenticationToken(TokenFlow tokenFlow,String context, String principal, String tenantId, Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
         super(authorities);
+        this.tokenFlow = tokenFlow;
         this.context = context;
         this.principal = principal;
         this.tenantId = tenantId;
@@ -58,4 +68,13 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
         return principal;
     }
 
+    public String getContext() {
+        return context;
+    }
+
+    public TokenFlow getTokenFlow() {
+        return tokenFlow;
+    }
+
+    
 }
