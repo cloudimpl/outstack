@@ -61,17 +61,17 @@ public class AuthenticationHelperService {
 
   //  private ResourceCache<AuthorizeRequest> requestCache = new ResourceCache<>(10000, Duration.ofMinutes(1));
 
-    public Mono<PlatformAuthenticationToken> login(PlatformAuthenticationToken token) {
-        if (domainOwner == null || domainContext == null || version == null || serviceName == null) {
-            return Mono.error(() -> new PlatformAuthenticationException("authentication service not found", null));
-        }
-        if (authService == null) {
-            authService = domainOwner + "/" + domainContext + "/" + version + "/" + serviceName;
-        }
-
-        CloudMessage userDetailReq = CloudMessage.builder().withData(UserLoginRequest.builder().withUserId(token.getUserId()).withTenantId(token.tenantId()).withId(token.getUserId()).withVersion(version)).build();
-        return cluster.requestReply(authService, userDetailReq).map(o -> UserLoginResponse.class.cast(o)).map(this::onAuth).onErrorMap(err -> new PlatformAuthenticationException("user login error", err));
-    }
+//    public Mono<PlatformAuthenticationToken> login(PlatformAuthenticationToken token) {
+//        if (domainOwner == null || domainContext == null || version == null || serviceName == null) {
+//            return Mono.error(() -> new PlatformAuthenticationException("authentication service not found", null));
+//        }
+//        if (authService == null) {
+//            authService = domainOwner + "/" + domainContext + "/" + version + "/" + serviceName;
+//        }
+//
+//        CloudMessage userDetailReq = CloudMessage.builder().withData(UserLoginRequest.builder().withUserId(token.getUserId()).withTenantId(token.tenantId()).withId(token.getUserId()).withVersion(version)).build();
+//        return cluster.requestReply(authService, userDetailReq).map(o -> UserLoginResponse.class.cast(o)).map(this::onAuth).onErrorMap(err -> new PlatformAuthenticationException("user login error", err));
+//    }
 
     public Mono<AuthorizeResponse> authorize(AuthorizeRequest req) {
         if ((req.getCodeChallenge() == null || req.getCodeChallengeMethod() == null) && pkceEnable) {

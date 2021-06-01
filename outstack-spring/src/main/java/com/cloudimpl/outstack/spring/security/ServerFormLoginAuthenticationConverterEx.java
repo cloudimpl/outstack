@@ -15,17 +15,10 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import java.util.Base64;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import static org.springframework.security.web.server.ServerHttpBasicAuthenticationConverter.BASIC;
 import org.springframework.security.web.server.authentication.ServerFormLoginAuthenticationConverter;
-import org.springframework.security.web.server.authentication.ServerHttpBasicAuthenticationConverter;
-import org.springframework.util.Assert;
 import org.springframework.util.MultiValueMap;
-import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -52,19 +45,9 @@ public class ServerFormLoginAuthenticationConverterEx extends ServerFormLoginAut
         String password = data.getFirst(this.passwordParameter);
         String authKey = data.getFirst(this.authorizationKeyParameter);
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
-        AuthenticationMeta meta = new AuthenticationMeta(createFlow(exchange), authKey,context);
+        PlatformAuthenticationToken.TokenFlow flow = Auth2Util.createFlow(exchange);
+        AuthenticationMeta meta = new AuthenticationMeta(flow, authKey,context,Auth2Util.getGrantType(flow, exchange),Auth2Util.getClientMeta(exchange));
         token.setDetails(meta);
         return token;
-    }
-
-    private PlatformAuthenticationToken.TokenFlow createFlow(ServerWebExchange exchange) {
-        String path = exchange.getRequest().getPath().pathWithinApplication().value();
-        if (path.equals("/login")) {
-            return PlatformAuthenticationToken.TokenFlow.AUTHENTICATION_FLOW;
-        } else if (path.equals("/token")) {
-            return PlatformAuthenticationToken.TokenFlow.TOKEN_FLOW;
-        } else {
-            throw new PlatformAuthenticationException("unknow authenication endpoint", null);
-        }
     }
 }

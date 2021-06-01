@@ -18,12 +18,13 @@ import reactor.core.publisher.Mono;
 @Slf4j
 //@Component("Bearer")
 public class BearerTokenAuthenticationManager
-        implements ReactiveAuthenticationManager {
+        extends PlatformAuthenticationManager{
     private final JwtBearerTokenConverter jwtAuthenticationConverter = new JwtBearerTokenConverter();
 
     private final ReactiveJwtDecoder jwtDecoder;
 
-    public BearerTokenAuthenticationManager(ReactiveJwtDecoder jwtDecoder) {
+    public BearerTokenAuthenticationManager(ReactiveJwtDecoder jwtDecoder,AuthenticationProvider authenticationProvider, AuthorizationProvider authorizationProvider, TokenProvider tokenProvider) {
+        super(authenticationProvider, authorizationProvider, tokenProvider);
         this.jwtDecoder = jwtDecoder;
     }
 
@@ -53,6 +54,11 @@ public class BearerTokenAuthenticationManager
                 HttpStatus.UNAUTHORIZED,
                 "Invalid Access Token",
                 "https://tools.ietf.org/html/rfc6750#section-3.1");
+    }
+
+    @Override
+    protected Mono<PlatformAuthenticationToken> convertToPlatformToken(Authentication autentication) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
 }

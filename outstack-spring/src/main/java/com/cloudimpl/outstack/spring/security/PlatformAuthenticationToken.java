@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.spring.security;
 
 import java.util.Collection;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
  *
@@ -33,29 +34,18 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
     public static final String TOKEN_CONTEXT_HEADER_NAME = "X-TokenContext";
     
     private final String principal;
-    private final String tenantId;
-    private final String context;
     private final UserDetail userDetail;
-    private final TokenFlow tokenFlow;
-    public PlatformAuthenticationToken(TokenFlow tokenFlow,String context, String principal, String tenantId, Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
+    private final AuthenticationMeta authMeta;
+    private Jwt jwtToken;
+    public PlatformAuthenticationToken(AuthenticationMeta authMeta,String principal,Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
         super(authorities);
-        this.tokenFlow = tokenFlow;
-        this.context = context;
         this.principal = principal;
-        this.tenantId = tenantId;
         this.userDetail = userDetail;
+        this.authMeta = authMeta;
     }
 
     public String getUserId() {
         return principal;
-    }
-
-    public String tenantId() {
-        return tenantId;
-    }
-
-    public String context() {
-        return context;
     }
 
     @Override
@@ -68,13 +58,16 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
         return principal;
     }
 
-    public String getContext() {
-        return context;
+    public AuthenticationMeta getAuthMeta() {
+        return authMeta;
     }
 
-    public TokenFlow getTokenFlow() {
-        return tokenFlow;
+    public Jwt getJwtToken() {
+        return jwtToken;
     }
 
+    public void setJwtToken(Jwt jwtToken) {
+        this.jwtToken = jwtToken;
+    }
     
 }

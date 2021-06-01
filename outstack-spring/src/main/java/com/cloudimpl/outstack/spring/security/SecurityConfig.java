@@ -29,6 +29,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
@@ -61,9 +62,9 @@ public class SecurityConfig {
 //        return new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
 //    }
 
-    public AuthenticationWebFilter authenticationFilter() {
+    public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor,String... urls) {
         AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
-        authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, "/login"));
+        authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST,urls));
      //   authenticationFilter.setAuthenticationFailureHandler(this.authenticationFailureHandler);
         authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
         authenticationFilter.setAuthenticationSuccessHandler(new RedirectServerAuthenticationSuccessHandler("/hello"));
@@ -83,12 +84,15 @@ public class SecurityConfig {
                 .anyExchange().authenticated()
                 .and()
                 .httpBasic()
-                .and()
+                .disable()
+                .formLogin().disable()
               //  .formLogin()
              //   .loginPage("/login")
              //   .and()
-                .addFilterAt(authenticationFilter(), SecurityWebFiltersOrder.FORM_LOGIN)
-                .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver));
+                .addFilterAt(authenticationFilter(new ServerFormLoginAuthenticationConverterEx(),"/login","/token"), SecurityWebFiltersOrder.FORM_LOGIN)
+                .addFilterAt(authenticationFilter(new BasicLoginAuthenticationConverterEx(),"/login","/token"), SecurityWebFiltersOrder.HTTP_BASIC)
+                .addFilterAt(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(true),"/token"), SecurityWebFiltersOrder.AUTHENTICATION)
+                .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver).bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false)));
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());
         return http.build();

@@ -2,16 +2,13 @@ package com.cloudimpl.outstack.spring.security;
 
 import java.util.Collections;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.BearerTokenError;
 import org.springframework.security.oauth2.server.resource.BearerTokenErrorCodes;
 import org.springframework.stereotype.Component;
@@ -20,21 +17,18 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component("Basic")
 public class BasicTokenAuthenticationManager
-       extends PlatformAuthenticationManager{
+        extends PlatformAuthenticationManager {
+
+    public BasicTokenAuthenticationManager(@Autowired(required = false)AuthenticationProvider authenticationProvider,@Autowired(required = false) AuthorizationProvider authorizationProvider,@Autowired(required = false) TokenProvider tokenProvider) {
+        super(authenticationProvider, authorizationProvider, tokenProvider);
+    }
 
     @Override
-    public Mono<Authentication> authenticate(Authentication authentication) {
-      //  String authKey = getContext().<String>get("authKey").orElseThrow(()->new PlatformAuthenticationException("authKey not found", null));
-        return Mono.justOrEmpty(authentication)
-                .filter(a->a instanceof UsernamePasswordAuthenticationToken)
-  
+    protected Mono<PlatformAuthenticationToken> convertToPlatformToken(Authentication autentication) {
+        return Mono.justOrEmpty(autentication).filter(a -> a instanceof UsernamePasswordAuthenticationToken)
                 .cast(UsernamePasswordAuthenticationToken.class)
-                .doOnNext(s->System.out.println(s.getDetails()))
-                .doOnNext(s->System.out.println("auth:"+s.isAuthenticated()))
-             //   .map(a->new PlatformAuthenticationToken("xx", "asda", null,Collections.EMPTY_LIST, null))
-                .cast(Authentication.class)
-                .doOnNext(a->a.setAuthenticated(true))
-                
+                .doOnNext(a -> Auth2Util.validateAuthentcationMeta(a.getDetails()))
+                .map(a -> new PlatformAuthenticationToken((AuthenticationMeta) a.getDetails(), (String) a.getPrincipal(), Collections.EMPTY_LIST, null))
                 .onErrorMap(JwtException.class, this::onError);
     }
 
@@ -52,9 +46,4 @@ public class BasicTokenAuthenticationManager
                 "https://tools.ietf.org/html/rfc6750#section-3.1");
     }
 
-    @Override
-    protected Mono<PlatformAuthenticationToken> convertToPlatformToken(Authentication autentication) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-    
 }

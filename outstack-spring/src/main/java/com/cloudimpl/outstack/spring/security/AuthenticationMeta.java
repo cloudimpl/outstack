@@ -20,14 +20,18 @@ package com.cloudimpl.outstack.spring.security;
  * @author nuwan
  */
 public class AuthenticationMeta {
+
     private final PlatformAuthenticationToken.TokenFlow tokenFlow;
     private final String authKey;
     private final String tokenContext;
-    
-    public AuthenticationMeta(PlatformAuthenticationToken.TokenFlow tokenFlow, String authKey,String tokenContext) {
+    private final GrantType grantType;
+    private final ClientMeta clientMeta;
+    public AuthenticationMeta(PlatformAuthenticationToken.TokenFlow tokenFlow, String authKey, String tokenContext, GrantType grantType,ClientMeta clientMeta) {
         this.tokenFlow = tokenFlow;
         this.authKey = authKey;
         this.tokenContext = tokenContext;
+        this.grantType = grantType;
+        this.clientMeta = clientMeta;
     }
 
     public String getAuthKey() {
@@ -38,15 +42,70 @@ public class AuthenticationMeta {
         return tokenContext;
     }
 
+    public GrantType getGrantType() {
+        return grantType;
+    }
+
+    public ClientMeta getClientMeta() {
+        return clientMeta;
+    }
+
     public PlatformAuthenticationToken.TokenFlow getTokenFlow() {
         return tokenFlow;
     }
 
     @Override
     public String toString() {
-        return "AuthenticationMeta{" + "tokenFlow=" + tokenFlow + ", authKey=" + authKey + ", tokenContet=" + tokenContext + '}';
+        return "AuthenticationMeta{" + "tokenFlow=" + tokenFlow + ", authKey=" + authKey + ", tokenContext=" + tokenContext + ", grantType=" + grantType + '}';
     }
 
-    
-    
+    public static final class ClientMeta {
+
+        private final String clientId;
+        private final String clientSecret;
+        private final String code;
+        private final String redirectUri;
+        private final String codeVerifier;
+        private final String tenantId;
+        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier,String tenantId) {
+            this.clientId = clientId;
+            this.clientSecret = clientSecret;
+            this.code = code;
+            this.redirectUri = redirectUri;
+            this.codeVerifier = codeVerifier;
+            this.tenantId = tenantId;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        public String getClientSecret() {
+            return clientSecret;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public String getRedirectUri() {
+            return redirectUri;
+        }
+
+        public String getCodeVerifier() {
+            return codeVerifier;
+        }
+
+        public String getTenantId() {
+            return tenantId;
+        }
+
+        
+        @Override
+        public String toString() {
+            return "ClientMeta{" + "clientId=" + clientId + ", clientSecret=" + clientSecret + ", code=" + code + ", redirectUri=" + redirectUri + ", codeVerifier=" + codeVerifier + '}';
+        }
+        
+        
+    }
 }

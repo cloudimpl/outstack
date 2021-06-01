@@ -9,6 +9,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 public class JwtBearerTokenConverter implements Converter<Jwt, AbstractAuthenticationToken> {
     @Override
     public AbstractAuthenticationToken convert(Jwt source) {
+        
        return new JwtAuthenticatedToken(JwtToken.builder().build(), source.getTokenValue());
     }
 }

@@ -25,20 +25,46 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  */
 public abstract class PlatformAuthenticationManager implements ReactiveAuthenticationManager {
-    
-    @Autowired
+
     private AuthenticationProvider authenticationProvider;
-    @Autowired
+    
     private AuthorizationProvider authorizationProvider;
-    @Autowired
+    
     private TokenProvider tokenProvider;
+
+    public PlatformAuthenticationManager(@Autowired(required = false) AuthenticationProvider authenticationProvider,@Autowired(required = false) AuthorizationProvider authorizationProvider,@Autowired(required = false) TokenProvider tokenProvider) {
+        this.authenticationProvider = authenticationProvider == null ? t->Mono.error(()->new RuntimeException("AuthenticationProvider not provisioned")): authenticationProvider;
+        this.authorizationProvider = authorizationProvider;
+        this.tokenProvider = tokenProvider;
+    }
+
     
     @Override
-    public Mono<Authentication> authenticate(Authentication authentication)
-    {
-        return convertToPlatformToken(authentication).cast(Authentication.class);
+    public Mono<Authentication> authenticate(Authentication authentication) {
+        return convertToPlatformToken(authentication).flatMap(this::onPlatformToken);
     }
-    
+
+    private Mono<Authentication> onPlatformToken(PlatformAuthenticationToken token) {
+        AuthenticationMeta meta = token.getAuthMeta();
+        if (meta == null) {
+            throw new PlatformAuthenticationException("no meta data found in the platform token", null);
+        }
+        switch (meta.getTokenFlow()) {
+            case AUTHENTICATION_FLOW: {
+                return authenticationProvider.authenticate(token);
+            }
+            case AUTHORIZATION_FLOW: {
+                return authorizationProvider.authenticate(token);
+            }
+            case TOKEN_FLOW: {
+                return tokenProvider.authenticate(token);
+            }
+            default: {
+                return Mono.error(() -> new PlatformAuthenticationException("unknown token flow:" + meta.getTokenFlow(), null));
+            }
+        }
+    }
+
     protected abstract Mono<PlatformAuthenticationToken> convertToPlatformToken(Authentication autentication);
 
     protected void setAuthenticationProvider(AuthenticationProvider authenticationProvider) {
@@ -52,5 +78,5 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
     protected void setTokenProvider(TokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
     }
-   
+
 }

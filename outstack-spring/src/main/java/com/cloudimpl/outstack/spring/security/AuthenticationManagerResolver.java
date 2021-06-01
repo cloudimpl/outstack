@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
@@ -29,13 +30,19 @@ import reactor.core.publisher.Mono;
 @Component
 public class AuthenticationManagerResolver implements ReactiveAuthenticationManagerResolver<ServerWebExchange> {
 
-    private BearerTokenAuthenticationManager bearerTokenAuthentication;
+    private final BearerTokenAuthenticationManager bearerTokenAuthentication;
 
-    private BasicTokenAuthenticationManager basicTokenAuthentication;
+    private final BasicTokenAuthenticationManager basicTokenAuthentication;
 
-    public AuthenticationManagerResolver(ReactiveJwtDecoder jwtDecoder) {
-        bearerTokenAuthentication = new BearerTokenAuthenticationManager(jwtDecoder);
-        basicTokenAuthentication = new BasicTokenAuthenticationManager();
+    private AuthenticationProvider authenticationProvider;
+    
+    private AuthorizationProvider authorizationProvider;
+    
+    private TokenProvider tokenProvider;
+
+    public AuthenticationManagerResolver(ReactiveJwtDecoder jwtDecoder,@Autowired(required = false) AuthenticationProvider authenticationProvider,@Autowired(required = false) AuthorizationProvider authorizationProvider,@Autowired(required = false) TokenProvider tokenProvider) {
+        bearerTokenAuthentication = new BearerTokenAuthenticationManager(jwtDecoder,authenticationProvider,authorizationProvider,tokenProvider);
+        basicTokenAuthentication = new BasicTokenAuthenticationManager(authenticationProvider,authorizationProvider,tokenProvider);
     }
 
 //    @Autowired
@@ -43,21 +50,25 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
     @Override
     public Mono<ReactiveAuthenticationManager> resolve(ServerWebExchange c) {
         String path = c.getRequest().getPath().pathWithinApplication().value();
-        System.out.println("path:"+path);
+        System.out.println("path:" + path);
         c.getRequest().getHeaders().forEach((k, l) -> System.out.println(k + ":" + l));
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         String authorization = c.getRequest().getHeaders().getOrEmpty("Authorization").stream().findFirst().orElseThrow(() -> new PlatformAuthenticationException("Authorization not found", null));
         if (authorization.toLowerCase().startsWith("bearer")) {
-            return Mono.just(bearerTokenAuthentication);
+            return Mono.just(init(bearerTokenAuthentication));
         } else if (authorization.toLowerCase().startsWith("basic")) {
-            return Mono.just(basicTokenAuthentication);
-        }
-        else if (path.equals("/login")) {
             return Mono.just(basicTokenAuthentication);
         }
 //            return Mono.just(new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey)));
 //        }
         return Mono.error(() -> new PlatformAuthenticationException("unknown auth type:" + authorization, null));
 
+    }
+
+    private ReactiveAuthenticationManager init(PlatformAuthenticationManager authManager) {
+        authManager.setAuthenticationProvider(authenticationProvider);
+        authManager.setAuthorizationProvider(authorizationProvider);
+        authManager.setTokenProvider(tokenProvider);
+        return authManager;
     }
 }
