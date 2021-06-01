@@ -36,18 +36,21 @@ public class ServerFormLoginAuthenticationConverterEx extends ServerFormLoginAut
 
     @Override
     public Mono<Authentication> apply(ServerWebExchange exchange) {
-        return exchange.getFormData().map((data) -> createAuthentication(exchange,data));
+        return exchange.getFormData().flatMap((data) -> createAuthentication(exchange,data));
     }
 
-    private UsernamePasswordAuthenticationToken createAuthentication(ServerWebExchange exchange,MultiValueMap<String, String> data) {
+    private Mono<UsernamePasswordAuthenticationToken> createAuthentication(ServerWebExchange exchange,MultiValueMap<String, String> data) {
         String context = exchange.getRequest().getHeaders().getFirst(PlatformAuthenticationToken.TOKEN_CONTEXT_HEADER_NAME);
         String username = data.getFirst(this.usernameParameter);
         String password = data.getFirst(this.passwordParameter);
+        if(username == null || password == null)
+        {
+            return Mono.empty();
+        }
         String authKey = data.getFirst(this.authorizationKeyParameter);
+        AuthenticationMeta meta = Auth2Util.createAuthMeta(authKey,context,exchange);
         UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
-        PlatformAuthenticationToken.TokenFlow flow = Auth2Util.createFlow(exchange);
-        AuthenticationMeta meta = new AuthenticationMeta(flow, authKey,context,Auth2Util.getGrantType(flow, exchange),Auth2Util.getClientMeta(exchange));
         token.setDetails(meta);
-        return token;
+        return Mono.just(token);
     }
 }

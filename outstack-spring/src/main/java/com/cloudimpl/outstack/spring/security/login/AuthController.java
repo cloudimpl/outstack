@@ -15,14 +15,16 @@
  */
 package com.cloudimpl.outstack.spring.security.login;
 
+import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
+import com.cloudimpl.outstack.spring.security.TokenResponse;
 import com.cloudimpl.outstack.spring.security.service.AuthenticationHelperService;
 import com.cloudimpl.outstack.spring.security.service.AuthorizeRequest;
 import java.net.URI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -48,7 +50,13 @@ public class AuthController {
                 .flatMap(resp->redirect(response, "/login?id="+resp.getReqKey()));
     }
 
-    
+    @GetMapping(value = "token")
+    private Mono<TokenResponse> token()
+    {
+        return ReactiveSecurityContextHolder
+                .getContext()
+                .map(a->a.getAuthentication()).cast(PlatformAuthenticationToken.class).map(p->p.getResponse()).cast(TokenResponse.class);
+    }
     
     private Mono<Void> redirect(ServerHttpResponse resp,String redirectUri)
     {

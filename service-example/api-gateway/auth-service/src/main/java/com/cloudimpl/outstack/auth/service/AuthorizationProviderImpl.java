@@ -17,7 +17,6 @@ package com.cloudimpl.outstack.auth.service;
 
 import com.cloudimpl.outstack.spring.security.AuthorizationProvider;
 import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 

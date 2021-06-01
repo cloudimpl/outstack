@@ -46,37 +46,46 @@ public class SecurityConfig {
 //        return new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
 //    }
 
-    public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor,String... urls) {
+    public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor, String... urls) {
         AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
-        authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST,urls));
-     //   authenticationFilter.setAuthenticationFailureHandler(this.authenticationFailureHandler);
+        authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
+        //   authenticationFilter.setAuthenticationFailureHandler(this.authenticationFailureHandler);
         authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
         authenticationFilter.setAuthenticationSuccessHandler(new PlatformAuthenticationSuccessHandler());
         return authenticationFilter;
     }
+    
+//    public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor, String... urls) {
+//        AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
+//        authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
+//        //   authenticationFilter.setAuthenticationFailureHandler(this.authenticationFailureHandler);
+//        authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
+//        authenticationFilter.setAuthenticationSuccessHandler(new PlatformAuthenticationSuccessHandler());
+//        return authenticationFilter;
+//    }
 
     @Bean
     SecurityWebFilterChain securityWebFilterChain(
             ServerHttpSecurity http,
             SecurityProperties securityProperties) {
         http
-               
                 .csrf().disable()
                 .authorizeExchange()
-               // .pathMatchers("/login", "/authorize")
-              //  .permitAll()
+                // .pathMatchers("/login", "/authorize")
+                //  .permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .httpBasic()
                 .disable()
                 .formLogin().disable()
-              //  .formLogin()
-             //   .loginPage("/login")
-             //   .and()
-                .addFilterAt(authenticationFilter(new ServerFormLoginAuthenticationConverterEx(),"/login","/token"), SecurityWebFiltersOrder.FORM_LOGIN)
-                .addFilterAt(authenticationFilter(new BasicLoginAuthenticationConverterEx(),"/login","/token"), SecurityWebFiltersOrder.HTTP_BASIC)
-                .addFilterAt(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(true),"/token"), SecurityWebFiltersOrder.AUTHENTICATION)
-                .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver).bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false)));
+                //  .formLogin()
+                //   .loginPage("/login")
+                //   .and()
+                .addFilterAt(authenticationFilter(new ServerFormLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.FORM_LOGIN)
+                .addFilterAt(authenticationFilter(new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
+                .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver)
+                .bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false)))
+                .addFilterBefore(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(true), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());
         return http.build();
