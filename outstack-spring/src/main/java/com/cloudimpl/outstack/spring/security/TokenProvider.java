@@ -23,5 +23,5 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  */
 public interface TokenProvider {
-    Mono<Authentication> authenticate(PlatformAuthenticationToken authentication);
+    Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication);
 }

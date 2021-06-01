@@ -15,20 +15,60 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.net.URI;
+import java.util.LinkedHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.server.DefaultServerRedirectStrategy;
+import org.springframework.security.web.server.ServerRedirectStrategy;
 import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.savedrequest.ServerRequestCache;
+import org.springframework.security.web.server.savedrequest.WebSessionServerRequestCache;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
-public class PlatformAuthenticationSuccessHandler implements  ServerAuthenticationSuccessHandler{
+public class PlatformAuthenticationSuccessHandler implements ServerAuthenticationSuccessHandler {
+
+    private ObjectMapper mapper = new ObjectMapper(); //TODO remove this
+
+    private URI location = URI.create("/hello");
+
+    private ServerRedirectStrategy redirectStrategy = new DefaultServerRedirectStrategy();
+
+    private ServerRequestCache requestCache = new WebSessionServerRequestCache();
 
     @Override
     public Mono<Void> onAuthenticationSuccess(WebFilterExchange wfe, Authentication a) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (!(a instanceof PlatformAuthenticationToken)) {
+            throw new PlatformAuthenticationException("invalid authentication token", null);
+        }
+        PlatformAuthenticationToken pToken = PlatformAuthenticationToken.class.cast(a);
+        if (pToken.getResponse() != null) {
+            try {
+                Mono<DataBuffer> buffer = Mono.just(mapper.writeValueAsBytes(pToken.getResponse())).map(b -> wfe.getExchange().getResponse().bufferFactory().wrap(b));
+                wfe.getExchange().getResponse().getHeaders().add("Content-Type", "application/json");
+                wfe.getExchange().getResponse().setStatusCode(HttpStatus.OK);
+                return wfe.getExchange().getResponse().writeWith(buffer);
+                //  objectMapper.convertValue(reply, LinkedHashMap.class);
+                //  wfe.getExchange().getResponse().writeWith(Mono.just(pToken.getResponse()));
+            } catch (JsonProcessingException ex) {
+                Logger.getLogger(PlatformAuthenticationSuccessHandler.class.getName()).log(Level.SEVERE, null, ex);
+                return Mono.error(ex);
+            }
+        }
+        ServerWebExchange exchange = wfe.getExchange();
+        return this.requestCache.getRedirectUri(exchange).defaultIfEmpty(this.location)
+                .flatMap((location) -> this.redirectStrategy.sendRedirect(exchange, location));
     }
-    
+
 }

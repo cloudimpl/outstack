@@ -15,13 +15,16 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import org.springframework.security.core.Authentication;
-import reactor.core.publisher.Mono;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 
 /**
  *
  * @author nuwan
  */
-public interface AuthenticationProvider {
-      Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication);
+public interface JwtKeyProvider {
+
+    RSAPublicKey getPublicKey();
+
+    RSAPrivateKey getPrivateKey();
 }

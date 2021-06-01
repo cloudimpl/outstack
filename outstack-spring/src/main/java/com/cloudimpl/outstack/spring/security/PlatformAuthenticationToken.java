@@ -37,6 +37,7 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
     private final UserDetail userDetail;
     private final AuthenticationMeta authMeta;
     private Jwt jwtToken;
+    private Object response;
     public PlatformAuthenticationToken(AuthenticationMeta authMeta,String principal,Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
         super(authorities);
         this.principal = principal;
@@ -66,8 +67,19 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
         return jwtToken;
     }
 
-    public void setJwtToken(Jwt jwtToken) {
+    public PlatformAuthenticationToken setJwtToken(Jwt jwtToken) {
         this.jwtToken = jwtToken;
+        return this;
     }
+
+    public PlatformAuthenticationToken setResponse(Object response) {
+        this.response = response;
+        return this;
+    }
+
+    public Object getResponse() {
+        return response;
+    }
+    
     
 }

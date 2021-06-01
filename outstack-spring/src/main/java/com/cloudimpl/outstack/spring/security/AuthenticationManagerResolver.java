@@ -34,13 +34,10 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
 
     private final BasicTokenAuthenticationManager basicTokenAuthentication;
 
-    private AuthenticationProvider authenticationProvider;
-    
-    private AuthorizationProvider authorizationProvider;
-    
-    private TokenProvider tokenProvider;
-
     public AuthenticationManagerResolver(ReactiveJwtDecoder jwtDecoder,@Autowired(required = false) AuthenticationProvider authenticationProvider,@Autowired(required = false) AuthorizationProvider authorizationProvider,@Autowired(required = false) TokenProvider tokenProvider) {
+        authenticationProvider = authenticationProvider == null ? t->Mono.error(()->new RuntimeException("AuthenticationProvider not provisioned")): authenticationProvider;
+        authorizationProvider = authorizationProvider == null ? t->Mono.error(()->new PlatformAuthenticationException("AuthorizationProvider not provisioned",null)): authorizationProvider;
+        tokenProvider = tokenProvider == null ? t->Mono.error(()->new PlatformAuthenticationException("TokenProvider not provisioned",null)): tokenProvider;
         bearerTokenAuthentication = new BearerTokenAuthenticationManager(jwtDecoder,authenticationProvider,authorizationProvider,tokenProvider);
         basicTokenAuthentication = new BasicTokenAuthenticationManager(authenticationProvider,authorizationProvider,tokenProvider);
     }
@@ -55,7 +52,7 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         String authorization = c.getRequest().getHeaders().getOrEmpty("Authorization").stream().findFirst().orElseThrow(() -> new PlatformAuthenticationException("Authorization not found", null));
         if (authorization.toLowerCase().startsWith("bearer")) {
-            return Mono.just(init(bearerTokenAuthentication));
+            return Mono.just(bearerTokenAuthentication);
         } else if (authorization.toLowerCase().startsWith("basic")) {
             return Mono.just(basicTokenAuthentication);
         }
@@ -65,10 +62,4 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
 
     }
 
-    private ReactiveAuthenticationManager init(PlatformAuthenticationManager authManager) {
-        authManager.setAuthenticationProvider(authenticationProvider);
-        authManager.setAuthorizationProvider(authorizationProvider);
-        authManager.setTokenProvider(tokenProvider);
-        return authManager;
-    }
 }

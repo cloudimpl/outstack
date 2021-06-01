@@ -13,15 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.security;
+package com.cloudimpl.outstack.auth.service;
 
+import com.cloudimpl.outstack.spring.security.AuthorizationProvider;
+import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
-public interface AuthenticationProvider {
-      Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication);
+@Component
+public class AuthorizationProviderImpl implements AuthorizationProvider{
+
+    @Override
+    public Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication) {
+        return Mono.just(authentication).doOnNext(a->a.setAuthenticated(true));
+    }
+    
 }

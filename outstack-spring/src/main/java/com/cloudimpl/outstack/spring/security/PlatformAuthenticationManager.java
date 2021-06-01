@@ -26,16 +26,16 @@ import reactor.core.publisher.Mono;
  */
 public abstract class PlatformAuthenticationManager implements ReactiveAuthenticationManager {
 
-    private AuthenticationProvider authenticationProvider;
+    private final AuthenticationProvider authenticationProvider;
     
-    private AuthorizationProvider authorizationProvider;
+    private final AuthorizationProvider authorizationProvider;
     
-    private TokenProvider tokenProvider;
+    private final TokenProvider tokenProvider;
 
     public PlatformAuthenticationManager(@Autowired(required = false) AuthenticationProvider authenticationProvider,@Autowired(required = false) AuthorizationProvider authorizationProvider,@Autowired(required = false) TokenProvider tokenProvider) {
         this.authenticationProvider = authenticationProvider == null ? t->Mono.error(()->new RuntimeException("AuthenticationProvider not provisioned")): authenticationProvider;
-        this.authorizationProvider = authorizationProvider;
-        this.tokenProvider = tokenProvider;
+        this.authorizationProvider = authorizationProvider == null ? t->Mono.error(()->new PlatformAuthenticationException("AuthorizationProvider not provisioned",null)): authorizationProvider;
+        this.tokenProvider = tokenProvider == null ? t->Mono.error(()->new PlatformAuthenticationException("TokenProvider not provisioned",null)): tokenProvider;
     }
 
     
@@ -44,7 +44,7 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
         return convertToPlatformToken(authentication).flatMap(this::onPlatformToken);
     }
 
-    private Mono<Authentication> onPlatformToken(PlatformAuthenticationToken token) {
+    private Mono<PlatformAuthenticationToken> onPlatformToken(PlatformAuthenticationToken token) {
         AuthenticationMeta meta = token.getAuthMeta();
         if (meta == null) {
             throw new PlatformAuthenticationException("no meta data found in the platform token", null);
@@ -57,7 +57,7 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
                 return authorizationProvider.authenticate(token);
             }
             case TOKEN_FLOW: {
-                return tokenProvider.authenticate(token);
+                return tokenProvider.authenticate(token).doOnNext(this::validateTokenResponse);
             }
             default: {
                 return Mono.error(() -> new PlatformAuthenticationException("unknown token flow:" + meta.getTokenFlow(), null));
@@ -67,16 +67,12 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
 
     protected abstract Mono<PlatformAuthenticationToken> convertToPlatformToken(Authentication autentication);
 
-    protected void setAuthenticationProvider(AuthenticationProvider authenticationProvider) {
-        this.authenticationProvider = authenticationProvider;
+    
+    private void validateTokenResponse(PlatformAuthenticationToken token)
+    {
+        if(token.getResponse() == null || !(token.getResponse() instanceof TokenResponse))
+        {
+            throw new PlatformAuthenticationException("token response is null or invalid", null);
+        }
     }
-
-    protected void setAuthorizationProvider(AuthorizationProvider authorizationProvider) {
-        this.authorizationProvider = authorizationProvider;
-    }
-
-    protected void setTokenProvider(TokenProvider tokenProvider) {
-        this.tokenProvider = tokenProvider;
-    }
-
 }
