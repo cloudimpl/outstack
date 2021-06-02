@@ -175,6 +175,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
       
         Collection<K> result = mapEntites.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
                 .filter(e -> e.getKey().startsWith(fqtrn))
+                .map(e->e.getValue())
                 .map(e -> (K) e)
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
