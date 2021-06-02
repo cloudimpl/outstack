@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**
@@ -33,8 +34,8 @@ public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> i
         this.queryType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 1);
     }
 
-    public boolean isTenantFunction() {
-        return Entity.hasTenant(entityType);
+    public TenantRequirement getTenantFunction() {
+        return Entity.checkTenantRequirement(entityType);
     }
 
     public R apply(EntityQueryContext<T> context, I query) {
@@ -45,7 +46,7 @@ public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> i
     protected abstract R execute(EntityQueryContext<T> context, I query);
 
     protected void validateInput(I query) {
-        if (isTenantFunction() && query.tenantId() == null) {
+        if (getTenantFunction() == TenantRequirement.REQUIRED && query.tenantId() == null) {
             throw new QueryException("tenantId is not available in the request");
         }
     }
@@ -56,7 +57,7 @@ public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> i
         }
         I query = input.unwrap(this.queryType);
         validateInput(query);
-        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId(),false);
+        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), getTenantFunction() == TenantRequirement.NONE? null:query.tenantId(),false);
         EntityQueryContext<T> context = tx.getContext(this.entityType);
         //context.setTx(tx);
         return apply(context, query);

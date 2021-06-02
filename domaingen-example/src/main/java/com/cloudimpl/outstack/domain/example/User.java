@@ -8,6 +8,7 @@ import com.cloudimpl.outstack.domain.example.UserCreated;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
+import com.cloudimpl.outstack.domain.example.UserLoggedIn;
 
 @EntityMeta(plural="users",version="v1")
 public class User extends RootEntity implements ITenantOptional {
@@ -51,12 +52,19 @@ public class User extends RootEntity implements ITenantOptional {
         this.password = evt.getPassword() ;
     }
 
+    private void applyEvent(UserLoggedIn evt) {
+    }
+
     @Override
     public void apply(Event event) {
 
         switch (event.getClass().getSimpleName() ) {
             case "UserCreated" : {
                 applyEvent((UserCreated) event) ;
+                break ;
+            }
+            case "UserLoggedIn" : {
+                applyEvent((UserLoggedIn) event) ;
                 break ;
             }
             default : {

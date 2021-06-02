@@ -41,7 +41,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
     }
 
     public Transaction<T> createWritableTransaction(String rootTid, String tenantId, boolean async) {
-        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
+        return new Transaction(type,entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
     }
 
     private <T> void validateObject(T target) {
@@ -59,9 +59,9 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         private Object reply;
         private final List<Event> eventList;
 
-        public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid,
+        public Transaction(Class<R> type,EntityProvider entityProvider, Supplier<String> idGenerator, String rootId,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
-            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector, version, async);
+            super(type,idGenerator, rootId, tenantId, queryOperation, validator, queryOperationSelector, version, async);
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.eventList = new LinkedList<>();

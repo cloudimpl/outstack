@@ -49,7 +49,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
     }
 
     public ReadOnlyTransaction<T> createTransaction(String rootTid, String tenantId, boolean async) {
-        return new ReadOnlyTransaction(idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
+        return new ReadOnlyTransaction(type,idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
     }
 
     private <T> void validateObject(T target) {
@@ -76,11 +76,13 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected final String version;
         protected final boolean async;
 
-        public ReadOnlyTransaction(Supplier<String> idGenerator, String rootTid,
+        public ReadOnlyTransaction(Class<R> type,Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator,
                 Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
             this.idGenerator = idGenerator;
-            this.rootTid = rootTid;
+            if (rootTid != null) {
+                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : loadTid(type,rootTid,tenantId) ;
+            }
             this.tenantId = tenantId;
             this.queryOperation = queryOperation;
             this.validator = validator;
@@ -89,6 +91,11 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             this.async = async;
         }
 
+        private String loadTid(Class<R> type,String id,String tenantId)
+        {
+            String tid = queryOperation.getRootById(type, id, tenantId).map(t->t.id()).orElse(null);
+            return tid;
+        }
         public String getTenantId() {
             return tenantId;
         }
@@ -105,18 +112,18 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             return (K) reply;
         }
 
-        public <C extends ChildEntity<R>, K extends Entity ,Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
+        public <C extends ChildEntity<R>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
 
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
                 RootEntityContext context = new RootEntityContext<>(rootType, rootTid, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(), validator, this.queryOperationSelector, version);
-                return async ? (Z)new AsyncRootEntityQueryContext(context) 
-                        : (Z)context;
+                return async ? (Z) new AsyncRootEntityQueryContext(context)
+                        : (Z) context;
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return (Z)new ChildEntityContext<>(rootType, rootTid, childType, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(), validator, this.queryOperationSelector, version);
+                return (Z) new ChildEntityContext<>(rootType, rootTid, childType, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(), validator, this.queryOperationSelector, version);
             }
         }
 

@@ -38,7 +38,8 @@ public class TokenProviderImpl implements TokenProvider{
     @Override
     public Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication) {
         return Mono.justOrEmpty(authentication).doOnNext(t->t.setAuthenticated(true))
-                .doOnNext(t->t.setResponse(new TokenResponse(tokenGen.createToken(new JWTClaimsSet.Builder().claim("test", "asaf").claim("nonce", UUID.randomUUID().toString()).build()),"","bearer",1234)));
+                .doOnNext(t->t.setResponse(tokenGen.
+                        createTokenResponse(new JWTClaimsSet.Builder().claim("test", "asaf").claim("nonce", UUID.randomUUID().toString()).build(),new JWTClaimsSet.Builder().claim("test", "asaf").claim("nonce", UUID.randomUUID().toString()).build())));
     }
     
 }

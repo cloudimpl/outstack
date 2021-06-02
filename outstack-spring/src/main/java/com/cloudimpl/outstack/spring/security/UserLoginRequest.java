@@ -16,6 +16,9 @@
 package com.cloudimpl.outstack.spring.security;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -23,15 +26,28 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  */
 public class UserLoginRequest extends Command{
     private final String userId;
+    private final String password;
+    private final Map<String,String> mapAttr;
+    
     public UserLoginRequest(Builder builder) {
         super(builder);
         this.userId = builder.userId;
+        this.password = builder.password;
+        this.mapAttr = Collections.unmodifiableMap(builder.mapAttr);
     }
 
     public String getUserId() {
         return userId;
     }
-    
+
+    public String getPassword() {
+        return password;
+    }
+
+    public Map<String, String> getMapAttr() {
+        return mapAttr;
+    }
+   
     public static Builder builder()
     {
         return new Builder();
@@ -40,10 +56,24 @@ public class UserLoginRequest extends Command{
     public static final class Builder extends Command.Builder
     {
         private String userId;
+        private String password;
+        private Map<String,String> mapAttr = new HashMap<>()    ;
         
         public Builder withUserId(String userId)
         {
             this.userId = userId;
+            return this;
+        }
+        
+        public Builder withPassword(String password)
+        {
+            this.password = password;
+            return this;
+        }
+        
+        public Builder withAttr(String key,String value)
+        {
+            this.mapAttr.put(key, value);
             return this;
         }
         

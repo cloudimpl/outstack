@@ -17,9 +17,11 @@ import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
+import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import javax.annotation.PostConstruct;
@@ -98,6 +100,7 @@ public class Cluster {
     }
 
     public <T> Mono<T> requestReply(String serviceName, Object msg) {
+   
         return this.node.requestReply(serviceName, msg);
     }
 
