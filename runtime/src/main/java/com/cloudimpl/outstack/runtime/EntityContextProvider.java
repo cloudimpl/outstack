@@ -62,6 +62,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         public Transaction(Class<R> type,EntityProvider entityProvider, Supplier<String> idGenerator, String rootId,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
             super(type,idGenerator, rootId, tenantId, queryOperation, validator, queryOperationSelector, version, async);
+
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.eventList = new LinkedList<>();
@@ -110,6 +111,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
                 return (Z)new ChildEntityContext<>(
+
                         rootType,
                         rootTid, childType, tenantId,
                         Optional.of((EntityProvider) this::loadEntity), idGenerator, Optional.of((CRUDOperations) this),
@@ -216,7 +218,8 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
         @Override
         public ResultSet<R> getAllByRootType(Class<R> rootType, String tenantId, Query.PagingRequest paging) {
-            throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+
+            return queryOperation.getAllByRootType(rootType, tenantId, paging);
         }
     }
 }

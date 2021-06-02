@@ -37,3 +37,4 @@ fi
 echo "Found $line_count lines of text in $dir"
 
 exit 0
+
