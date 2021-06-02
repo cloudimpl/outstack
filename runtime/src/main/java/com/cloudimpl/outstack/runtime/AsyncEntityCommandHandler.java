@@ -33,7 +33,7 @@ public abstract class AsyncEntityCommandHandler<T extends RootEntity,C extends  
     
     public Mono<EntityContext<T>>  emitAsync(EntityContextProvider contextProvider,ICommand input)
     {
-        if(!contextProvider.getVersion().equals(input.version()))
+        if(input.version() != null && !contextProvider.getVersion().equals(input.version()))
         {
             throw new DomainEventException(DomainEventException.ErrorCode.INVALID_VERSION,"invalid version {0} ,expecting {1}", input.version(),contextProvider.getVersion());
         }

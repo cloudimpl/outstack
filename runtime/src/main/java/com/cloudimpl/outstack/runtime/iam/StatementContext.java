@@ -16,7 +16,7 @@
 package com.cloudimpl.outstack.runtime.iam;
 
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import java.text.MessageFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,12 +35,12 @@ public class StatementContext {
     
     public PolicyStatementRequest parse(PolicyStatementRequest statment)
     {
-        String current = GsonCodec.encode(statment);
+        String current = GsonCodecRuntime.encode(statment);
         for(Map.Entry<String,String> attr: mapAttr.entrySet())
         {
             current = current.replaceAll(attr.getKey(), attr.getValue());
         }
-        return GsonCodec.decode(PolicyStatementRequest.class, current);
+        return GsonCodecRuntime.decode(PolicyStatementRequest.class, current);
     }
     
 }

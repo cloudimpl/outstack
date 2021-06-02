@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-public class GsonCodec {
+public class GsonCodecRuntime {
 
     private static final ThreadLocal<Gson> THR_GSON = ThreadLocal.withInitial(() -> createGson(false));
     private static final ThreadLocal<Gson> THR_GSON_PRINTER = ThreadLocal.withInitial(() -> createGson(true));
@@ -24,7 +24,7 @@ public class GsonCodec {
     private static final Map<Class<?>, Supplier<JsonSerializer<?>>> serializers = new ConcurrentHashMap<>();
     private static final Map<Class<?>, Supplier<JsonDeserializer<?>>> deSerializers = new ConcurrentHashMap<>();
 
-    private GsonCodec() {
+    private GsonCodecRuntime() {
 
     }
 

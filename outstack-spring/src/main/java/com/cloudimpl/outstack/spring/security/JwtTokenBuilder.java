@@ -35,12 +35,19 @@ public class JwtTokenBuilder {
         this.builder.issueTime(new Date(Instant.now().toEpochMilli()));
         this.builder.jwtID(UUID.randomUUID().toString());
         this.builder.subject(token.getUserId());
+        this.builder.claim("userId", token.)
     }
     
     
     public JwtTokenBuilder withClaims(Map<String,Object> claims)
     {
         claims.entrySet().forEach(e->this.builder.claim(e.getKey(),e.getValue()));
+        return this;
+    }
+    
+    public JwtTokenBuilder withClaim(String key,String value)
+    {
+        this.builder.claim(key, value);
         return this;
     }
     

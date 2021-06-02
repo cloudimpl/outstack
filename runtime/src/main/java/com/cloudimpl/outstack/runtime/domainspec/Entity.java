@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.util.TimeUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.gson.JsonObject;
@@ -62,14 +62,14 @@ public abstract class Entity implements IResource {
     }
 
     public <T extends Entity> T cloneEntity() {
-        String json = GsonCodec.encode(this);
-        return GsonCodec.decode((Class<T>) this.getClass(), json);
+        String json = GsonCodecRuntime.encode(this);
+        return GsonCodecRuntime.decode((Class<T>) this.getClass(), json);
     }
 
     public <T extends Entity> T rename(String newEntityId) {
-        JsonObject json = GsonCodec.encodeToJson(this).getAsJsonObject();
+        JsonObject json = GsonCodecRuntime.encodeToJson(this).getAsJsonObject();
         json.addProperty(idField(), newEntityId);
-        return GsonCodec.decode((Class<T>) this.getClass(), json.toString());
+        return GsonCodecRuntime.decode((Class<T>) this.getClass(), json.toString());
     }
 
     public abstract String idField();
@@ -106,7 +106,7 @@ public abstract class Entity implements IResource {
 
     @Override
     public String toString() {
-        return GsonCodec.encode(this);
+        return GsonCodecRuntime.encode(this);
     }
 
     public static final class Meta {

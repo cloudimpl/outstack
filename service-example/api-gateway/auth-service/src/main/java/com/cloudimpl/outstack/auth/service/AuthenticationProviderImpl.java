@@ -45,13 +45,17 @@ public class AuthenticationProviderImpl implements AuthenticationProvider{
     
     private Mono<UserLoginResponse> onUsernamePasswordAuthentication(UsernamePasswordAuthenticationToken token)
     {
-        CommandWrapper wrap = CommandWrapper.builder().withCommand("LoginUser")
-                .withId((String)token.getPrincipal())
+//        CommandWrapper wrap = CommandWrapper.builder().withCommand("LoginUser")
+//                .withId((String)token.getPrincipal())
+//                .withVersion("v1")
+//                .withRootId((String)token.getPrincipal())
+//                .withObject().build();
+        UserLoginRequest userLoginReq = UserLoginRequest.builder()
+                .withUserId((String)token.getPrincipal()).withPassword((String)token.getCredentials())
                 .withVersion("v1")
+                .withId((String)token.getPrincipal())
                 .withRootId((String)token.getPrincipal())
-                .withObject(UserLoginRequest.builder()
-                .withUserId((String)token.getPrincipal()).withPassword((String)token.getCredentials()).build()).build();
-        
-        return cluster.requestReply("cloudimpl/example/v1/UserService",wrap);
+                .withCommandName("LoginUser").build();
+        return cluster.requestReply("cloudimpl/example/v1/UserService",userLoginReq);
     }
 }

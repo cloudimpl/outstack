@@ -12,7 +12,7 @@ import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.EventStream;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ResultSet;
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
@@ -154,9 +154,28 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     public synchronized <K extends ChildEntity<T>> ResultSet<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
+        String trn = null;
+        TenantRequirement tenantReq = Entity.checkTenantRequirement(rootType);
+        switch (tenantReq) {
+            case REQUIRED:
+                trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/" + id;
+                break;
+            case OPTIONAL:
+                if (tenantId != null) {
+                    trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/" + id;
+                } else {
+                    trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/" + id;
+                }
+                break;
+            default:
+                trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/" + id;
+                break;
+        }
+        String fqtrn = trn;
         String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, version, id, tenantId);
         SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
-        Collection<K> result = map.values().stream().filter(e -> e.getClass() == childType)
+        Collection<K> result = map.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
+                .filter(e -> e.getKey().startsWith(fqtrn))
                 .map(e -> (K) e)
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
@@ -187,7 +206,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     public synchronized ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String trn = null;
         TenantRequirement tenantReq = Entity.checkTenantRequirement(rootType);
-       switch (tenantReq) {
+        switch (tenantReq) {
             case REQUIRED:
                 trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
                 break;
@@ -196,7 +215,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                     trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/";
                 } else {
                     trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
-                }   break;
+                }
+                break;
             default:
                 trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/";
                 break;
@@ -212,18 +232,16 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     private int compare(String name, Object left, Object right) {
-        JsonObject leftJson = GsonCodec.encodeToJson(left).getAsJsonObject();
-        JsonObject rightJson = GsonCodec.encodeToJson(right).getAsJsonObject();
+        JsonObject leftJson = GsonCodecRuntime.encodeToJson(left).getAsJsonObject();
+        JsonObject rightJson = GsonCodecRuntime.encodeToJson(right).getAsJsonObject();
         JsonElement leftEl = leftJson.get(name);
         JsonElement rightEl = rightJson.get(name);
         if (leftEl == null && rightEl == null) {
             //throw new RepositoryException("null not supported for sorting: " + name + " field");
             return 0;
-        }
-        else if(leftEl == null && rightEl != null) {
+        } else if (leftEl == null && rightEl != null) {
             return 1;
-        }
-        else if(leftEl != null && rightEl == null){
+        } else if (leftEl != null && rightEl == null) {
             return -1;
         }
         if (!leftEl.isJsonPrimitive() || !rightEl.isJsonPrimitive()) {
@@ -245,7 +263,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (params.isEmpty()) {
             return true;
         }
-        JsonObject json = GsonCodec.encodeToJson(item).getAsJsonObject();
+        JsonObject json = GsonCodecRuntime.encodeToJson(item).getAsJsonObject();
         for (Map.Entry<String, String> entry : params.entrySet()) {
             JsonElement el = json.get(entry.getKey());
             if (el == null || !el.isJsonPrimitive()) {
@@ -328,7 +346,6 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
         Collection<Event<T>> cols = stream.map(e -> (Event<T>) e)
-                
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         return onPageable(cols, paging);

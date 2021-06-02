@@ -5,10 +5,10 @@
  */
 package com.cloudimpl.outstack.spring.controller;
 
+import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ValidationErrorException;
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Query;

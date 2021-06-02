@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.spring.service;
 
 import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.FluxMap;
+import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.common.RouterType;
 import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.CloudServiceDescriptor;
@@ -19,7 +20,6 @@ import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
