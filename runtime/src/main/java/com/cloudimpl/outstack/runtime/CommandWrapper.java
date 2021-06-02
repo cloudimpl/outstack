@@ -106,6 +106,11 @@ public class CommandWrapper implements ICommand {
             return this;
         }
         
+        public Builder withObject(Object payload)
+        {
+            this.payload = GsonCodec.encode(payload);
+            return this;
+        }
         public CommandWrapper build()
         {
             return new CommandWrapper(this);

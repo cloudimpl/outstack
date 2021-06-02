@@ -23,9 +23,9 @@ public class TokenResponse {
     private final String access_token;
     private final String refresh_token;
     private final String token_type;
-    private final int expires_in;
+    private final long expires_in;
 
-    public TokenResponse(String access_token, String refresh_token, String token_type, int expires_in) {
+    public TokenResponse(String access_token, String refresh_token, String token_type, long expires_in) {
         this.access_token = access_token;
         this.refresh_token = refresh_token;
         this.token_type = token_type;
@@ -44,7 +44,7 @@ public class TokenResponse {
         return token_type;
     }
 
-    public int getExpires_in() {
+    public long getExpires_in() {
         return expires_in;
     }
     

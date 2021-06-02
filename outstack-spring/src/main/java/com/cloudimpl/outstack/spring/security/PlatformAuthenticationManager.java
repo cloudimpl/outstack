@@ -37,11 +37,10 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
         this.authorizationProvider = authorizationProvider == null ? t->Mono.error(()->new PlatformAuthenticationException("AuthorizationProvider not provisioned",null)): authorizationProvider;
         this.tokenProvider = tokenProvider == null ? t->Mono.error(()->new PlatformAuthenticationException("TokenProvider not provisioned",null)): tokenProvider;
     }
-
-    
+  
     @Override
     public Mono<Authentication> authenticate(Authentication authentication) {
-        return convertToPlatformToken(authentication).flatMap(this::onPlatformToken);
+        return convertToPlatformToken(authentication).doOnNext(pt->pt.setSystemToken(authentication)).flatMap(this::onPlatformToken).cast(Authentication.class);
     }
 
     private Mono<PlatformAuthenticationToken> onPlatformToken(PlatformAuthenticationToken token) {

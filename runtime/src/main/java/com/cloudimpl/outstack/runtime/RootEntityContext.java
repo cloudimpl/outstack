@@ -236,6 +236,10 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return this;
     }
     
+    protected String getId()
+    {
+        return _id;
+    }
     public RootEntityContext<T> asNonTenantContext(String id){
         return new RootEntityContext<>(entityType,null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(id);
     }

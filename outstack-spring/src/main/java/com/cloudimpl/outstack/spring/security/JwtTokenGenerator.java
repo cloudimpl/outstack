@@ -52,6 +52,13 @@ public class JwtTokenGenerator {
         }
     }
 
+    public TokenResponse createTokenResponse(JWTClaimsSet accessTokenJwt,JWTClaimsSet refershTokenJwt)
+    {
+        long millis = accessTokenJwt.getExpirationTime().getTime() - System.currentTimeMillis();
+        
+        return new TokenResponse(createToken(accessTokenJwt),createToken(refershTokenJwt),"bearer",(int)(millis/1000));
+    }
+    
     public String createOneTimeToken(JWTClaimsSet jwtClaimsSet) {
         try {
             //  new JWTClaimsSet.Builder(jwtClaimsSet).claim(name, signer)

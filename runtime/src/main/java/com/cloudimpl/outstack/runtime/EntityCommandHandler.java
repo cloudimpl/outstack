@@ -9,6 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**
@@ -32,9 +33,9 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         this.cmdType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 1);
     }
     
-    public boolean isTenantFunction()
+    public TenantRequirement getTenantRequirement()
     {
-        return Entity.hasTenant(enityType);
+        return Entity.checkTenantRequirement(enityType);
     }
     
     public  R apply(EntityContext<T> context,I command)
@@ -47,7 +48,7 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
     
     protected void validateInput(I command)
     {
-        if(isTenantFunction() && command.tenantId() == null)
+        if(getTenantRequirement() == TenantRequirement.REQUIRED && command.tenantId() == null)
         {
             throw new CommandException("tenantId is not available in the request");
         }
@@ -61,7 +62,7 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         }
         I cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
-        EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), cmd.tenantId(),false);
+        EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(),getTenantRequirement() == TenantRequirement.NONE?null:cmd.tenantId(),false);
         EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
         context.setTx(tx);
         R reply = apply(context, (I) cmd);

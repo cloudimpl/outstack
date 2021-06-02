@@ -26,8 +26,9 @@ public class AsyncEntityContext<T extends RootEntity> extends RootEntityContext<
         super(entityType, tid, tenantId, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher,validator,queryOperationSelector,version);
     }
     
-    public <C extends ChildEntity<T>> C create(Class<C> type,String id, Event<C> event)
+    public <C extends ChildEntity<T>> C create(Class<C> type,String rootId,String id, Event<C> event)
     {
+        
         ChildEntityContext childContext = (ChildEntityContext) getTx().getContext(type);
         return (C) childContext.asChildContext().create(id, event);
     }

@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.spring.security;
 
 import java.util.Collection;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
@@ -37,6 +38,7 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
     private final UserDetail userDetail;
     private final AuthenticationMeta authMeta;
     private Jwt jwtToken;
+    private Authentication _systemToken;
     private Object response;
     public PlatformAuthenticationToken(AuthenticationMeta authMeta,String principal,Collection<PlatformGrantedAuthority> authorities,UserDetail userDetail) {
         super(authorities);
@@ -81,5 +83,14 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
         return response;
     }
     
+    
+    public Authentication getSystemToken()
+    {
+        return _systemToken;
+    }
+
+    public void setSystemToken(Authentication _systemToken) {
+        this._systemToken = _systemToken;
+    }
     
 }

@@ -31,7 +31,9 @@ import com.cloudimpl.outstack.spring.component.SpringService;
 public class UserService extends SpringService<User>{
     static{
         $(CreateUser.class);
+        $(LoginUser.class);
         $$(User.class);
+        
     }
     public UserService(EventRepositoryFactory factory) {
         super(factory);
