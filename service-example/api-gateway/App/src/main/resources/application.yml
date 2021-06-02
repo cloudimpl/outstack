@@ -11,6 +11,9 @@ outstack:
         domainContext: example
         version: version
         serviceName: UserService
+    oauth:
+        token:
+            issuer: http://www.cloudimpl.com
     providers:
       - name : com.cloudimpl.outstack.collection.CollectionProvider
         impl: com.cloudimpl.outstack.collection.MemCollectionProvider

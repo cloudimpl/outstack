@@ -15,60 +15,34 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import com.nimbusds.jwt.JWTClaimsSet;
+import java.util.Date;
 
 /**
  *
  * @author nuwan
  */
-public class JwtToken{
-    private final Map<String,String> claims;
-    private final Map<String,String> headers;
+public class JwtToken {
 
-    public JwtToken(Builder builder) {
-        this.claims = Collections.unmodifiableMap(builder.claims);
-        this.headers = Collections.unmodifiableMap(builder.headers);
+    private JWTClaimsSet jwt;
+    private long expireTimeInSeconds;
+    public JwtToken(long expireTimeInSeconds,JWTClaimsSet jwt) {
+        this.jwt = jwt;
+        this.expireTimeInSeconds = expireTimeInSeconds;
     }
-    
-    public Optional<String> getClaim(String claim)
-    {
-        return Optional.ofNullable(claims.get(claim));
+
+    public JWTClaimsSet getJwt() {
+        return jwt;
     }
-    
-    public Optional<String> getHeader(String header)
-    {
-        return Optional.ofNullable(headers.get(header));
+
+    public long getExpireTimeInSeconds() {
+        return expireTimeInSeconds;
     }
+
     
-    public static Builder builder()
+    public Date getExpireTime()
     {
-        return new Builder();
-    }
-    
-    public static final class Builder
-    {
-        private Map<String,String> claims = new HashMap<>();
-        private Map<String,String> headers = new HashMap<>();
-        
-        public Builder withClaim(String claimName,String value)
-        {
-            this.claims.put(claimName, value);
-            return this;
-        }
-        
-        public Builder withHeader(String header,String value)
-        {
-            this.claims.put(header, value);
-            return this;
-        }
-        
-        public JwtToken build()
-        {
-            return new JwtToken(this);
-        }
+        return jwt.getExpirationTime();
     }
     
 }

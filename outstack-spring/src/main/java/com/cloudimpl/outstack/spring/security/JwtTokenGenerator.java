@@ -22,7 +22,9 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import java.util.Date;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -31,6 +33,15 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class JwtTokenGenerator {
+
+    @Value("${outstack.oauth.token.issuer:http://www.cloudimpl.com}")
+    private String tokenIssuer;
+
+    @Value("${outstack.oauth.token.access_token_lifetime:60}")
+    private long access_token_lifetime;
+
+    @Value("${outstack.oauth.token.refresh_token_lifetime:180}")
+    private long refresh_token_lifetime;
 
     private final JWSSigner signer;
 
@@ -42,9 +53,21 @@ public class JwtTokenGenerator {
         }
     }
 
-    public String createToken(JWTClaimsSet jwtClaimsSet) {
+    public JwtToken createAccessToken(JwtTokenBuilder builder) {
+        builder.withIssuer(tokenIssuer);
+        builder.withExpireTime(access_token_lifetime);
+        return builder.build();
+    }
+
+    public JwtToken createRefreshToken(JwtTokenBuilder builder) {
+        builder.withIssuer(tokenIssuer);
+        builder.withExpireTime(refresh_token_lifetime);
+        return builder.build();
+    }
+
+    private String createToken(JwtToken token) {
         try {
-            SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).build(), jwtClaimsSet);
+            SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).build(), token.getJwt());
             jwt.sign(signer);
             return jwt.serialize();
         } catch (JOSEException ex) {
@@ -52,13 +75,11 @@ public class JwtTokenGenerator {
         }
     }
 
-    public TokenResponse createTokenResponse(JWTClaimsSet accessTokenJwt,JWTClaimsSet refershTokenJwt)
-    {
-        long millis = accessTokenJwt.getExpirationTime().getTime() - System.currentTimeMillis();
-        
-        return new TokenResponse(createToken(accessTokenJwt),createToken(refershTokenJwt),"bearer",(int)(millis/1000));
+    public TokenResponse createTokenResponse(JwtToken accessToken, JwtToken refreshToken) {
+
+        return new TokenResponse(createToken(accessToken), refreshToken == null ? null : createToken(refreshToken), "bearer", accessToken.getExpireTimeInSeconds());
     }
-    
+
     public String createOneTimeToken(JWTClaimsSet jwtClaimsSet) {
         try {
             //  new JWTClaimsSet.Builder(jwtClaimsSet).claim(name, signer)
