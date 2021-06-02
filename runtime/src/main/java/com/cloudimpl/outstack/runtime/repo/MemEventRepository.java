@@ -172,9 +172,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 break;
         }
         String fqtrn = trn;
-        String prefix = resourcePrefix("brn") + ":" + RootEntity.makeTRN(rootType, version, id, tenantId);
-        SortedMap<String, Entity> map = mapEntites.subMap(prefix, prefix + Character.MAX_VALUE);
-        Collection<K> result = map.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
+      
+        Collection<K> result = mapEntites.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
                 .filter(e -> e.getKey().startsWith(fqtrn))
                 .map(e -> (K) e)
                 .filter(e -> onFilter(e, paging.getParams()))
