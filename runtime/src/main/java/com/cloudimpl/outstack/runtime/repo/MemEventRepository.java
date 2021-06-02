@@ -216,8 +216,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         JsonObject rightJson = GsonCodec.encodeToJson(right).getAsJsonObject();
         JsonElement leftEl = leftJson.get(name);
         JsonElement rightEl = rightJson.get(name);
-        if (leftEl == null || rightEl == null) {
-            throw new RepositoryException("null not supported for sorting: " + name + " field");
+        if (leftEl == null && rightEl == null) {
+            //throw new RepositoryException("null not supported for sorting: " + name + " field");
+            return 0;
+        }
+        else if(leftEl == null && rightEl != null) {
+            return 1;
+        }
+        else if(leftEl != null && rightEl == null){
+            return -1;
         }
         if (!leftEl.isJsonPrimitive() || !rightEl.isJsonPrimitive()) {
             throw new RepositoryException("only primitive types supported for sorting");
@@ -227,7 +234,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (leftPrim.isNumber() && rightPrim.isNumber()) {
             return leftPrim.getAsBigDecimal().compareTo(rightPrim.getAsBigDecimal());
         } else if (leftPrim.isString() && rightPrim.isString()) {
-            return leftPrim.getAsString().compareTo(rightPrim.getAsString());
+            return leftPrim.getAsString().compareToIgnoreCase(rightPrim.getAsString());
         } else if (leftPrim.isBoolean() && rightPrim.isBoolean()) {
             return Boolean.compare(leftPrim.getAsBoolean(), rightPrim.getAsBoolean());
         }
@@ -316,11 +323,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
         Stream<Event<T>> stream = IntStream.range(0, size).mapToObj(i -> events.get(size - i - 1));
         if (technicalId) {
-            stream = stream.filter(e -> e.getRootEntityTRN().equals(rn));
+            stream = stream.filter(e -> e.getEntityTRN().equals(rn));
         } else {
-            stream = stream.filter(e -> e.getRootEntityRN().equals(rn));
+            stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
         Collection<Event<T>> cols = stream.map(e -> (Event<T>) e)
+                
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         return onPageable(cols, paging);
