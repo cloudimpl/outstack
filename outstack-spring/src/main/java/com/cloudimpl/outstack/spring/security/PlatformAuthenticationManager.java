@@ -15,9 +15,12 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
 import reactor.core.publisher.Mono;
 
 /**
@@ -56,7 +59,7 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
                 return authorizationProvider.authenticate(token);
             }
             case TOKEN_FLOW: {
-                return tokenProvider.authenticate(token).doOnNext(this::validateTokenResponse);
+                return Mono.just(token).doOnNext(t->validateTokenFlow(t)).flatMap(t->tokenProvider.authenticate(t)).doOnNext(this::validateTokenResponse);
             }
             default: {
                 return Mono.error(() -> new PlatformAuthenticationException("unknown token flow:" + meta.getTokenFlow(), null));
@@ -72,6 +75,33 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
         if(token.getResponse() == null || !(token.getResponse() instanceof TokenResponse))
         {
             throw new PlatformAuthenticationException("token response is null or invalid", null);
+        }
+    }
+    
+    private void validateTokenFlow(PlatformAuthenticationToken token)
+    {
+        switch(token.getAuthMeta().getGrantType())
+        {
+            case AUTHORIZATION_CODE:
+            {
+                break;
+            }
+            case PASSWORD:
+            {
+                if(!UsernamePasswordAuthenticationToken.class.isInstance(token.getSystemToken()))
+                {
+                    throw new ValidationErrorException("grant type does not match with token type");
+                }
+                break;
+            }
+            case REFRESH_TOKEN:
+            {
+                if(!BearerTokenAuthenticationToken.class.isInstance(token.getSystemToken()))
+                {
+                    throw new ValidationErrorException("grant type does not match with token type");
+                }
+                break;
+            }
         }
     }
 }

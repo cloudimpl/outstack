@@ -26,7 +26,8 @@ public class AuthenticationMeta {
     private final String tokenContext;
     private final GrantType grantType;
     private final ClientMeta clientMeta;
-    public AuthenticationMeta(PlatformAuthenticationToken.TokenFlow tokenFlow, String authKey, String tokenContext, GrantType grantType,ClientMeta clientMeta) {
+
+    public AuthenticationMeta(PlatformAuthenticationToken.TokenFlow tokenFlow, String authKey, String tokenContext, GrantType grantType, ClientMeta clientMeta) {
         this.tokenFlow = tokenFlow;
         this.authKey = authKey;
         this.tokenContext = tokenContext;
@@ -56,7 +57,7 @@ public class AuthenticationMeta {
 
     @Override
     public String toString() {
-        return "AuthenticationMeta{" + "tokenFlow=" + tokenFlow + ", authKey=" + authKey + ", tokenContext=" + tokenContext + ", grantType=" + grantType + '}';
+        return "AuthenticationMeta{" + "tokenFlow=" + tokenFlow + ", authKey=" + authKey + ", tokenContext=" + tokenContext + ", grantType=" + grantType + ", clientMeta=" + clientMeta + '}';
     }
 
     public static final class ClientMeta {
@@ -67,13 +68,16 @@ public class AuthenticationMeta {
         private final String redirectUri;
         private final String codeVerifier;
         private final String tenantId;
-        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier,String tenantId) {
+        private final String accessType;
+
+        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier, String tenantId, String accessType) {
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.code = code;
             this.redirectUri = redirectUri;
             this.codeVerifier = codeVerifier;
             this.tenantId = tenantId;
+            this.accessType = accessType;
         }
 
         public String getClientId() {
@@ -88,6 +92,10 @@ public class AuthenticationMeta {
             return code;
         }
 
+        public String getAccessType() {
+            return accessType;
+        }
+
         public String getRedirectUri() {
             return redirectUri;
         }
@@ -100,12 +108,10 @@ public class AuthenticationMeta {
             return tenantId;
         }
 
-        
         @Override
         public String toString() {
-            return "ClientMeta{" + "clientId=" + clientId + ", clientSecret=" + clientSecret + ", code=" + code + ", redirectUri=" + redirectUri + ", codeVerifier=" + codeVerifier + '}';
+            return "ClientMeta{" + "clientId=" + clientId + ", clientSecret=" + clientSecret + ", code=" + code + ", redirectUri=" + redirectUri + ", codeVerifier=" + codeVerifier + ", tenantId=" + tenantId + ", accessType=" + accessType + '}';
         }
-        
-        
+
     }
 }

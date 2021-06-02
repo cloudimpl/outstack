@@ -55,9 +55,9 @@ public class Auth2Util {
         String codeVerfier = req.getQueryParams().getFirst("code_verifier");
         String code = req.getQueryParams().getFirst("code");
         String redirectUri = req.getQueryParams().getFirst("redirect_uri");
-
+        String accessType = req.getQueryParams().getFirst("access_type");
         String tenantId = req.getHeaders().getFirst("X-TenantId");
-        return new AuthenticationMeta.ClientMeta(clientId, clientSecret, code, redirectUri, codeVerfier, tenantId);
+        return new AuthenticationMeta.ClientMeta(clientId, clientSecret, code, redirectUri, codeVerfier, tenantId,accessType);
     }
 
     public static void validateAuthentcationMeta(Object detail) {

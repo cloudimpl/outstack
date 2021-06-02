@@ -19,10 +19,13 @@ public abstract class RootEntity extends Entity {
     public final String getBRN() {
         switch (getTenantRequirement()) {
             case REQUIRED: {
+                Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
+            }
+            case OPTIONAL: {
                 return makeRN(this.getClass(), getMeta().getVersion(), entityId(), getTenantId());
             }
             default: {
-                return makeRN(this.getClass(), getMeta().getVersion(), entityId(), getTenantId());
+                return makeRN(this.getClass(), getMeta().getVersion(), entityId(), null);
             }
         }
     }
@@ -32,10 +35,12 @@ public abstract class RootEntity extends Entity {
         switch (getTenantRequirement()) {
             case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
+            }
+            case OPTIONAL: {
                 return makeTRN(this.getClass(), getMeta().getVersion(), id(), getTenantId());
             }
             default: {
-                return makeTRN(this.getClass(), getMeta().getVersion(), id(), getTenantId());
+                return makeTRN(this.getClass(), getMeta().getVersion(), id(), null);
             }
         }
     }
@@ -65,8 +70,7 @@ public abstract class RootEntity extends Entity {
         T root;
         TenantRequirement req = checkTenantRequirement(type);
         switch (req) {
-            case REQUIRED:
-            {
+            case REQUIRED: {
                 Objects.requireNonNull(tenantId);
             }
             case OPTIONAL: {
@@ -77,7 +81,7 @@ public abstract class RootEntity extends Entity {
                 root = Util.createObject(type, new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
             }
         }
-        
+
         EntityHelper.updateId(root, tid);
         return root;
     }

@@ -28,14 +28,14 @@ import java.util.UUID;
 public class JwtTokenBuilder {
     private final PlatformAuthenticationToken token;
     private final JWTClaimsSet.Builder builder;
-    
+    private long expireTimeInSeconds;
     public JwtTokenBuilder(PlatformAuthenticationToken token) {
         this.token = token;
         this.builder = new JWTClaimsSet.Builder();
         this.builder.issueTime(new Date(Instant.now().toEpochMilli()));
         this.builder.jwtID(UUID.randomUUID().toString());
         this.builder.subject(token.getUserId());
-       // this.builder.claim("userId", token.)
+        this.builder.claim("userId", token.getUserId());
     }
     
     
@@ -59,12 +59,23 @@ public class JwtTokenBuilder {
     
     public JwtTokenBuilder withExpireTime(long seconds)
     {
-        this.builder.expirationTime(new Date(Instant.now().plusSeconds(1000000000).toEpochMilli()));
+        this.builder.expirationTime(new Date(Instant.now().plusSeconds(seconds).toEpochMilli()));
+        this.expireTimeInSeconds = seconds;
         return this;
     }
     
-    public JWTClaimsSet build()
+    public long getExpiretimeInSeconds()
     {
-        return this.builder.build();
+        return this.expireTimeInSeconds;
+    }
+    
+    public JwtTokenBuilder withIssuer(String issuer)
+    {
+        this.builder.issuer(issuer);
+        return this;
+    }
+    public JwtToken build()
+    {
+        return new JwtToken(expireTimeInSeconds,this.builder.build());
     }
 }

@@ -32,10 +32,12 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
         switch (getTenantRequirement()) {
             case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
+            }
+            case OPTIONAL: {
                 return makeTRN(rootType(), getMeta().getVersion(), rootId(), getClass(), id(), getTenantId());
             }
             default: {
-                return makeTRN(rootType(), getMeta().getVersion(), rootId(), getClass(), id(), getTenantId());
+                return makeTRN(rootType(), getMeta().getVersion(), rootId(), getClass(), id(), null);
             }
         }
     }
@@ -45,10 +47,12 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
         switch (getTenantRequirement()) {
             case REQUIRED: {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
+            }
+            case OPTIONAL: {
                 return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), ITenant.class.cast(this).getTenantId());
             }
             default: {
-                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), getTenantId());
+                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), null);
             }
         }
     }
