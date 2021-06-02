@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
@@ -34,7 +34,7 @@ public class CommandWrapper implements ICommand {
 
     @Override
     public final <T extends Command> T unwrap(Class<T> type) {
-        T cmd = GsonCodec.decode(type, payload);
+        T cmd = GsonCodecRuntime.decode(type, payload);
         CommandHelper.withRootId(cmd, rootId);
         CommandHelper.withTenantId(cmd, tenantId);
         CommandHelper.withId(cmd, id);
@@ -108,7 +108,7 @@ public class CommandWrapper implements ICommand {
         
         public Builder withObject(Object payload)
         {
-            this.payload = GsonCodec.encode(payload);
+            this.payload = GsonCodecRuntime.encode(payload);
             return this;
         }
         public CommandWrapper build()

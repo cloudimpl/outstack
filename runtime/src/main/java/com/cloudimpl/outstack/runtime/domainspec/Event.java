@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.util.TimeUtils;
 import java.text.MessageFormat;
 
@@ -196,7 +196,7 @@ public abstract class Event<T extends Entity> implements IResource ,Input{
     @Override
     public String toString()
     {
-        return GsonCodec.encode(this);
+        return GsonCodecRuntime.encode(this);
     }
     
     public static final class Meta {

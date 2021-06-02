@@ -81,7 +81,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
                 Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
             this.idGenerator = idGenerator;
             if (rootTid != null) {
-                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : loadTid(type,rootTid,tenantId) ;
+                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId).map(t->t.id()).orElse(null) ;
             }
             this.tenantId = tenantId;
             this.queryOperation = queryOperation;
@@ -91,11 +91,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             this.async = async;
         }
 
-        private String loadTid(Class<R> type,String id,String tenantId)
-        {
-            String tid = queryOperation.getRootById(type, id, tenantId).map(t->t.id()).orElse(null);
-            return tid;
-        }
+ 
         public String getTenantId() {
             return tenantId;
         }

@@ -12,7 +12,7 @@ import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.EventStream;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ResultSet;
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
@@ -212,8 +212,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     private int compare(String name, Object left, Object right) {
-        JsonObject leftJson = GsonCodec.encodeToJson(left).getAsJsonObject();
-        JsonObject rightJson = GsonCodec.encodeToJson(right).getAsJsonObject();
+        JsonObject leftJson = GsonCodecRuntime.encodeToJson(left).getAsJsonObject();
+        JsonObject rightJson = GsonCodecRuntime.encodeToJson(right).getAsJsonObject();
         JsonElement leftEl = leftJson.get(name);
         JsonElement rightEl = rightJson.get(name);
         if (leftEl == null && rightEl == null) {
@@ -245,7 +245,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         if (params.isEmpty()) {
             return true;
         }
-        JsonObject json = GsonCodec.encodeToJson(item).getAsJsonObject();
+        JsonObject json = GsonCodecRuntime.encodeToJson(item).getAsJsonObject();
         for (Map.Entry<String, String> entry : params.entrySet()) {
             JsonElement el = json.get(entry.getKey());
             if (el == null || !el.isJsonPrimitive()) {

@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryHelper;
@@ -36,7 +36,7 @@ public class QueryWrapper implements IQuery {
 
     @Override
     public <T extends Query> T unwrap(Class<T> type) {
-        T query = GsonCodec.decode(type, payload);
+        T query = GsonCodecRuntime.decode(type, payload);
         QueryHelper.withRootId(query, rootId);
         QueryHelper.withId(query, id);
         QueryHelper.withTenantId(query, tenantId);

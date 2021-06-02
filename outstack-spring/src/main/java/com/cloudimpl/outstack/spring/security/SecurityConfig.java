@@ -13,6 +13,7 @@ import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationFailureHandler;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
@@ -49,7 +50,7 @@ public class SecurityConfig {
     public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor, String... urls) {
         AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
         authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
-        //   authenticationFilter.setAuthenticationFailureHandler(this.authenticationFailureHandler);
+        authenticationFilter.setAuthenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login"));
         authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
         authenticationFilter.setAuthenticationSuccessHandler(new PlatformAuthenticationSuccessHandler());
         return authenticationFilter;

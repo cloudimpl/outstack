@@ -5,7 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -94,7 +94,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
         if (ICommand.class.isInstance(input)) {
             return applyCommand((ICommand) input);
         } else if (LinkedTreeMap.class.isInstance(input)) {
-            return applyCommand(GsonCodec.decodeTree(CommandWrapper.class, (LinkedTreeMap) input));
+            return applyCommand(GsonCodecRuntime.decodeTree(CommandWrapper.class, (LinkedTreeMap) input));
         } else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }

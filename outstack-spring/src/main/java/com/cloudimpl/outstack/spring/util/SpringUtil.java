@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.spring.util;
 
 import com.cloudimpl.outstack.app.ServiceMeta;
+import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.core.CloudFunctionMeta;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
@@ -15,7 +16,6 @@ import com.cloudimpl.outstack.runtime.EntityEventHandler;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.Handler;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
-import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
