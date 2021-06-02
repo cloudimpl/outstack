@@ -9,9 +9,8 @@
     <artifactId>outstack-spring</artifactId>
     <packaging>jar</packaging>
     <properties>
-        <outstack.version>3.0</outstack.version>
-        <spring.version>2.4.5</spring.version>
-        <spring.security.version>5.4.6</spring.security.version>
+<!--        <spring.version>2.4.5</spring.version>
+        <spring.security.version>5.4.6</spring.security.version>-->
     </properties>
     <dependencyManagement>
         <dependencies> 
@@ -48,12 +47,12 @@
         <dependency>
             <groupId>com.cloudimpl.outstack</groupId>
             <artifactId>core</artifactId>
-            <version>${outstack.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>com.cloudimpl.outstack</groupId>
             <artifactId>runtime</artifactId>
-            <version>${outstack.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
