@@ -35,7 +35,7 @@ public class JwtTokenBuilder {
         this.builder.issueTime(new Date(Instant.now().toEpochMilli()));
         this.builder.jwtID(UUID.randomUUID().toString());
         this.builder.subject(token.getUserId());
-        this.builder.claim("userId", token.)
+       // this.builder.claim("userId", token.)
     }
     
     
