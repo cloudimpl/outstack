@@ -1,99 +1,57 @@
-///*
-// * To change this license header, choose License Headers in Project Properties.
-// * To change this template file, choose Tools | Templates
-// * and open the template in the editor.
-// */
-//package com.cloudimpl.outstack.spring.security;
-//
-//import java.io.IOException;
-//import java.io.InputStream;
-//import java.security.Key;
-//import java.security.KeyStore;
-//import java.security.KeyStoreException;
-//import java.security.NoSuchAlgorithmException;
-//import java.security.PublicKey;
-//import java.security.UnrecoverableKeyException;
-//import java.security.cert.Certificate;
-//import java.security.cert.CertificateException;
-//import java.security.interfaces.RSAPrivateKey;
-//import java.security.interfaces.RSAPublicKey;
-//import lombok.extern.slf4j.Slf4j;
-//import org.springframework.beans.factory.annotation.Value;
-//import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-//import org.springframework.context.annotation.Bean;
-//import org.springframework.context.annotation.Configuration;
-//import org.springframework.security.oauth2.jwt.JwtDecoder;
-//import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-//import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
-//import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-//
-///**
-// *
-// * @author nuwan
-// */
-//@Slf4j
-//@Configuration
-//@EnableAutoConfiguration
-//public class JwtConfiguration {
-//	
-//	@Value("${com.cloudimpl.outstack.security.jwt.keystore-location}")
-//	private String keyStorePath;
-//	
-//	@Value("${com.cloudimpl.outstack.security.jwt.keystore-password}")
-//	private String keyStorePassword;
-//	
-//	@Value("${com.cloudimpl.outstack.security.jwt.key-alias}")
-//	private String keyAlias;
-//	
-//	@Value("${com.cloudimpl.outstack.security.jwt.private-key-passphrase}")
-//	private String privateKeyPassphrase;
-//	
-//	@Bean
-//	public KeyStore keyStore() {
-//		try {
-//			KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-//			InputStream resourceAsStream = Thread.currentThread().getContextClassLoader().getResourceAsStream(keyStorePath);
-//			keyStore.load(resourceAsStream, keyStorePassword.toCharArray());
-//			return keyStore;
-//		} catch (IOException | CertificateException | NoSuchAlgorithmException | KeyStoreException e) {
-//			log.error("Unable to load keystore: {}", keyStorePath, e);
-//		}
-//		
-//		throw new IllegalArgumentException("Unable to load keystore");
-//	}
-//	
-//	@Bean
-//	public RSAPrivateKey jwtSigningKey(KeyStore keyStore) {
-//		try {
-//			Key key = keyStore.getKey(keyAlias, privateKeyPassphrase.toCharArray());
-//			if (key instanceof RSAPrivateKey) {
-//				return (RSAPrivateKey) key;
-//			}
-//		} catch (UnrecoverableKeyException | NoSuchAlgorithmException | KeyStoreException e) {
-//			log.error("Unable to load private key from keystore: {}", keyStorePath, e);
-//		}
-//		
-//		throw new IllegalArgumentException("Unable to load private key");
-//	}
-//	
-//	@Bean
-//	public RSAPublicKey jwtValidationKey(KeyStore keyStore) {
-//		try {
-//			Certificate certificate = keyStore.getCertificate(keyAlias);
-//			PublicKey publicKey = certificate.getPublicKey();
-//			
-//			if (publicKey instanceof RSAPublicKey) {
-//				return (RSAPublicKey) publicKey;
-//			}
-//		} catch (KeyStoreException e) {
-//			log.error("Unable to load private key from keystore: {}", keyStorePath, e);
-//		}
-//		
-//		throw new IllegalArgumentException("Unable to load RSA public key");
-//	}
-//	
-//	@Bean
-//	public ReactiveJwtDecoder jwtDecoder(RSAPublicKey rsaPublicKey) {
-//		return NimbusReactiveJwtDecoder.withPublicKey(rsaPublicKey).build();
-//	}
-//}
+/*
+ * Copyright 2021 nuwan.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.cloudimpl.outstack.spring.security;
+
+import java.io.IOException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
+
+/**
+ *
+ * @author nuwan
+ */
+@Configuration
+public class JwtConfiguration {
+
+    @Bean
+    public ReactiveJwtDecoder jwtDecoder(RSAPublicKey publicKey) {
+        return new NimbusReactiveJwtDecoder(publicKey);
+    }
+
+    @Bean
+    //@SneakyThrows
+    public RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
+
+        try {
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate cert = (X509Certificate) certFactory.generateCertificate(securityProperties.getPublicKeyFile().getInputStream());
+            return RSAPublicKey.class.cast(cert.getPublicKey());
+        } catch (CertificateException | IOException ex) {
+            Logger.getLogger(SecurityConfig.class.getName()).log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
+        }
+    }
+
+}

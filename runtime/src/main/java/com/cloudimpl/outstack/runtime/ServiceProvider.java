@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -13,12 +14,19 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.internal.LinkedTreeMap;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
@@ -34,12 +42,13 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
+    private final static ObjectMapper objectMapper = new ObjectMapper();
 
-    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository,Function<Class<? extends RootEntity>,QueryOperations<?>> queryOperationSelector) {
+    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
-        contextProvider = new EntityContextProvider<>(rootType,this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository,queryOperationSelector);
+        contextProvider = new EntityContextProvider<>(rootType, this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
@@ -64,7 +73,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     public Optional<EntityCommandHandler> getCmdHandler(String name) {
         return Optional.ofNullable(mapCmdHandlers.get(name.toLowerCase()));
     }
-    
+
     public static void validateHandler(String name, Class<? extends RootEntity> rootType, Class<? extends Entity> type) {
         if (RootEntity.isMyType(type)) {
             if (type != rootType) {
@@ -84,29 +93,61 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
         if (ICommand.class.isInstance(input)) {
             return applyCommand((ICommand) input);
-        }else {
+        } else if (LinkedTreeMap.class.isInstance(input)) {
+            return applyCommand(GsonCodec.decodeTree(CommandWrapper.class, (LinkedTreeMap) input));
+        } else {
             return Mono.error(() -> new CommandException("invalid input received. {0}", input));
         }
-
     }
 
     private Publisher applyCommand(ICommand cmd) {
-        try
-        {
-            return Mono.just(getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase())).emit(contextProvider, cmd))
-                .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction)ct.getTx(), ct.getEvents()))
-                .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction)ct.getTx()))
-                .map(ct -> ct.getTx().getReply());
-        }catch(Throwable thr)
-        {
+        try {
+            EntityCommandHandler handler = getCmdHandler(cmd.commandName()).orElseThrow(() -> new CommandException("command {0} not found", cmd.commandName().toLowerCase()));
+            if (AsyncEntityCommandHandler.class.isInstance(handler)) {
+                Mono<EntityContext> mono = AsyncEntityCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd);
+                return mono.doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
+                        .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                        .flatMap(ct -> resolveReply(ct.getTx().getReply()))
+                        .map(r -> encode(cmd, r));
+            } else {
+                return Mono.just(handler.emit(contextProvider, cmd))
+                        .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
+                        .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                        .flatMap(ct -> resolveReply(ct.getTx().getReply()))
+                        .map(r -> encode(cmd, r));
+            }
+
+        } catch (Throwable thr) {
             thr.printStackTrace();
             return Mono.error(thr);
+//            if (RuntimeException.class.isInstance(thr)) {
+//                throw thr;
+//            }
+            //  throw thr;
+            // throw new RuntimeException(thr);
         }
-        
+    }
+
+    private Mono resolveReply(Object reply) {
+        if (Mono.class.isInstance(reply)) {
+            return (Mono) reply;
+        } else {
+            return Mono.just(reply);
+        }
+    }
+
+    private Object encode(ICommand cmd, Object reply) {
+        if (CommandWrapper.class.isInstance(cmd)) {
+            //return objectMapper.writeValueAsString(reply);
+            return objectMapper.convertValue(reply, LinkedHashMap.class);
+
+        } else {
+            return reply;
+        }
     }
 
     public void applyEvent(Event event) {
-        EntityContextProvider.Transaction<T> tx = contextProvider.createWritableTransaction(event.rootId(), event.tenantId());
+        EntityContextProvider.Transaction<T> tx = contextProvider.createWritableTransaction(event.rootId(), event.tenantId(), false);
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
         eventRepository.saveTx(tx);
     }

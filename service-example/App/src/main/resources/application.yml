@@ -1,0 +1,39 @@
+outstack:
+    domainOwner: cloudimpl
+    domainContext: example
+    apiContext: example
+    cluster:
+      servicePort: 12000
+      gossipPort: 14000
+      seeds:
+          - 192.168.1.13:13000
+    providers:
+      - name : com.cloudimpl.outstack.collection.CollectionProvider
+        impl: com.cloudimpl.outstack.collection.MemCollectionProvider
+        
+      - name:  com.cloudimpl.outstack.collection.CollectionProvider
+        impl: com.cloudimpl.outstack.collection.AwsCollectionProvider
+        status: active
+        configs:
+          endpoint: http://localhost:1234
+          leaderTable : LeaderTable 
+
+spring:
+  main:
+    web-application-type: reactive
+#  thymeleaf:
+#    cache: false  
+#    check-template: true
+#    check-template-location: true
+#    content-type: text/html
+#    enabled: true
+#    encoding: UTF-8
+#    mode: HTML
+#    prefix: classpath:/templates/
+#    suffix: .html  
+
+server:
+  error:
+    include-message: always
+  port: 15000
+  

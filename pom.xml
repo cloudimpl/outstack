@@ -52,6 +52,12 @@
             <artifactId>aws-java-sdk-dynamodb</artifactId>
             <version>1.11.892</version>
             <type>jar</type>
+            <exclusions>
+                <exclusion>
+                    <groupId>commons-logging</groupId>
+                    <artifactId>commons-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.cloudimpl</groupId>

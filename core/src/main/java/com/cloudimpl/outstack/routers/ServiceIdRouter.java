@@ -10,7 +10,7 @@ import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.RouterException;
-import com.cloudimpl.outstack.coreImpl.CloudServiceRegistry;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import reactor.core.publisher.Mono;
 
 /**
@@ -20,10 +20,10 @@ import reactor.core.publisher.Mono;
 public class ServiceIdRouter implements CloudRouter {
 
   private final String topic;
-  private final CloudServiceRegistry registry;
+  private final ServiceRegistryReadOnly registry;
 
   @Inject
-  public ServiceIdRouter(@Named("@topic") String topic, CloudServiceRegistry serviceRegistry) {
+  public ServiceIdRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
     this.topic = topic;
     this.registry = serviceRegistry;
   }

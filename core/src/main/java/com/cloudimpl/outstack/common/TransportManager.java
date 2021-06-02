@@ -8,6 +8,7 @@ import io.rsocket.Closeable;
 import io.rsocket.ConnectionSetupPayload;
 import io.rsocket.Payload;
 import io.rsocket.RSocket;
+import io.rsocket.RSocketErrorException;
 import io.rsocket.SocketAcceptor;
 import io.rsocket.core.RSocketConnector;
 import io.rsocket.core.RSocketServer;
@@ -111,22 +112,22 @@ public class TransportManager {
 
                 @Override
                 public Mono<Void> fireAndForget(Payload payload) {
-                    return listener.fireAndForget((T) decode(payload));
+                    return listener.fireAndForget((T) decode(payload)).onErrorMap(err->new RSocketErrorException(12345, GsonCodec.encodeWithType(err),null));
                 }
 
                 @Override
                 public Mono<Payload> requestResponse(Payload payload) {
-                    return listener.requestResponse((T) decode(payload)).map(this::encode);
+                    return listener.requestResponse((T) decode(payload)).map(this::encode).onErrorMap(err->new RSocketErrorException(12345, GsonCodec.encodeWithType(err),null));
                 }
 
                 @Override
                 public Flux<Payload> requestStream(Payload payload) {
-                    return listener.requestStream((T) decode(payload)).map(this::encode);
+                    return listener.requestStream((T) decode(payload)).map(this::encode).onErrorMap(err->new RSocketErrorException(12345, GsonCodec.encodeWithType(err),null));
                 }
 
                 @Override
                 public Flux<Payload> requestChannel(Publisher<Payload> payloads) {
-                    return listener.requestChannel((Publisher<T>) Flux.from(payloads).map(s -> this.decode(s))).map(this::encode);
+                    return listener.requestChannel((Publisher<T>) Flux.from(payloads).map(s -> this.decode(s))).map(this::encode).onErrorMap(err->new RSocketErrorException(12345, GsonCodec.encodeWithType(err),null));
                 }
 
                 private Payload encode(Object msg) {

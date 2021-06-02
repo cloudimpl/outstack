@@ -19,12 +19,15 @@ import java.util.Optional;
  */
 public interface EntityQueryContext<T extends Entity>{
     
+    
     Optional<T> getEntityById(String id);
     
     <R extends RootEntity> RootEntityQueryContext<R> asRootQueryContext();
 
-
+    
     <R extends RootEntity,K extends ChildEntity<R>> ChildEntityQueryContext<R,K> asChildQueryContext() ;
+    
+    <R extends RootEntity> AsyncRootEntityQueryContext<R> asAsyncQueryContext();
     
     <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String id);
     

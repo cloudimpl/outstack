@@ -7,14 +7,13 @@ package com.cloudimpl.outstack.spring.component;
 
 import com.cloudimpl.outstack.app.AppConfig;
 import com.cloudimpl.outstack.app.ResourcesLoader;
-import com.cloudimpl.outstack.collection.AwsCollectionProvider;
 import com.cloudimpl.outstack.collection.CollectionOptions;
 import com.cloudimpl.outstack.collection.CollectionProvider;
-import com.cloudimpl.outstack.collection.MemCollectionProvider;
 import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
@@ -26,7 +25,6 @@ import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -42,26 +40,9 @@ public class Cluster {
         GsonCodec.registerTypeAdaptor(CloudMessage.class, () -> new CloudMessageDecoder(), () -> new CloudMessageEncoder());
     }
 
-    @Value("${com.cloudimpl.outstack.cluster.gossipPort:12000}")
-    private int gossipPort;
-
-    @Value("${com.cloudimpl.outstack.cluster.seedName:@null}")
-    private String seedName;
-
-    @Value("${com.cloudimpl.outstack.cluster.servicePort:10000}")
-    private int servicePort;
-
-    @Value("${com.cloudimpl.outstack.cluster.domainOwner:cloudimpl}")
-    private String domainOwner;
-
-    @Value("${com.cloudimpl.outstack.cluster.domainContext:example}")
-    private String domainContext;
-
-    @Value("${com.cloudimpl.outstack.cluster.apiContext:api}")
-    private String apiContext;
-
     private CloudNode node;
 
+    @Autowired
     private ServiceDescriptorContextManager serviceDescriptorContextMan;
 
     @Autowired
@@ -74,10 +55,12 @@ public class Cluster {
     public void init() {
         Injector injector = new Injector();
         configManager.setInjector(injector);
-        serviceDescriptorContextMan = new ServiceDescriptorContextManager();
-        ResourceHelper resourceHelper = new ResourceHelper(domainOwner, domainContext, configManager.getApiContext());
+      //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
+        ResourceHelper resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
         EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
-        AppConfig appConfig = AppConfig.builder().withGossipPort(gossipPort).withSeedName(seedName).withServicePort(servicePort).build();
+        AppConfig appConfig = AppConfig.builder().withGossipPort(configManager.getCluster().getGossipPort())
+                .withSeeds(configManager.getCluster().getSeeds().toArray(String[]::new))
+                .withSeedName(configManager.getCluster().getSeedName()).withServicePort(configManager.getCluster().getServicePort()).build();
         
         injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
         injector.bind(ResourceHelper.class).to(resourceHelper);
@@ -105,6 +88,11 @@ public class Cluster {
         System.exit(-1);
     }
 
+    public ServiceRegistryReadOnly getServiceRegistry()
+    {
+        return this.node.getServiceRegistry();
+    }
+    
     public ServiceDescriptorContextManager getServiceDescriptorContextManager() {
         return serviceDescriptorContextMan;
     }

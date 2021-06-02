@@ -25,6 +25,9 @@ public class EntityHelper {
         return ITenant.class.isAssignableFrom(entityType);
     }
 
+    public static <T extends Entity> boolean hasOptionalTenant(Class<T> entityType) {
+        return ITenantOptional.class.isAssignableFrom(entityType);
+    }
     public static void setCreatedDate(Entity e,long millis)
     {
         e.getMeta().setCreatedDate(millis);

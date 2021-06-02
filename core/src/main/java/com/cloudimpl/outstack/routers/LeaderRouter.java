@@ -24,6 +24,7 @@ import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.RouterException;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.coreImpl.CloudServiceRegistry;
 import com.cloudimpl.outstack.le.LeaderElectionManager;
@@ -47,13 +48,13 @@ public class LeaderRouter implements CloudRouter {
     private final List<String> leaderServices = new CopyOnWriteArrayList<>();
     private volatile String leaderId = null;
     private final ILogger logger;
-    private final CloudServiceRegistry registry;
+    private final ServiceRegistryReadOnly registry;
     private CloudService serviceInstance;
     private int nextPossibleId = 0;
     @Inject
     public LeaderRouter(@Named("@topic") String topic, @Named("RSHnd") BiFunction<String, CloudMessage, Flux<LeaderInfoResponse>> rsHnd,
             ILogger logger,
-            CloudServiceRegistry serviceRegistry, LeaderElectionManager leaderManager) {
+            ServiceRegistryReadOnly serviceRegistry, LeaderElectionManager leaderManager) {
         this.registry = serviceRegistry;
         this.logger = logger.createSubLogger("LeaderRouter",topic);
         serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD).map(e -> e.getValue())

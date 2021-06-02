@@ -7,7 +7,7 @@
         <version>3.0</version>
     </parent>
     <artifactId>service-example</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -41,4 +41,9 @@
             </plugin>
         </plugins>
      </build>
+    <modules>
+        <module>user-service</module>
+        <module>App</module>
+        <module>api-gateway</module>
+    </modules>
 </project>

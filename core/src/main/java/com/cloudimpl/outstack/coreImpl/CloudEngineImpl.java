@@ -6,14 +6,17 @@ package com.cloudimpl.outstack.coreImpl;
 
 import com.cloudimpl.outstack.routers.LeaderRouter;
 import com.cloudimpl.outstack.common.CloudMessage;
+import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.core.CloudFunction;
 import com.cloudimpl.outstack.core.CloudServiceDescriptor;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.le.LeaderElectionManager;
 import com.cloudimpl.outstack.logger.Logger;
 import com.cloudimpl.outstack.node.NodeConfig;
+import io.rsocket.exceptions.CustomRSocketException;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import reactor.core.publisher.Flux;
@@ -43,7 +46,7 @@ public class CloudEngineImpl implements CloudEngine {
         rootLogger = injector.inject(Logger.class);
         this.elMan = injector.inject(LeaderElectionManager.class);
         this.serviceRegistry = new CloudServiceRegistry(rootLogger);
-        injector.bind(CloudServiceRegistry.class).to(serviceRegistry);
+        injector.bind(ServiceRegistryReadOnly.class).to(serviceRegistry);
         injector.nameBind("@serviceFlux",this.serviceRegistry.flux());
         injector.bind(Logger.class).to(rootLogger);
         injector.bind(ILogger.class).to(rootLogger);
@@ -69,8 +72,10 @@ public class CloudEngineImpl implements CloudEngine {
     public <T> Mono<T> requestReply(String topic, Object request) {
         try {
             CloudMessage cloudMsg = buildMsg(topic, request);
-            return routerRepository.router(topic).route(cloudMsg).flatMap(service -> service
-                    .requestReply(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())));
+            return (Mono<T>) routerRepository.router(topic).route(cloudMsg).flatMap(service -> service
+                    .requestReply(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())))
+                    .onErrorMap(err-> CustomRSocketException.class.isInstance(err), err->(Throwable)GsonCodec.decode(err.getMessage()))
+                    .doOnError(err->System.out.println("err:"+err.getMessage()));
         } catch (Exception ex) {
             return Mono.error(ex);
         }
@@ -80,8 +85,9 @@ public class CloudEngineImpl implements CloudEngine {
     public <T> Flux<T> requestStream(String topic, Object request) {
         try {
             CloudMessage cloudMsg = buildMsg(topic, request);
-            return routerRepository.router(topic).route(cloudMsg).flatMapMany(service -> service
-                    .requestStream(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())));
+            return (Flux<T>) routerRepository.router(topic).route(cloudMsg).flatMapMany(service -> service
+                    .requestStream(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())))
+                    .onErrorMap(err-> CustomRSocketException.class.isInstance(err), err->(Throwable)GsonCodec.decode(err.getMessage()));
         } catch (Exception ex) {
             return Flux.error(ex);
         }
@@ -92,7 +98,8 @@ public class CloudEngineImpl implements CloudEngine {
         try {
             CloudMessage cloudMsg = buildMsg(topic, data);
             return routerRepository.router(topic).route(cloudMsg).flatMap(service -> service
-                    .send(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())));
+                    .send(cloudMsg.withAttr(CloudMsgHdr.SERVICE_ID, service.id())))
+                    .onErrorMap(err-> CustomRSocketException.class.isInstance(err), err->(Throwable)GsonCodec.decode(err.getMessage()));
         } catch (Exception ex) {
             return Mono.error(ex);
         }

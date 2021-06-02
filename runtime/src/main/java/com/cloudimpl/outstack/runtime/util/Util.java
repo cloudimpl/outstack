@@ -6,7 +6,6 @@
 package com.cloudimpl.outstack.runtime.util;
 
 import com.cloudimpl.outstack.collection.error.CollectionException;
-import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -14,6 +13,7 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.HashMap;
 import java.util.Map;
+import reactor.util.retry.Retry;
 
 /**
  *
@@ -30,6 +30,10 @@ public class Util {
         }
     }
 
+    public static Retry wrap(reactor.retry.Retry retry)
+    {
+        return Retry.withThrowable(retry);
+    }
     public static <T> Class<T> classForName(String name)
     {
         try {

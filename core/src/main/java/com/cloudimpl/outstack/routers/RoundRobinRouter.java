@@ -11,6 +11,7 @@ import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.RouterException;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.coreImpl.CloudServiceRegistry;
 import java.util.Iterator;
 import java.util.Set;
@@ -28,7 +29,7 @@ public class RoundRobinRouter implements CloudRouter {
   private final String topic;
 
   @Inject
-  public RoundRobinRouter(@Named("@topic") String topic, CloudServiceRegistry serviceRegistry) {
+  public RoundRobinRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
     this.topic = topic;
     serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD)
         .map(e -> e.getValue())

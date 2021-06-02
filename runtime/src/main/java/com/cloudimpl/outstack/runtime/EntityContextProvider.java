@@ -25,9 +25,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
-import javax.validation.Validation;
-import javax.validation.Validator;
-import javax.validation.ValidatorFactory;
 
 /**
  *
@@ -43,8 +40,9 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         this.entityProvider = entityProvider;
     }
 
-    public Transaction<T> createWritableTransaction(String rootTid, String tenantId) {
-        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version);
+    public Transaction<T> createWritableTransaction(String rootTid, String tenantId, boolean async) {
+        return new Transaction(entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
+
     }
 
     private <T> void validateObject(T target) {
@@ -63,8 +61,9 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         private final List<Event> eventList;
 
         public Transaction(EntityProvider entityProvider, Supplier<String> idGenerator, String rootTid,
-                String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version) {
-            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector, version);
+                String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
+            super(idGenerator, rootTid, tenantId, queryOperation, validator, queryOperationSelector, version, async);
+
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.eventList = new LinkedList<>();
@@ -87,21 +86,33 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         }
 
         @Override
-        public <C extends ChildEntity<R>, K extends Entity> EntityContext<?> getContext(Class<K> entityType) {
+        public <C extends ChildEntity<R>, K extends Entity,Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
-                return new RootEntityContext(rootType,
-                        rootTid, tenantId,
-                        Optional.of((EntityProvider) this::loadEntity),
-                        idGenerator, Optional.of((CRUDOperations) this),
-                        this,
-                        Optional.of((Consumer<Event>) this::publishEvent),
-                        validator, this.queryOperationSelector, version);
+                if (async) {
+                    return (Z)new AsyncEntityContext(rootType,
+                            rootTid, tenantId,
+                            Optional.of((EntityProvider) this::loadEntity),
+                            idGenerator, Optional.of((CRUDOperations) this),
+                            this,
+                            Optional.of((Consumer<Event>) this::publishEvent),
+                            validator, this.queryOperationSelector, version);
+                } else {
+                    return (Z)new RootEntityContext(rootType,
+                            rootTid, tenantId,
+                            Optional.of((EntityProvider) this::loadEntity),
+                            idGenerator, Optional.of((CRUDOperations) this),
+                            this,
+                            Optional.of((Consumer<Event>) this::publishEvent),
+                            validator, this.queryOperationSelector, version);
+                }
+
             } else {
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return new ChildEntityContext<R, C>(
+                return (Z)new ChildEntityContext<>(
+
                         rootType,
                         rootTid, childType, tenantId,
                         Optional.of((EntityProvider) this::loadEntity), idGenerator, Optional.of((CRUDOperations) this),
@@ -208,6 +219,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
         @Override
         public ResultSet<R> getAllByRootType(Class<R> rootType, String tenantId, Query.PagingRequest paging) {
+
             return queryOperation.getAllByRootType(rootType, tenantId, paging);
         }
     }

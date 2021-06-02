@@ -21,7 +21,7 @@ import com.cloudimpl.outstack.runtime.util.Util;
 public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> implements Handler<T> {
 
     protected final Class<T> entityType;
-    private final Class<I> queryType;
+    protected final Class<I> queryType;
 
     public EntityQueryHandler() {
         this.entityType = Util.extractGenericParameter(this.getClass(), EntityQueryHandler.class, 0);
@@ -44,23 +44,21 @@ public abstract class EntityQueryHandler<T extends Entity, I extends Query, R> i
 
     protected abstract R execute(EntityQueryContext<T> context, I query);
 
-    private void validateInput(I query) {
+    protected void validateInput(I query) {
         if (isTenantFunction() && query.tenantId() == null) {
             throw new QueryException("tenantId is not available in the request");
         }
     }
 
-    public EntityContext<T> emit(EntityQueryContextProvider contextProvider, IQuery input) {
+    public R emit(EntityQueryContextProvider contextProvider, IQuery input) {
         if (!contextProvider.getVersion().equals(input.version())) {
             throw new DomainEventException(DomainEventException.ErrorCode.INVALID_VERSION, "invalid version {0} ,expecting {1}", input.version(), contextProvider.getVersion());
         }
         I query = input.unwrap(this.queryType);
         validateInput(query);
-        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId());
-        EntityContext<T> context = tx.getContext(this.entityType);
-        context.setTx(tx);
-        R reply = apply((EntityQueryContext<T>) context, query);
-        tx.setReply(reply);
-        return context;
+        EntityQueryContextProvider.ReadOnlyTransaction tx = contextProvider.createTransaction(query.rootId(), query.tenantId(),false);
+        EntityQueryContext<T> context = tx.getContext(this.entityType);
+        //context.setTx(tx);
+        return apply(context, query);
     }
 }

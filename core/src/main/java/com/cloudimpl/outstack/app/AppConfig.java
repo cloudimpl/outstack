@@ -96,6 +96,7 @@ public class AppConfig implements Callable<Integer> {
         if (gossipPort > 0) {
             builder.withGossipPort(gossipPort);
         }
+        endpoints = seeds.stream().map(s -> s.split(":")).map(arr -> Address.create(arr[0], Integer.valueOf(arr[1]))).collect(Collectors.toList());
         if (endpoints.size() > 0) {
             builder.withSeedNodes(getEndpoints());
         }

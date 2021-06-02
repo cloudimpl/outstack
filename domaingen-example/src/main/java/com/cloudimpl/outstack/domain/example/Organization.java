@@ -8,7 +8,7 @@ import com.cloudimpl.outstack.domain.example.OrganizationCreated;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
 
-@EntityMeta(plural="organizations",version="V1")
+@EntityMeta(plural="organizations",version="v1")
 public class Organization extends RootEntity {
     private String website ;
     @NotBlank(message = "orgName field cannot be blank in Organization entity")

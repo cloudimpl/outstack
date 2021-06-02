@@ -14,12 +14,14 @@ import com.cloudimpl.outstack.core.CloudFunction;
 import com.cloudimpl.outstack.core.CloudServiceDescriptor;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.Injector;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.logger.ILogger;
 import com.cloudimpl.outstack.coreImpl.CloudEngine;
 import com.cloudimpl.outstack.coreImpl.CloudEngineImpl;
 import com.cloudimpl.outstack.coreImpl.CloudMsgHdr;
 import com.cloudimpl.outstack.coreImpl.RemoteCloudService;
 import com.cloudimpl.outstack.logger.Logger;
+import com.cloudimpl.outstack.routers.LocalRouter;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import io.scalecube.cluster.Cluster;
 import io.scalecube.cluster.ClusterImpl;
@@ -48,7 +50,7 @@ import reactor.core.publisher.Mono;
  *
  * @author nuwansa
  */
-public class CloudNode implements MetadataCodec{
+public class CloudNode implements MetadataCodec {
 
     private final CloudEngine engine;
     private final NodeConfig config;
@@ -67,7 +69,7 @@ public class CloudNode implements MetadataCodec{
         injector.bind("@nodeId").to(id);
         this.transportManager = new TransportManager(com.cloudimpl.outstack.common.JsonMessageCodec.instance());
         this.injector.bind(TransportManager.class).to(this.transportManager);
-        this.engine = new CloudEngineImpl(()->getMemberId(),id, injector, config);
+        this.engine = new CloudEngineImpl(() -> getMemberId(), id, injector, config);
         this.config = config;
         this.logger = injector.inject(Logger.class).createSubLogger(CloudNode.class);
     }
@@ -92,14 +94,19 @@ public class CloudNode implements MetadataCodec{
         return config;
     }
 
-    private String getNodeId()
+    public ServiceRegistryReadOnly getServiceRegistry()
     {
-        String id = System.getenv("NODE_ID");
-        if(id == null)
-            id = UUID.randomUUID().toString();
-        return id;
+        return engine.getServiceRegistry();
     }
     
+    private String getNodeId() {
+        String id = System.getenv("NODE_ID");
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
+        return id;
+    }
+
     public void start() {
 
         gossipCluster = new ClusterImpl()
@@ -128,19 +135,17 @@ public class CloudNode implements MetadataCodec{
         startEndpointServices();
     }
 
-    public void shutdown()
-    {
+    public void shutdown() {
         this.transportManager.close();
         this.gossipCluster.shutdown();
     }
-    
-    private String getMemberId()
-    {
+
+    private String getMemberId() {
         return gossipCluster.member().id();
     }
-    
+
     private void startEndpointServices() {
-        logger.info("node : {0} endpoint created in host {1}, port {2}",id, CloudUtil.getHostIpAddr(),config.getNodePort());
+        logger.info("node : {0} endpoint created in host {1}, port {2}", id, CloudUtil.getHostIpAddr(), config.getNodePort());
         transportManager.createEndpoint(CloudUtil.getHostIpAddr(), config.getNodePort(), new EndpointListener<CloudMessage>() {
             @Override
             public Mono<Void> fireAndForget(CloudMessage msg) {
@@ -163,10 +168,10 @@ public class CloudNode implements MetadataCodec{
         startOtherEndpointServices();
     }
 
-    private void startOtherEndpointServices() { 
-        config.getServiceEndpoints().stream().map(s->CloudUtil.newInstance(injector, s))
-                .peek(s->logger.info("service endpoint created for {0} host: {1} , port {2}",s.name(), s.getHostAddr(),s.getServicePort()))
-                .forEach(e->transportManager.createEndpoint(e.getHostAddr(), e.getServicePort(), e.getEndpointListener(engine)));
+    private void startOtherEndpointServices() {
+        config.getServiceEndpoints().stream().map(s -> CloudUtil.newInstance(injector, s))
+                .peek(s -> logger.info("service endpoint created for {0} host: {1} , port {2}", s.name(), s.getHostAddr(), s.getServicePort()))
+                .forEach(e -> transportManager.createEndpoint(e.getHostAddr(), e.getServicePort(), e.getEndpointListener(engine)));
     }
 
     private void publishServices() {
@@ -178,7 +183,11 @@ public class CloudNode implements MetadataCodec{
                 .doOnNext(desc -> logger.info("local service update : {0}", desc))
                 .doOnNext(desc -> serviceCache.put("srv_" + desc.getServiceId(), desc.toString()))
                 .doOnNext(
-                        desc -> gossipCluster.updateMetadata(serviceCache).subscribe())
+                        desc -> {
+                            if (desc.getRouterDescriptor().getRouterType() != LocalRouter.class) {
+                                gossipCluster.updateMetadata(serviceCache).subscribe();
+                            }
+                        })
                 .doOnError(err -> logger.exception(err, "error updating membership service"))
                 .subscribe();
         // listen to service removal
@@ -186,7 +195,11 @@ public class CloudNode implements MetadataCodec{
                 .filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
                 .doOnNext(e -> serviceCache.remove("srv_" + e.getValue().id()))
                 .doOnNext(e -> logger.info("local service removed : {0}", e.getValue().getDescriptor()))
-                .doOnNext(e -> gossipCluster.updateMetadata(serviceCache).subscribe()).subscribe();
+                .doOnNext(e -> {
+                    if (e.getValue().getDescriptor().getRouterDescriptor().getRouterType() != LocalRouter.class) {
+                        gossipCluster.updateMetadata(serviceCache).subscribe();
+                    }
+                }).subscribe();
     }
 
     private void onMemberEvent(MembershipEvent event) {
@@ -200,8 +213,7 @@ public class CloudNode implements MetadataCodec{
             }
             Map<String, String> newMeta = newMetaOptional.get();
             String nodeId = newMeta.get("node_id");
-            if(nodeId == null)
-            {
+            if (nodeId == null) {
                 logger.error("node id is not found ,ignore event");
                 return;
             }
@@ -220,18 +232,18 @@ public class CloudNode implements MetadataCodec{
             // add new services;
             keys.stream().filter(k -> k.startsWith("srv_")).map(k -> newMeta.get(k))
                     .map(e -> GsonCodec.decode(CloudServiceDescriptor.class, e))
-                    .forEach(desc -> this.updateRegistry(event.member().id(),nodeId, desc));
+                    .forEach(desc -> this.updateRegistry(event.member().id(), nodeId, desc));
         } catch (Exception ex) {
             ex.printStackTrace();
         }
 
     }
 
-    private void updateRegistry(String memberId,String nodeId, CloudServiceDescriptor desc) {
+    private void updateRegistry(String memberId, String nodeId, CloudServiceDescriptor desc) {
 
         logger.info("remote service registered. {0}", desc);
         Address address = Address.create(desc.getHostAddr(), desc.getServicePort());
-        RemoteCloudService remoteService = new RemoteCloudService(nodeId,memberId,
+        RemoteCloudService remoteService = new RemoteCloudService(nodeId, memberId,
                 () -> transportManager.get(RouteEndpoint.create(address.host(), address.port())), desc);
         engine.getServiceRegistry().register(remoteService);
 
@@ -264,7 +276,7 @@ public class CloudNode implements MetadataCodec{
 
     @Override
     public Object deserialize(ByteBuffer bb) {
-         try {
+        try {
             return DefaultObjectMapper.OBJECT_MAPPER.readValue(
                     new ByteBufferBackedInputStream(bb), Map.class);
             // return GsonCodec.decode(Map.class, new String(byteBuffer.array()));
@@ -288,7 +300,7 @@ public class CloudNode implements MetadataCodec{
             throw Exceptions.propagate(e);
         }
     }
-    
+
     private static class MessageCodecImpl implements MessageCodec {
 
         @Override

@@ -24,6 +24,7 @@ public class OrganizationService extends SpringService<Organization>{
         $(CreateOrganization.class);
         $(UpdateOrganization.class);
         $(CreateTenant.class);
+        $(ServiceAsyncHandler.class);
         $$(Organization.class);
         $$(Tenant.class); // auto bind for DeleteTenant and RenameTenant command handlers
     }

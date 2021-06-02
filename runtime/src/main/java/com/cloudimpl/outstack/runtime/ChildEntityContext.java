@@ -202,4 +202,15 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public ResultSet<Event<T>> getEntityEventsById(String id, Query.PagingRequest pageRequest) {
          return  this.<R>getQueryOperations().getEventsByChildId(rootType, rootId, entityType, id, getTenantId(), pageRequest);
     }
+
+    @Override
+    public <R extends RootEntity> AsyncEntityContext<R> asAsyncEntityContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public <R extends RootEntity> AsyncRootEntityQueryContext<R> asAsyncQueryContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
 }

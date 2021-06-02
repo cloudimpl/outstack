@@ -13,7 +13,6 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -95,8 +94,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         EntityHelper.setVersion(event, version);
         event.setTenantId(getTenantId());
-        event.setId(_id);
-        event.setRootId(_id);
+        event.setId(root.id());
+        event.setRootId(root.id());
         event.setAction(Event.Action.UPDATE);
         root.applyEvent(event);
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
@@ -121,8 +120,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityIdHelper.validateId(_id, root);
         
         EntityDeleted event = new EntityDeleted(entityType, entityType, root.entityId(), root.entityId());
-        event.setId(_id);
-        event.setRootId(_id);
+        event.setId(root.id());
+        event.setRootId(root.id());
         event.setTenantId(getTenantId());
         event.setAction(Event.Action.DELETE);
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
@@ -151,8 +150,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         
         EntityRenamed event = new EntityRenamed(entityType, entityType, newId, id, newId);
         event.setTenantId(getTenantId());
-        event.setId(_id);
-        event.setRootId(_id);
+        event.setId(root.id());
+        event.setRootId(root.id());
         event.setAction(Event.Action.RENAME);
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         EntityHelper.setVersion(event, version);
@@ -219,5 +218,25 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     @Override
     public  ResultSet<Event<T>> getEntityEventsById(String id,Query.PagingRequest pageRequest) {
         return  this.<T>getQueryOperations().getEventsByRootId(entityType, _id, getTenantId(), pageRequest);
+    }
+
+    @Override
+    public AsyncEntityContext<T> asAsyncEntityContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public AsyncRootEntityQueryContext<T> asAsyncQueryContext() {
+        throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    private RootEntityContext<T>  init(String id)
+    {
+        _id = getEntityById(id).get().id();
+        return this;
+    }
+    
+    public RootEntityContext<T> asNonTenantContext(String id){
+        return new RootEntityContext<>(entityType,null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(id);
     }
 }

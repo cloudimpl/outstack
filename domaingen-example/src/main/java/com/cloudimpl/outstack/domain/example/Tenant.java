@@ -9,7 +9,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
 
-@EntityMeta(plural="tenants",version="V1")
+@EntityMeta(plural="tenants",version="v1")
 public class Tenant extends ChildEntity<Organization> {
     private String endpoint ;
     @NotEmpty(message = "tenantName field cannot be empty or null in Tenant entity")

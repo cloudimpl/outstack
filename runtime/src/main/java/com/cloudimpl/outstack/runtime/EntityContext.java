@@ -9,7 +9,6 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -27,10 +26,10 @@ public abstract class EntityContext<T extends Entity> implements Context {
     private final String tenantId;
     protected final Class<T> entityType;
     private final List<Event> events;
-    private final Optional<EntityProvider<? extends RootEntity>> entitySupplier;
+    protected final Optional<EntityProvider<? extends RootEntity>> entitySupplier;
     protected final Supplier<String> idGenerator;
     protected final Optional<CRUDOperations> crudOperations;
-    private final QueryOperations<?> queryOperation;
+    protected final QueryOperations<?> queryOperation;
     protected final Optional<Consumer<Event>> eventPublisher;
     protected EntityContextProvider.ReadOnlyTransaction tx;
     protected final Consumer<Object> validator;
@@ -105,6 +104,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     
     public abstract <R extends RootEntity> RootEntityContext<R> asRootContext();
 
+    public abstract <R extends RootEntity> AsyncEntityContext<R> asAsyncEntityContext();
 
     public abstract <R extends RootEntity,K extends ChildEntity<R>> ChildEntityContext<R,K> asChildContext() ;
     
@@ -112,4 +112,5 @@ public abstract class EntityContext<T extends Entity> implements Context {
     {
         return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType),rootType,id,getTenantId());
     }
+    
 }

@@ -1,0 +1,33 @@
+outstack:
+    domainOwner: cloudimpl
+    domainContext: gateway
+    apiContext: gateway
+    cluster:
+      servicePort: 11000
+      gossipPort: 13000
+    apiGateway:
+      authEndpoint:
+        domainOwner: cloudimpl
+        domainContext: example
+        version: version
+        serviceName: UserService
+    providers:
+      - name : com.cloudimpl.outstack.collection.CollectionProvider
+        impl: com.cloudimpl.outstack.collection.MemCollectionProvider
+        
+      - name:  com.cloudimpl.outstack.collection.CollectionProvider
+        impl: com.cloudimpl.outstack.collection.AwsCollectionProvider
+        status: active
+        configs:
+          endpoint: http://localhost:1234
+          leaderTable : LeaderTable 
+
+spring:
+  main:
+    web-application-type: reactive
+    
+server:
+  error:
+    include-message: always
+  port: 20000
+    

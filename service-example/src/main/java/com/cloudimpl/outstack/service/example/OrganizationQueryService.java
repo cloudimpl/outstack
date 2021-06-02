@@ -21,6 +21,7 @@ import com.cloudimpl.outstack.spring.component.SpringQueryService;
 @Router(routerType = RouterType.ROUND_ROBIN)
 public class OrganizationQueryService extends SpringQueryService<Organization>{
     static{
+        $(AsynQueryHandler.class);
         $$(Organization.class); //auto binding for GetOrganization and ListOrganization query handlers
         $$(Tenant.class);       //auto binding for GetTenant and ListTenant query handlers
     }

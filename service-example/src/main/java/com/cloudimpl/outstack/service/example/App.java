@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author nuwan
  */
 @SpringBootApplication(scanBasePackages = "com.cloudimpl.outstack",exclude = {
-  //  SecurityAutoConfiguration.class,
+    //SecurityAutoConfiguration.class
    // JwtConfiguration.class
 })
 public class App {
