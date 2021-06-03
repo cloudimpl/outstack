@@ -14,6 +14,7 @@ outstack:
     oauth:
         token:
             issuer: http://www.cloudimpl.com
+        errorPageUri: /login
     providers:
       - name : com.cloudimpl.outstack.collection.CollectionProvider
         impl: com.cloudimpl.outstack.collection.MemCollectionProvider

@@ -62,7 +62,11 @@ public class SecurityConfig {
             SecurityProperties securityProperties) {
         http
                 .csrf().disable()
+               // .cors()
+              //  .and()
                 .authorizeExchange()
+                .pathMatchers(HttpMethod.OPTIONS).permitAll()
+                
                 .pathMatchers("/login", "/authorize")
                 .permitAll()
                 .anyExchange().authenticated()
