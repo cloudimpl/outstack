@@ -19,58 +19,55 @@ import com.cloudimpl.outstack.runtime.util.Util;
  * @param <T>
  * @param <I>
  */
-public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements CommandHandler<T>
-{
-    
+public abstract class EntityCommandHandler<T extends Entity, I extends Command, R> implements CommandHandler<T> {
+
     public static final CommandResponse OK = new CommandResponse();
-    
+
     protected final Class<T> enityType;
     protected final Class<I> cmdType;
+
     public EntityCommandHandler() {
         this.enityType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 0);
         this.cmdType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 1);
     }
-    
+
     public EntityCommandHandler(Class<T> type) {
         this.enityType = type;
         this.cmdType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 1);
     }
-    
-    public TenantRequirement getTenantRequirement()
-    {
+
+    public TenantRequirement getTenantRequirement() {
         return Entity.checkTenantRequirement(enityType);
     }
-    
-    public  R apply(EntityContext<T> context,I command)
-    {
+
+    public R apply(EntityContext<T> context, I command) {
         validateInput(command);
         return execute(context, command);
     }
-    
-    protected abstract  R execute(EntityContext<T> context,I command);
-    
-    protected void validateInput(I command)
-    {
-        if(getTenantRequirement() == TenantRequirement.REQUIRED && command.tenantId() == null)
-        {
+
+    protected abstract R execute(EntityContext<T> context, I command);
+
+    protected void validateInput(I command) {
+        if (getTenantRequirement() == TenantRequirement.REQUIRED && command.tenantId() == null) {
             throw new CommandException("tenantId is not available in the request");
         }
     }
-    
-    protected EntityContext<T>  emit(EntityContextProvider contextProvider,ICommand input)
-    {
-        if(!contextProvider.getVersion().equals(input.version()))
-        {
-            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_VERSION,"invalid version {0} ,expecting {1}", input.version(),contextProvider.getVersion());
+
+    protected EntityContext<T> emit(EntityContextProvider contextProvider, ICommand input) {
+        if (!contextProvider.getVersion().equals(input.version())) {
+            throw new DomainEventException(DomainEventException.ErrorCode.INVALID_VERSION, "invalid version {0} ,expecting {1}", input.version(), contextProvider.getVersion());
         }
         I cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
-        EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(),getTenantRequirement() == TenantRequirement.NONE?null:cmd.tenantId(),false);
+        EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), getTenantRequirement() == TenantRequirement.NONE ? null : cmd.tenantId(), false);
         EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
         context.setTx(tx);
         R reply = apply(context, (I) cmd);
         tx.setReply(reply);
         return context;
     }
-   
+
+    public static CommandResponse OK() {
+        return OK;
+    }
 }
