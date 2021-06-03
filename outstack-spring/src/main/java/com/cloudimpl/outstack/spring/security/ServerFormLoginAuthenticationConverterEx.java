@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.server.authentication.ServerFormLoginAuthenticationConverter;
@@ -23,34 +24,37 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 /**
- *
  * @author nuwan
  */
 public class ServerFormLoginAuthenticationConverterEx extends ServerFormLoginAuthenticationConverter {
 
-    private final String usernameParameter = "username";
+  private final String usernameParameter = "username";
 
-    private final String passwordParameter = "password";
+  private final String passwordParameter = "password";
 
-    private final String authorizationKeyParameter = "authKey";
+  private final String authorizationKeyParameter = "authKey";
 
-    @Override
-    public Mono<Authentication> apply(ServerWebExchange exchange) {
-        return exchange.getFormData().flatMap((data) -> createAuthentication(exchange,data));
+  @Override
+  public Mono<Authentication> apply(ServerWebExchange exchange) {
+    exchange.getResponse().getHeaders().add("Access-Control-Allow-Origin", "*");
+    exchange.getResponse().getHeaders().add("Access-Control-Allow-Headers", "*");
+    if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
+      return Mono.empty();
     }
+    return exchange.getFormData().flatMap((data) -> createAuthentication(exchange, data));
+  }
 
-    private Mono<UsernamePasswordAuthenticationToken> createAuthentication(ServerWebExchange exchange,MultiValueMap<String, String> data) {
-        String context = exchange.getRequest().getHeaders().getFirst(PlatformAuthenticationToken.TOKEN_CONTEXT_HEADER_NAME);
-        String username = data.getFirst(this.usernameParameter);
-        String password = data.getFirst(this.passwordParameter);
-        if(username == null || password == null)
-        {
-            return Mono.empty();
-        }
-        String authKey = data.getFirst(this.authorizationKeyParameter);
-        AuthenticationMeta meta = Auth2Util.createAuthMeta(authKey,context,exchange);
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
-        token.setDetails(meta);
-        return Mono.just(token);
+  private Mono<UsernamePasswordAuthenticationToken> createAuthentication(ServerWebExchange exchange, MultiValueMap<String, String> data) {
+    String context = exchange.getRequest().getHeaders().getFirst(PlatformAuthenticationToken.TOKEN_CONTEXT_HEADER_NAME);
+    String username = data.getFirst(this.usernameParameter);
+    String password = data.getFirst(this.passwordParameter);
+    if (username == null || password == null) {
+      return Mono.empty();
     }
+    String authKey = data.getFirst(this.authorizationKeyParameter);
+    AuthenticationMeta meta = Auth2Util.createAuthMeta(authKey, context, exchange);
+    UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(username, password);
+    token.setDetails(meta);
+    return Mono.just(token);
+  }
 }

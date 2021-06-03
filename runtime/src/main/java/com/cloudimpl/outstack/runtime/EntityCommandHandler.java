@@ -21,6 +21,9 @@ import com.cloudimpl.outstack.runtime.util.Util;
  */
 public abstract class EntityCommandHandler<T extends Entity,I extends Command,R> implements CommandHandler<T>
 {
+    
+    public static final CommandResponse OK = new CommandResponse();
+    
     protected final Class<T> enityType;
     protected final Class<I> cmdType;
     public EntityCommandHandler() {
@@ -69,4 +72,5 @@ public abstract class EntityCommandHandler<T extends Entity,I extends Command,R>
         tx.setReply(reply);
         return context;
     }
+   
 }

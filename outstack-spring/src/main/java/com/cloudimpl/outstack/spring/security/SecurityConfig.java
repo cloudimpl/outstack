@@ -1,21 +1,21 @@
 package com.cloudimpl.outstack.spring.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.oauth2.server.resource.web.server.BearerTokenServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationFailureHandler;
-import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.authentication.ServerAuthenticationConverter;
+import org.springframework.security.web.server.authentication.ServerAuthenticationEntryPointFailureHandler;
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 import org.springframework.web.server.ServerWebExchange;
 
@@ -50,7 +50,8 @@ public class SecurityConfig {
     public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor, String... urls) {
         AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
         authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
-        authenticationFilter.setAuthenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login"));
+        // authenticationFilter.setAuthenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login"));
+        authenticationFilter.setAuthenticationFailureHandler(new ServerAuthenticationEntryPointFailureHandler(new BearerTokenServerAuthenticationEntryPoint()));
         authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
         authenticationFilter.setAuthenticationSuccessHandler(new PlatformAuthenticationSuccessHandler());
         return authenticationFilter;
@@ -62,7 +63,10 @@ public class SecurityConfig {
             SecurityProperties securityProperties) {
         http
                 .csrf().disable()
+                .cors()
+                .and()
                 .authorizeExchange()
+                .pathMatchers(HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/login", "/authorize")
                 .permitAll()
                 .anyExchange().authenticated()
@@ -70,9 +74,9 @@ public class SecurityConfig {
                 .httpBasic()
                 .disable()
                 .formLogin().disable()
-              //  .formLogin()
-             //   .loginPage("/login")
-             //   .and()
+                //  .formLogin()
+                //   .loginPage("/login")
+                //   .and()
                 .addFilterAt(authenticationFilter(new ServerFormLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.FORM_LOGIN)
                 .addFilterAt(authenticationFilter(new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
                 .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver)
