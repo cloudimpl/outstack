@@ -20,5 +20,14 @@ package com.cloudimpl.outstack.runtime;
  * @author nuwan
  */
 public class CommandResponse {
+    private String status;
+
+    public CommandResponse(String status) {
+        this.status = status;
+    }
+
+    public String getStatus() {
+        return status;
+    }
     
 }
