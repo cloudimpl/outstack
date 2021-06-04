@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException.ErrorCode;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**
@@ -41,6 +42,12 @@ public class EntityHelper {
     public static void setCreatedDate(Event e,long millis)
     {
         e.getMeta().setCreatedDate(millis);
+    }
+    
+    public  static  void validateEvent(Class<? extends RootEntity> rootType, Event event){
+        if(event.getRootOwner()!= rootType){
+            throw new DomainEventException(ErrorCode.BASIC_VIOLATION,"root entity type {0} mismatched with event root owner {1}",rootType,event.getRootOwner());
+        }
     }
     
     public static void setVersion(Event e,String version)

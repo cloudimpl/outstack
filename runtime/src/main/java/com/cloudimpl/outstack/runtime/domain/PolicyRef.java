@@ -60,7 +60,7 @@ public class PolicyRef extends ChildEntity<Role> implements ITenantOptional{
     
     @Override
     protected void apply(Event event) { 
-        switch(event.getClass().getName())
+        switch(event.getClass().getSimpleName())
         {
             case "PolicyRefCreated":
             {
