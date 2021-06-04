@@ -23,10 +23,15 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  */
 public class PolicyCreateRequest extends Command {
 
+    private final String domainOwner;
+    private final String domainContext;
     private final String policyName;
     private final String policyContext;
+
     public PolicyCreateRequest(Builder builder) {
         super(builder);
+        this.domainOwner = builder.domainOwner;
+        this.domainContext = builder.domainContext;
         this.policyName = builder.policyName;
         this.policyContext = builder.policyContext;
     }
@@ -39,31 +44,47 @@ public class PolicyCreateRequest extends Command {
         return policyContext;
     }
 
-    public static Builder builder()
-    {
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    public static Builder builder() {
         return new Builder();
     }
-    
+
     public static final class Builder extends Command.Builder {
 
-        private String policyName; 
+        private String policyName;
         private String policyContext;
-        
-        public Builder withPolicyContext(String policyContext)
-        {
+        private String domainOwner;
+        private String domainContext;
+
+        public Builder withPolicyContext(String policyContext) {
             this.policyContext = policyContext;
             return this;
         }
-        
-        public Builder withPolicyName(String policyName)
-        {
+
+        public Builder withPolicyName(String policyName) {
             this.policyName = policyName;
+            return this;
+        }
+
+        public Builder withDomainOwner(String domainOwner){
+            this.domainOwner = domainOwner;
+            return this;
+        }
+        
+        public Builder withDomainContext(String domainContext){
+            this.domainContext = domainContext;
             return this;
         }
         
         @Override
-        public PolicyCreateRequest build()
-        {
+        public PolicyCreateRequest build() {
             return new PolicyCreateRequest(this);
         }
     }
