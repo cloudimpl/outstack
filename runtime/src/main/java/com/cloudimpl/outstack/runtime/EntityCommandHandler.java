@@ -21,7 +21,7 @@ import com.cloudimpl.outstack.runtime.util.Util;
  */
 public abstract class EntityCommandHandler<T extends Entity, I extends Command, R> implements CommandHandler<T> {
 
-    public static final CommandResponse OK = new CommandResponse();
+    public static final CommandResponse OK = new CommandResponse("OK");
 
     protected final Class<T> enityType;
     protected final Class<I> cmdType;
