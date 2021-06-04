@@ -44,6 +44,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public T create(String id, Event<T> event) {
         EntityIdHelper.validateEntityId(id);
         EntityIdHelper.validateTechnicalId(rootId);
+        EntityHelper.validateEvent(rootType,event);
         validator.accept(event); //validate event
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
                 .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} is not exist", event.getRootEntityRN()));
@@ -79,6 +80,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public T update(String id, Event<T> event) {
         EntityIdHelper.validateTechnicalId(rootId);
         validator.accept(event); //validate event
+        EntityHelper.validateEvent(rootType,event);
         R root = (R) this.<R>getEntityProvider().loadEntity(rootType, rootId, null, null, getTenantId())
                 .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} is not exist", event.getRootEntityRN()));
 

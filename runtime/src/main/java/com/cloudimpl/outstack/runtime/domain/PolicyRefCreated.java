@@ -38,7 +38,7 @@ public class PolicyRefCreated extends Event<PolicyRef>{
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return Policy.class;
+        return Role.class;
     }
 
     @Override

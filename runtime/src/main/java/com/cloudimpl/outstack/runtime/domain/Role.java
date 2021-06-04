@@ -45,15 +45,15 @@ public class Role extends RootEntity implements ITenantOptional {
         return roleName;
     }
 
-    private void applyEvent(PolicyCreated created) {
+    private void applyEvent(RoleCreated created) {
 
     }
 
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "PolicyCreated": {
-                applyEvent((PolicyCreated) event);
+            case "RoleCreated": {
+                applyEvent((RoleCreated) event);
                 break;
             }
             default: {

@@ -30,6 +30,8 @@ public class EntityIdHelper {
         }
     }
 
+
+
     public static boolean isTechnicalId(String id) {
         Objects.requireNonNull(id);
         return id.startsWith(EventRepositoy.TID_PREFIX);
