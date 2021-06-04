@@ -49,7 +49,7 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             }
             case OPTIONAL: {
-                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), ITenant.class.cast(this).getTenantId());
+                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), getTenantId());
             }
             default: {
                 return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), null);

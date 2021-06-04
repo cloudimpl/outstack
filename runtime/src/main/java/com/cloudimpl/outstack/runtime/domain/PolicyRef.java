@@ -26,7 +26,7 @@ import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
  * @author nuwan
  */
 @EntityMeta(plural = "PolicyRef" , version = "v1")
-public class PolicyRef extends ChildEntity<Policy> implements ITenantOptional{
+public class PolicyRef extends ChildEntity<Role> implements ITenantOptional{
     private final String policyRef;
     private final String tenantId;
     
@@ -36,8 +36,8 @@ public class PolicyRef extends ChildEntity<Policy> implements ITenantOptional{
     }
     
     @Override
-    public Class<Policy> rootType() {
-        return Policy.class;
+    public Class<Role> rootType() {
+        return Role.class;
     }
 
     @Override
