@@ -29,9 +29,11 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 public class Role extends RootEntity implements ITenantOptional {
 
     private final String roleName;
+    private final String tenantId;
 
-    public Role(String roleName) {
+    public Role(String roleName,String tenantId) {
         this.roleName = roleName;
+        this.tenantId = tenantId;
     }
 
     public String getRoleName() {

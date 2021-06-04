@@ -6,6 +6,8 @@
 package com.cloudimpl.outstack.spring.component;
 
 import com.cloudimpl.outstack.common.CloudMessage;
+import com.cloudimpl.outstack.core.Inject;
+import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -18,8 +20,11 @@ import com.cloudimpl.outstack.runtime.ServiceQueryProvider;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import java.util.Collection;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import reactor.core.publisher.Mono;
 
 /**
  *
@@ -32,9 +37,14 @@ public class SpringQueryService<T extends RootEntity> implements Function<CloudM
     private static final Set<Class<? extends Entity>> QUERY_ENTITIES = new HashSet<>();
     private final ServiceQueryProvider<T, CloudMessage> serviceProvider;
 
+    @Inject
+    @Named("RRHnd")
+    private BiFunction<String, Object, Mono> requestHandler;
+
     public SpringQueryService(EventRepositoryFactory factory) {
+       // Supplier<BiFunction<String, Object, Mono>> supplier = ()-> this.requestHandler;
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringQueryService.class, 0);
-        serviceProvider = new ServiceQueryProvider<>(root, factory.createOrGetRepository(root),factory::createOrGetRepository);
+        serviceProvider = new ServiceQueryProvider<>(root, factory.createOrGetRepository(root), factory::createOrGetRepository,()->this.requestHandler);
 
         HANDLERS.stream()
                 .filter(h -> SpringQueryService.filter(root, h))
@@ -55,7 +65,7 @@ public class SpringQueryService<T extends RootEntity> implements Function<CloudM
 
     @Override
     public Publisher apply(CloudMessage msg) {
-        
+
         return serviceProvider.apply(msg.data());
     }
 

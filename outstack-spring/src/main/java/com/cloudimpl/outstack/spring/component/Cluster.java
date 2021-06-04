@@ -24,6 +24,7 @@ import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
+import java.text.MessageFormat;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +51,7 @@ public class Cluster {
     @Autowired
     private SpringApplicationConfigManager configManager;
     
+    private ResourceHelper resourceHelper;
     public Cluster() {
     }
 
@@ -58,7 +60,7 @@ public class Cluster {
         Injector injector = new Injector();
         configManager.setInjector(injector);
       //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
-        ResourceHelper resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
+        resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
         EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(configManager.getCluster().getGossipPort())
                 .withSeeds(configManager.getCluster().getSeeds().toArray(String[]::new))
@@ -111,4 +113,14 @@ public class Cluster {
     public Mono<Void> send(String serviceName, Object msg) {
         return this.node.send(serviceName, msg);
     }
+    
+//    public <T> Mono<T> requestReplyToServiceProvider(String serviceName,Object msg)
+//    {
+//        return requestReply(MessageFormat.format("{0}/{1}/{2}", resourceHelper.getDomainOwner(),resourceHelper.getDomainContext(),serviceName), msg);
+//    }
+//    
+//    public <T> Mono<T> requestReplyToServiceProvider(String domainOwner,String domainContext,String version,String serviceName,Object msg)
+//    {
+//        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
+//    }
 }

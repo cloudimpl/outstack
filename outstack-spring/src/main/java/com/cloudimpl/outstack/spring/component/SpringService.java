@@ -6,6 +6,8 @@
 package com.cloudimpl.outstack.spring.component;
 
 import com.cloudimpl.outstack.common.CloudMessage;
+import com.cloudimpl.outstack.core.Inject;
+import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.runtime.CommandHandler;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityEventHandler;
@@ -21,8 +23,11 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import static com.cloudimpl.outstack.spring.component.SpringQueryService.filterEntity;
 import java.util.Collection;
+import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import reactor.core.publisher.Mono;
 
 /**
  *
@@ -34,9 +39,14 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     private static final Set<Class<? extends CommandHandler<?>>> HANDLERS = new HashSet<>();
     private static final Set<Class<? extends Entity>> CMD_ENTITIES = new HashSet<>();
     private final ServiceProvider<T,CloudMessage> serviceProvider;
+    
+    @Inject
+    @Named("RRHnd")
+    private BiFunction<String, Object, Mono>  requestHandler;
+    
     public SpringService(EventRepositoryFactory factory) {
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
-        serviceProvider = new ServiceProvider<>(root,factory.createOrGetRepository(root),factory::createOrGetRepository);
+        serviceProvider = new ServiceProvider<>(root,factory.createOrGetRepository(root),factory::createOrGetRepository,()->requestHandler);
         HANDLERS.stream()
                 .filter(h->SpringService.filter(root, h))
                 .filter(h->EntityCommandHandler.class.isAssignableFrom(h))
