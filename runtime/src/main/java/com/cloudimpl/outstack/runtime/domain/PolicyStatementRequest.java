@@ -30,6 +30,8 @@ import java.util.LinkedList;
 public class PolicyStatementRequest extends Command {
 
     private final String sid;
+    private final String domainOwner;
+    private final String domainContext;
     private final String rootType;
     private final EffectType effect;
     private final Collection<String> actions;
@@ -38,6 +40,8 @@ public class PolicyStatementRequest extends Command {
     public PolicyStatementRequest(Builder builder) {
         super(builder);
         this.sid = builder.sid;
+        this.domainOwner = builder.domainOwner;
+        this.domainContext = builder.domainContext;
         this.rootType= builder.rootType;
         this.effect = builder.effect;
         this.actions = Collections.unmodifiableCollection(builder.actions);
@@ -65,6 +69,14 @@ public class PolicyStatementRequest extends Command {
         return sid;
     }
 
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
     public static Builder builder()
     {
         return new Builder();
@@ -73,6 +85,8 @@ public class PolicyStatementRequest extends Command {
     public static final class Builder extends Command.Builder {
 
         private String sid;
+        private String domainOwner;
+        private String domainContext;
         private String rootType;
         private EffectType effect;
         private Collection<String> actions = new LinkedList<>();
@@ -105,6 +119,18 @@ public class PolicyStatementRequest extends Command {
         public Builder withResource(String resource)
         {
             this.resources.add(resource);
+            return this;
+        }
+        
+        public Builder withDomainContext(String domainContext)
+        {
+            this.domainContext = domainContext;
+            return this;
+        }
+        
+        public Builder withDomainOwner(String domainOwner)
+        {
+            this.domainOwner = domainOwner;
             return this;
         }
         
