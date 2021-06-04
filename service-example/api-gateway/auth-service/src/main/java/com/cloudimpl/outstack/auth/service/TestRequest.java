@@ -15,26 +15,16 @@
  */
 package com.cloudimpl.outstack.auth.service;
 
-import com.cloudimpl.outstack.common.RouterType;
-import com.cloudimpl.outstack.core.annon.CloudFunction;
-import com.cloudimpl.outstack.core.annon.Router;
-import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.spring.component.SpringService;
+import com.cloudimpl.outstack.runtime.domainspec.Command;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "AuthService")
-@Router(routerType = RouterType.ROUND_ROBIN)
-public class AuthService extends SpringService<Test>{
-    static
-    {
-        $(AsyncHandler.class);
-    }
+public class TestRequest extends Command{
     
-    public AuthService(EventRepositoryFactory factory) {
-        super(factory);
+    public TestRequest(Builder builder) {
+        super(builder);
     }
     
 }

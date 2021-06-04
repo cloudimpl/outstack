@@ -20,11 +20,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
+import reactor.core.publisher.Mono;
 
 /**
  *
@@ -34,14 +36,16 @@ import javax.validation.ConstraintViolation;
 public class EntityContextProvider<T extends RootEntity> extends EntityQueryContextProvider<T> {
 
     private final EntityProvider entityProvider;
-
-    public EntityContextProvider(Class<T> type, EntityProvider entityProvider, Supplier<String> idGenerator, QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
+    private final Supplier<BiFunction<String, Object, Mono>> requestHandler;
+    public EntityContextProvider(Class<T> type, EntityProvider entityProvider, Supplier<String> idGenerator,
+            QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler) {
         super(type, idGenerator, queryOperation, queryOperationSelector);
         this.entityProvider = entityProvider;
+        this.requestHandler = requestHandler;
     }
 
     public Transaction<T> createWritableTransaction(String rootTid, String tenantId, boolean async) {
-        return new Transaction(type,entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
+        return new Transaction(type,entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async,requestHandler);
     }
 
     private <T> void validateObject(T target) {
@@ -58,14 +62,15 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         private final EntityProvider entityProvider;
         private Object reply;
         private final List<Event> eventList;
-
+        private final Supplier<BiFunction<String, Object, Mono>> requestHandler;
         public Transaction(Class<R> type,EntityProvider entityProvider, Supplier<String> idGenerator, String rootId,
-                String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
+                String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async,Supplier<BiFunction<String, Object, Mono>> requestHandler) {
             super(type,idGenerator, rootId, tenantId, queryOperation, validator, queryOperationSelector, version, async);
 
             this.mapEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
             this.eventList = new LinkedList<>();
+            this.requestHandler = requestHandler;
         }
 
         public void setReply(Object reply) {
@@ -95,7 +100,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                             idGenerator, Optional.of((CRUDOperations) this),
                             this,
                             Optional.of((Consumer<Event>) this::publishEvent),
-                            validator, this.queryOperationSelector, version);
+                            validator, this.queryOperationSelector, version,requestHandler.get());
                 } else {
                     return (Z)new RootEntityContext(rootType,
                             rootTid, tenantId,
