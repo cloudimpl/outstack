@@ -37,6 +37,7 @@ public class ServerBearerTokenAuthenticationConverterEx extends ServerBearerToke
   public Mono<Authentication> convert(ServerWebExchange exchange) {
     exchange.getResponse().getHeaders().add("Access-Control-Allow-Origin", "*");
     exchange.getResponse().getHeaders().add("Access-Control-Allow-Headers", "*");
+    exchange.getResponse().getHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
     if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
       return Mono.empty();
     }
