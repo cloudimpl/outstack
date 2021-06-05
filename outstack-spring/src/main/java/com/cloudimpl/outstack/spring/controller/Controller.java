@@ -42,6 +42,7 @@ import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -51,7 +52,7 @@ import org.springframework.web.server.ResponseStatusException;
  * @author nuwan
  */
 @RestController
-@CrossOrigin(origins = "*", allowedHeaders = "*")
+@CrossOrigin(origins = "*", allowedHeaders = "*",methods = {RequestMethod.DELETE,RequestMethod.GET,RequestMethod.POST})
 @RequestMapping("/")
 public class Controller {
 
@@ -363,7 +364,7 @@ public class Controller {
     @GetMapping("/doAuth")
     private Mono<AbstractAuthenticationToken> doAuth() {
         return ReactiveSecurityContextHolder
-                .getContext()
+                .getContext() 
                 .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err -> err.printStackTrace());
     }
     
