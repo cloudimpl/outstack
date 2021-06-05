@@ -38,6 +38,7 @@ public class ServerFormLoginAuthenticationConverterEx extends ServerFormLoginAut
   public Mono<Authentication> apply(ServerWebExchange exchange) {
     exchange.getResponse().getHeaders().add("Access-Control-Allow-Origin", "*");
     exchange.getResponse().getHeaders().add("Access-Control-Allow-Headers", "*");
+    exchange.getResponse().getHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
     if (exchange.getRequest().getMethod() == HttpMethod.OPTIONS) {
       return Mono.empty();
     }

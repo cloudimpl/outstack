@@ -42,6 +42,9 @@ public class BasicLoginAuthenticationConverterEx extends ServerHttpBasicAuthenti
 
     @Override
     public Mono<Authentication> apply(ServerWebExchange exchange) {
+        exchange.getResponse().getHeaders().add("Access-Control-Allow-Origin", "*");
+        exchange.getResponse().getHeaders().add("Access-Control-Allow-Headers", "*");
+        exchange.getResponse().getHeaders().add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE");
         ServerHttpRequest request = exchange.getRequest();
         String authorization = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         String context = request.getHeaders().getFirst(PlatformAuthenticationToken.TOKEN_CONTEXT_HEADER_NAME);
@@ -56,7 +59,7 @@ public class BasicLoginAuthenticationConverterEx extends ServerHttpBasicAuthenti
             return Mono.empty();
         }
         PlatformAuthenticationToken.TokenFlow flow = Auth2Util.createFlow(exchange);
-        return Mono.just(new UsernamePasswordAuthenticationToken(parts[0], parts[1])).doOnNext(token->token.setDetails(new AuthenticationMeta(flow, null, context,Auth2Util.getGrantType(flow, exchange),Auth2Util.getClientMeta(exchange))))
+        return Mono.just(new UsernamePasswordAuthenticationToken(parts[0], parts[1])).doOnNext(token -> token.setDetails(new AuthenticationMeta(flow, null, context, Auth2Util.getGrantType(flow, exchange), Auth2Util.getClientMeta(exchange))))
                 .cast(Authentication.class);
     }
 
@@ -67,5 +70,5 @@ public class BasicLoginAuthenticationConverterEx extends ServerHttpBasicAuthenti
             return new byte[0];
         }
     }
-  
+
 }
