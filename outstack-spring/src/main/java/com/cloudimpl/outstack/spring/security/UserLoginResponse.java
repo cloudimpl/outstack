@@ -30,7 +30,7 @@ public class UserLoginResponse {
     private final boolean locked;
     private final boolean active;
     private final List<PolicyStatement> stmts;
-
+    private Object userdata;
     public UserLoginResponse(String userId, String username, String email,boolean locked, boolean active, List<PolicyStatement> stmts) {
         this.userId = userId;
         this.username = username;
@@ -64,5 +64,15 @@ public class UserLoginResponse {
         return stmts;
     }
 
+    public UserLoginResponse setUserData(Object userdata)
+    {
+        this.userdata = userdata;
+        return this;
+    }
+
+    public Object getUserdata() {
+        return userdata;
+    }
+    
     
 }
