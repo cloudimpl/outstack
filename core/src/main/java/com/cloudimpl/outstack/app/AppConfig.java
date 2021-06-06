@@ -60,6 +60,7 @@ public class AppConfig implements Callable<Integer> {
         this.gossipPort = builder.gossipPort;
         this.seedName = builder.seedName;
         this.servicePort = builder.servicePort;
+        this.waitForSeed = builder.waitForSeed;
         this.seeds = new LinkedList<>(builder.seeds);
     }
 
@@ -99,6 +100,10 @@ public class AppConfig implements Callable<Integer> {
         endpoints = seeds.stream().map(s -> s.split(":")).map(arr -> Address.create(arr[0], Integer.valueOf(arr[1]))).collect(Collectors.toList());
         if (endpoints.size() > 0) {
             builder.withSeedNodes(getEndpoints());
+        }
+        if(seedName != null)
+        {
+            this.waitForSeed = true;
         }
         if (!waitForSeed) {
             return Mono.just(builder);
@@ -150,6 +155,7 @@ public class AppConfig implements Callable<Integer> {
 
         public Builder withSeedName(String seedName) {
             this.seedName = seedName;
+            this.waitForSeed = seedName != null;
             return this;
         }
 
@@ -157,6 +163,7 @@ public class AppConfig implements Callable<Integer> {
             this.servicePort = servicePort;
             return this;
         }
+
 
         public Builder withSeeds(String... seeds) {
             this.seeds.addAll(Arrays.asList(seeds));
