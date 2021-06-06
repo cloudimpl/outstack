@@ -38,7 +38,7 @@ public class AuthenticationUtil {
         }
         if (UsernamePasswordAuthenticationToken.class.isInstance(auth)) {
             return onUsernamePasswordAuthentication((UsernamePasswordAuthenticationToken) auth,loginProvider)
-                    .doOnNext(resp->token.setUserId(resp.getUserId())).map(resp->token)
+                    .map(resp->token)
                     .doOnNext(t->t.setAuthenticated(true));
         } else {
             return Mono.error(new PlatformAuthenticationException("invalid authentication medium", null));

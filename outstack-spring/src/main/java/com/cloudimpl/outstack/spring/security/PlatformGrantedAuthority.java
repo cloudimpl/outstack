@@ -26,15 +26,25 @@ import org.springframework.security.core.GrantedAuthority;
  */
 public class PlatformGrantedAuthority implements GrantedAuthority{
 
-    private final Map<String,PolicyStatement> policyStmts;
+    private final Map<String,PolicyStatement> denyPolicyStmts;
+    private final Map<String,PolicyStatement> allowPolicyStmts;
 
-    public PlatformGrantedAuthority(Map<String, PolicyStatement> policyStmts) {
-        this.policyStmts = policyStmts;
+    public PlatformGrantedAuthority(Map<String, PolicyStatement> denyPolicyStmts, Map<String, PolicyStatement> allowPolicyStmts) {
+        this.denyPolicyStmts = denyPolicyStmts;
+        this.allowPolicyStmts = allowPolicyStmts;
+    }
+
+   
+    
+    public Optional<PolicyStatement> getDenyStatmentByResourceName(String resourceName)
+    {
+        
+        return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName)));
     }
     
-    public Optional<PolicyStatement> getStatmentByResourceName(String resourceName)
+    public Optional<PolicyStatement> getAllowStatmentByResourceName(String resourceName)
     {
-        return Optional.ofNullable(policyStmts.get(resourceName));
+        return Optional.ofNullable(allowPolicyStmts.get("*")).or(()->Optional.ofNullable(allowPolicyStmts.get(resourceName)));
     }
     
     @Override

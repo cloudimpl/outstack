@@ -26,9 +26,15 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 public class PolicyRefCreated extends Event<PolicyRef>{
     private final String policyRef;
     private final String roleName;
-    public PolicyRefCreated(String roleName,String policyRef) {
+    private final String version;
+    private final String domainContext;
+    private final String domainOwner;
+    public PolicyRefCreated(String domainOwner,String domainContext,String version,String roleName,String policyRef) {
         this.roleName = roleName;
         this.policyRef = policyRef;
+        this.version = version;
+        this.domainContext = domainContext;
+        this.domainOwner = domainOwner;
     }
     
     @Override
@@ -46,6 +52,10 @@ public class PolicyRefCreated extends Event<PolicyRef>{
         return policyRef;
     }
 
+    public String getVersion() {
+        return version;
+    }
+
     @Override
     public String rootEntityId() {
         return roleName;
@@ -54,6 +64,13 @@ public class PolicyRefCreated extends Event<PolicyRef>{
     public String getPolicyRef() {
         return policyRef;
     }
-    
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
+    }
     
 }

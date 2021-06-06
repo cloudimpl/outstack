@@ -23,13 +23,18 @@ public class CommandWrapper implements ICommand {
     private final String tenantId;
     private final String payload;
     private final String version;
+    private final String rootType;
+    private final String childType;
+    private Object grant;
     public CommandWrapper(Builder builder) {
         this.command = builder.command;
         this.rootId = builder.rootId;
         this.tenantId = builder.tenantId;
-        this.payload = builder.payload == null?"{}":builder.payload;
+        this.payload = builder.payload == null ? "{}" : builder.payload;
         this.id = builder.id;
         this.version = builder.version;
+        this.rootType = builder.rootType;
+        this.childType = builder.childType;
     }
 
     @Override
@@ -46,73 +51,94 @@ public class CommandWrapper implements ICommand {
     public final String commandName() {
         return command;
     }
-    
+
     @Override
-    public final String version(){
+    public final String version() {
         return version;
     }
-    
+
+    public String getRootType() {
+        return rootType;
+    }
+
+    public String getChildType() {
+        return childType;
+    }
+
     public final Optional<String> getRootId() {
         return Optional.ofNullable(rootId);
     }
 
-    public static Builder builder()
-    {
+    public void setGrant(Object grant) {
+        this.grant = grant;
+    }
+
+    public <T> T getGrant() {
+        return (T) grant;
+    }
+
+    
+    public static Builder builder() {
         return new Builder();
     }
-    
+
     public static final class Builder {
 
-        private  String command;
-        private  String rootId;
-        private  String id;
-        private  String tenantId;
-        private  String payload;
+        private String command;
+        private String rootId;
+        private String id;
+        private String tenantId;
+        private String payload;
         private String version;
-        
-        public Builder withCommand(String command)
-        {
+        private String rootType;
+        private String childType;
+
+        public Builder withCommand(String command) {
             this.command = command;
             return this;
         }
-        
-        public Builder withId(String id)
-        {
+
+        public Builder withId(String id) {
             this.id = id;
             return this;
         }
-        
-        public Builder withVersion(String version)
-        {
+
+        public Builder withRootType(String rootType) {
+            this.rootType = rootType;
+            return this;
+        }
+
+        public Builder withChildType(String childType) {
+            this.childType = childType;
+            return this;
+        }
+
+        public Builder withVersion(String version) {
             this.version = version;
             return this;
         }
-        
-        public Builder withRootId(String rootId)
-        {
+
+        public Builder withRootId(String rootId) {
             this.rootId = rootId;
             return this;
         }
-        
-        public Builder withTenantId(String tenantId)
-        {
+
+        public Builder withTenantId(String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
-        
-        public Builder withPayload(String payload)
-        {
+
+        public Builder withPayload(String payload) {
             this.payload = payload;
             return this;
         }
-        
-        public Builder withObject(Object payload)
-        {
+
+        public Builder withObject(Object payload) {
             this.payload = GsonCodecRuntime.encode(payload);
             return this;
         }
-        public CommandWrapper build()
-        {
+
+        public CommandWrapper build() {
             return new CommandWrapper(this);
         }
     }

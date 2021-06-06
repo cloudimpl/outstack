@@ -14,7 +14,10 @@ public class QueryByIdRequest extends Query{
         super(builder);
     }
 
-    
+    public static Builder builder()
+    {
+        return new Builder();
+    }
     
     public static final class Builder extends Query.Builder
     {

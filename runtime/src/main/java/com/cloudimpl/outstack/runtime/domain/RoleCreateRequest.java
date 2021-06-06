@@ -13,23 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.auth.service;
+package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
+import java.util.List;
 
 /**
  *
  * @author nuwan
  */
-public class TestRequest extends Command{
-    private String username;
-    public TestRequest(Builder builder) {
+public class RoleCreateRequest extends Command{
+    private String roleName;
+    private List<PolicyRef> policyRef;
+    
+    public RoleCreateRequest(Builder builder) {
         super(builder);
     }
 
-    public String getUsername() {
-        return username;
+    public String getRoleName() {
+        return roleName;
+    }
+
+    public List<PolicyRef> getPolicyRef() {
+        return policyRef;
     }
     
     
+    
+    public static final class Builder extends Command.Builder
+    {
+        private String roleName;
+        private List<PolicyRef> policyRef;
+
+        public Builder() {
+        }
+       
+    }
 }
