@@ -49,7 +49,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
     }
 
     public ReadOnlyTransaction<T> createTransaction(String rootTid, String tenantId, boolean async) {
-        return new ReadOnlyTransaction(type,idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
+        return new ReadOnlyTransaction(type, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
     }
 
     private <T> void validateObject(T target) {
@@ -76,12 +76,12 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected final String version;
         protected final boolean async;
 
-        public ReadOnlyTransaction(Class<R> type,Supplier<String> idGenerator, String rootTid,
+        public ReadOnlyTransaction(Class<R> type, Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator,
                 Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
             this.idGenerator = idGenerator;
             if (rootTid != null) {
-                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId).map(t->t.id()).orElse(null) ;
+                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId).map(t -> t.id()).orElse(null);
             }
             this.tenantId = tenantId;
             this.queryOperation = queryOperation;
@@ -91,7 +91,6 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             this.async = async;
         }
 
- 
         public String getTenantId() {
             return tenantId;
         }
