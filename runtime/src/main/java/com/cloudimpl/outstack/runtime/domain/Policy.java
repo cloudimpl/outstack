@@ -25,7 +25,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "Policies" , version = "v1")
+@EntityMeta(plural = "Policies", version = "v1")
 public class Policy extends RootEntity implements ITenantOptional {
 
     private String policyContext;

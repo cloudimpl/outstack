@@ -60,6 +60,25 @@ public class ResourceDescriptor {
         this.tenantScope = builder.tenantScope;
     }
 
+    public boolean isResourceMatched(String resource)
+    {
+        switch(resourceScope)
+        {
+            case GLOBAL:
+            {
+                return true;
+            }
+            case ALL:
+            {
+                return rootType.toLowerCase().equals(resource.toLowerCase());
+            }
+            default:
+            {
+                return false;
+            }
+        }
+    }
+    
     public String getTenantId() {
         return tenantId;
     }

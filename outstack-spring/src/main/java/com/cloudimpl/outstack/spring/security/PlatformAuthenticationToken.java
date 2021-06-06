@@ -35,7 +35,6 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
     public static final String TOKEN_CONTEXT_HEADER_NAME = "X-TokenContext";
     
     private final String principal;
-    private String userId;
     private final UserDetail userDetail;
     private final AuthenticationMeta authMeta;
     private Jwt jwtToken;
@@ -48,10 +47,12 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
         this.authMeta = authMeta;
     }
 
-    public String getUserId() {
-        return userId;
+    public PlatformAuthenticationToken copy(Collection<PlatformGrantedAuthority> authorities)
+    {
+        PlatformAuthenticationToken token = new PlatformAuthenticationToken(authMeta,principal,authorities,userDetail);
+        return token;
     }
-
+    
     @Override
     public Object getCredentials() {
         return _systemToken.getCredentials();
@@ -79,16 +80,11 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
         this.response = response;
         return this;
     }
-
+    
     public Object getResponse() {
         return response;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-   
-    
     public Authentication getSystemToken()
     {
         return _systemToken;

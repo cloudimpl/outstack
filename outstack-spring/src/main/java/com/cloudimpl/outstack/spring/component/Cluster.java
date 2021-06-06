@@ -21,13 +21,14 @@ import com.cloudimpl.outstack.node.CloudNode;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
-import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
+import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
+import com.cloudimpl.outstack.spring.security.PolicyStatementValidator;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
-import java.text.MessageFormat;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -50,8 +51,9 @@ public class Cluster {
 
     @Autowired
     private SpringApplicationConfigManager configManager;
-    
+
     private ResourceHelper resourceHelper;
+
     public Cluster() {
     }
 
@@ -59,13 +61,13 @@ public class Cluster {
     public void init() {
         Injector injector = new Injector();
         configManager.setInjector(injector);
-      //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
+        //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
         resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
         EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(configManager.getCluster().getGossipPort())
                 .withSeeds(configManager.getCluster().getSeeds().toArray(String[]::new))
                 .withSeedName(configManager.getCluster().getSeedName()).withServicePort(configManager.getCluster().getServicePort()).build();
-        
+
         injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
         injector.bind(ResourceHelper.class).to(resourceHelper);
         injector.bind(ServiceDescriptorContextManager.class).to(serviceDescriptorContextMan);
@@ -92,17 +94,26 @@ public class Cluster {
         System.exit(-1);
     }
 
-    public ServiceRegistryReadOnly getServiceRegistry()
-    {
+    public ServiceRegistryReadOnly getServiceRegistry() {
         return this.node.getServiceRegistry();
     }
-    
+
     public ServiceDescriptorContextManager getServiceDescriptorContextManager() {
         return serviceDescriptorContextMan;
     }
 
     public <T> Mono<T> requestReply(String serviceName, Object msg) {
-   
+        if (msg instanceof CommandWrapper) {
+            CommandWrapper wrapper = CommandWrapper.class.cast(msg);
+            return ReactiveSecurityContextHolder
+                    .getContext().map(c -> c.getAuthentication())
+                    .switchIfEmpty(this.node.requestReply(serviceName, msg))
+                    .cast(PlatformAuthenticationToken.class)
+                    .map(t->PolicyStatementValidator.processPolicyStatements(wrapper.commandName(),wrapper.getRootType(), t))
+                    .doOnNext(g->wrapper.setGrant(g))
+                    .flatMap(g->this.node.requestReply(serviceName,msg));
+        }
+
         return this.node.requestReply(serviceName, msg);
     }
 
@@ -113,7 +124,7 @@ public class Cluster {
     public Mono<Void> send(String serviceName, Object msg) {
         return this.node.send(serviceName, msg);
     }
-    
+
 //    public <T> Mono<T> requestReplyToServiceProvider(String serviceName,Object msg)
 //    {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}", resourceHelper.getDomainOwner(),resourceHelper.getDomainContext(),serviceName), msg);

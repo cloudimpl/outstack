@@ -25,16 +25,20 @@ import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
  *
  * @author nuwan
  */
-@EntityMeta(plural = "PolicyRef" , version = "v1")
-public class PolicyRef extends ChildEntity<Role> implements ITenantOptional{
+@EntityMeta(plural = "PolicyRef", version = "v1")
+public class PolicyRef extends ChildEntity<Role> implements ITenantOptional {
+
     private final String policyRef;
     private final String tenantId;
+    private String domainContext;
+    private String domainOwner;
+    private String version;
     
-    public PolicyRef(String policyRef,String tenantId) {
+    public PolicyRef(String policyRef, String tenantId) {
         this.policyRef = policyRef;
         this.tenantId = tenantId;
     }
-    
+
     @Override
     public Class<Role> rootType() {
         return Role.class;
@@ -53,18 +57,30 @@ public class PolicyRef extends ChildEntity<Role> implements ITenantOptional{
     public String getTenantId() {
         return tenantId;
     }
- 
-    private void applyEvent(PolicyRefCreated event)
-    {
+
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getVersion() {
+        return version;
     }
     
+    private void applyEvent(PolicyRefCreated event) {
+        this.domainContext = event.getDomainContext();
+        this.domainOwner = event.getDomainOwner();
+        this.version = event.getVersion();
+    }
+
     @Override
-    protected void apply(Event event) { 
-        switch(event.getClass().getSimpleName())
-        {
-            case "PolicyRefCreated":
-            {
-                applyEvent((PolicyRefCreated)event);
+    protected void apply(Event event) {
+        switch (event.getClass().getSimpleName()) {
+            case "PolicyRefCreated": {
+                applyEvent((PolicyRefCreated) event);
                 break;
             }
             default: {
@@ -77,5 +93,5 @@ public class PolicyRef extends ChildEntity<Role> implements ITenantOptional{
     public String idField() {
         return "policyRef";
     }
-    
+
 }

@@ -45,5 +45,6 @@
         <module>user-service</module>
         <module>App</module>
         <module>api-gateway</module>
+        <module>role-service</module>
     </modules>
 </project>

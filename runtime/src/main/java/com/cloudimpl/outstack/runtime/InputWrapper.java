@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.security;
-
-import java.text.MessageFormat;
-import org.springframework.security.core.AuthenticationException;
+package com.cloudimpl.outstack.runtime;
 
 /**
  *
  * @author nuwan
  */
-public class PlatformAuthenticationException extends AuthenticationException{
+public interface InputWrapper {
     
-    public PlatformAuthenticationException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
-    
-     public PlatformAuthenticationException(Throwable thr,String format,Object... args) {
-        super(MessageFormat.format(format, args), thr);
-    }
-    
+    String getAction();
+    String getRootId();
+    String getId();
+    String getTenantId();
+    String getPayload();
+    String version();
+    String getRootType();
+    String getChildType();
+    <T> T getGrant();
 }

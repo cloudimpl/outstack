@@ -49,7 +49,7 @@ public class ActionDescriptor {
                 return true;
             }
             case PREFIX_MATCH: {
-                return action.equalsIgnoreCase(name);
+                return action.toLowerCase().startsWith(name);
             }
             case EXACT_NAME: {
                 return action.equalsIgnoreCase(name);
@@ -60,4 +60,10 @@ public class ActionDescriptor {
         }
     }
 
+    @Override
+    public String toString() {
+        return "ActionDescriptor{" + "name=" + name + ", actionScope=" + actionScope + '}';
+    }
+
+    
 }

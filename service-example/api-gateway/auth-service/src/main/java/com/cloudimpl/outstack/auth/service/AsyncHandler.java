@@ -30,7 +30,7 @@ public class AsyncHandler extends AsyncEntityCommandHandler<Test, TestRequest, C
 
     @Override
     protected Mono<CommandResponse> execute(EntityContext<Test> context, TestRequest command) {
-        return context.asAsyncEntityContext().<User>sendRequest("cloudimpl", "example", "v1", "UserService", UserCreateReq.builder().withUsername("nuwan")
+        return context.asAsyncEntityContext().<User>sendRequest("cloudimpl", "example", "v1", "UserService", UserCreateReq.builder().withUsername(command.getUsername())
                 .withPassword("1234").withCommandName("CreateUser").withVersion("v1").build()).map(r -> new CommandResponse(r.entityId()));
     }
 

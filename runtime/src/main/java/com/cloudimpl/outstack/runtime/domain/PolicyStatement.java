@@ -35,7 +35,6 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     public enum EffectType {
         ALLOW, DENY
     }
-
     private final String sid;
     private  EffectType effect;
     private  Collection<ActionDescriptor> actions;
@@ -119,4 +118,10 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
         return "sid";
     }
 
+    @Override
+    public String toString() {
+        return "PolicyStatement{" + "sid=" + sid + ", effect=" + effect + ", actions=" + actions + ", resources=" + resources + ", tenantId=" + tenantId + '}';
+    }
+
+    
 }

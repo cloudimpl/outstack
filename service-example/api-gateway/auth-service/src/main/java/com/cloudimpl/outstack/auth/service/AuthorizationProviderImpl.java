@@ -15,8 +15,14 @@
  */
 package com.cloudimpl.outstack.auth.service;
 
+import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
+import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import com.cloudimpl.outstack.spring.security.AuthorizationProvider;
 import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
+import com.cloudimpl.outstack.spring.security.PlatformGrantedAuthority;
+import java.util.Collections;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -25,11 +31,30 @@ import reactor.core.publisher.Mono;
  * @author nuwan
  */
 @Component
-public class AuthorizationProviderImpl implements AuthorizationProvider{
+public class AuthorizationProviderImpl implements AuthorizationProvider {
+
+    private final PlatformGrantedAuthority adminAuth;
+    private PlatformAuthenticationToken token;
+
+    public AuthorizationProviderImpl() {
+        PolicyStatement adminPolicy = new PolicyStatement("fullAdminAccess", null);
+        adminPolicy.applyEvent(new PolicyStatementCreated("fullAdminAccess", PolicyStatement.EffectType.DENY,
+                Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)), Collections.singleton(ResourceDescriptor.builder().withResourceScope(ResourceDescriptor.ResourceScope.GLOBAL).build())));
+        adminAuth = new PlatformGrantedAuthority(Collections.EMPTY_MAP, Collections.singletonMap("*", adminPolicy));
+    }
 
     @Override
     public Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication) {
-        return Mono.just(authentication).doOnNext(a->a.setAuthenticated(true));
+
+        return Mono.just(authentication)
+                .map(this::onAuth)
+                .doOnNext(a -> a.setAuthenticated(true));
     }
-    
+
+    private PlatformAuthenticationToken onAuth(PlatformAuthenticationToken token) {
+        if (this.token == null) {
+            this.token = token.copy(Collections.singleton(adminAuth));
+        }
+        return this.token;
+    }
 }

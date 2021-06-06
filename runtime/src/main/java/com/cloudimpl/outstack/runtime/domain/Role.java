@@ -30,7 +30,7 @@ public class Role extends RootEntity implements ITenantOptional {
 
     private final String roleName;
     private final String tenantId;
-
+    
     public Role(String roleName,String tenantId) {
         this.roleName = roleName;
         this.tenantId = tenantId;
@@ -46,7 +46,7 @@ public class Role extends RootEntity implements ITenantOptional {
     }
 
     private void applyEvent(RoleCreated created) {
-
+        
     }
 
     @Override

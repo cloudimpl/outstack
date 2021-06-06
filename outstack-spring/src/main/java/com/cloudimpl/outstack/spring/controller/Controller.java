@@ -17,7 +17,6 @@ import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
-import io.rsocket.exceptions.ApplicationErrorException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,6 +37,7 @@ import reactor.core.publisher.Mono;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
@@ -350,6 +350,9 @@ public class Controller {
                     return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
                 }
             }
+        }else if(AuthenticationException.class.isInstance(thr))
+        {
+            return new ResponseStatusException(HttpStatus.UNAUTHORIZED,thr.getMessage());
         }
         return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
     }
