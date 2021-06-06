@@ -77,8 +77,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     public <C extends ChildEntity<T>> C create(Class<C> type, String id, Event<C> event) {
-        ChildEntityContext childContext = (ChildEntityContext) getTx().getContext(type);
-        return (C) childContext.asChildContext().create(id, event);
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        return (C) childContext.create(id, event);
     }
 
     @Override
@@ -139,8 +139,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     public <C extends ChildEntity<T>> C delete(Class<C> type, String id) {
-        ChildEntityContext childContext = (ChildEntityContext) getTx().getContext(type);
-        return (C) childContext.asChildContext().delete(id);
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type,null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        return (C) childContext.delete(id);
     }
 
     @Override
