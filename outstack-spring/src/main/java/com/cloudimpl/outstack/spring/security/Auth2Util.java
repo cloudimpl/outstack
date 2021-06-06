@@ -57,7 +57,9 @@ public class Auth2Util {
         String redirectUri = req.getQueryParams().getFirst("redirect_uri");
         String accessType = req.getQueryParams().getFirst("access_type");
         String tenantId = req.getHeaders().getFirst("X-TenantId");
-        return new AuthenticationMeta.ClientMeta(clientId, clientSecret, code, redirectUri, codeVerfier, tenantId,accessType);
+        String userAgent = req.getHeaders().getFirst("User-Agent");
+        String remoteIp = req.getRemoteAddress().toString();
+        return new AuthenticationMeta.ClientMeta(clientId, clientSecret, code, redirectUri, codeVerfier, tenantId,accessType,userAgent,remoteIp);
     }
 
     public static void validateAuthentcationMeta(Object detail) {

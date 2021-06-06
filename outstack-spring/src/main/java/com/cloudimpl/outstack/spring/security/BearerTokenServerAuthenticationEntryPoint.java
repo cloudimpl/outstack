@@ -60,6 +60,7 @@ public final class BearerTokenServerAuthenticationEntryPoint implements ServerAu
                 ServerHttpResponse response = exchange.getResponse();
                 response.writeWith(buffer);
                 response.getHeaders().set(HttpHeaders.WWW_AUTHENTICATE, wwwAuthenticate);
+                response.getHeaders().set("X-Error", authException.getMessage());
                 response.setStatusCode(status);
                 return response.setComplete();
             } catch (JsonProcessingException ex) {
