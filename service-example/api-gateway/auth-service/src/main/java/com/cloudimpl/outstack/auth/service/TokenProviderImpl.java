@@ -58,7 +58,7 @@ public class TokenProviderImpl implements TokenProvider {
     private Mono<UserLoginResponse> validateLogin(UserLoginRequest req) {
         if (req.getUserId() != null && req.getPassword() != null) {
             if (req.getUserId().equals(username) && req.getPassword().equals(password)) {
-                return Mono.just(new UserLoginResponse(userid, username, "test@gmail.com", false, true, Collections.EMPTY_LIST));
+                return Mono.just(new UserLoginResponse(userid,"","", username, "test@gmail.com", false, true, Collections.EMPTY_LIST));
             }
 
         }

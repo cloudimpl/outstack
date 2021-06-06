@@ -26,14 +26,18 @@ public class UserLoginResponse {
 
     private final String userId;
     private final String username;
+    private final String firstName;
+    private final String lastName;
     private final String email;
     private final boolean locked;
     private final boolean active;
     private final List<PolicyStatement> stmts;
     private Object userdata;
-    public UserLoginResponse(String userId, String username, String email,boolean locked, boolean active, List<PolicyStatement> stmts) {
+    public UserLoginResponse(String userId,String firstname,String lastName, String username, String email,boolean locked, boolean active, List<PolicyStatement> stmts) {
         this.userId = userId;
         this.username = username;
+        this.firstName = firstname;
+        this.lastName = lastName;
         this.email = email;
         this.locked = locked;
         this.active = active;
@@ -60,6 +64,15 @@ public class UserLoginResponse {
         return active;
     }
 
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    
     public List<PolicyStatement> getStmts() {
         return stmts;
     }
