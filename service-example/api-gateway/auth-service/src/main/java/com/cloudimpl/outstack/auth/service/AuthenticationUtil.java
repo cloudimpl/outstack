@@ -40,6 +40,7 @@ public class AuthenticationUtil {
             return onUsernamePasswordAuthentication((UsernamePasswordAuthenticationToken) auth,loginProvider)
                     .map(resp->token)
                     .doOnNext(t->t.setAuthenticated(true));
+            
         } else {
             return Mono.error(new PlatformAuthenticationException("invalid authentication medium", null));
         }

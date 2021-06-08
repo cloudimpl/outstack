@@ -13,6 +13,7 @@ import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.Injector;
 import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
@@ -63,18 +64,19 @@ public class Cluster {
         configManager.setInjector(injector);
         //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
         resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
-        EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
+        injector.bind(ResourceHelper.class).to(resourceHelper);
+        //   EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(configManager.getCluster().getGossipPort())
                 .withSeeds(configManager.getCluster().getSeeds().toArray(String[]::new))
                 .withSeedName(configManager.getCluster().getSeedName()).withServicePort(configManager.getCluster().getServicePort()).build();
 
-        injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
-        injector.bind(ResourceHelper.class).to(resourceHelper);
+        //   injector.bind(EventRepositoryFactory.class).to(eventRepoFactory);
         injector.bind(ServiceDescriptorContextManager.class).to(serviceDescriptorContextMan);
         injector.bind(LogWriter.class).to(new ConsoleLogWriter());
+        bindVars(injector);
         //injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
         injector.nameBind("leaderOptions", CollectionOptions.builder().withOption("TableName", "Test").build());
-        injector.bind(CollectionProvider.class).to(configManager.getProvider(CollectionProvider.class.getName()).getInstance());
+        //injector.bind(CollectionProvider.class).to(configManager.getProvider(CollectionProvider.class.getName()).get().getInstance());
         ResourcesLoader serviceLoader = new ResourcesLoaderEx(resourceHelper);
         serviceLoader.preload();
         appConfig.getNodeConfigBuilder().doOnNext(c -> c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C -> C.build())
@@ -84,6 +86,16 @@ public class Cluster {
                     node.start();
                 }).subscribe();
 
+    }
+
+    private void bindVars(Injector injector) {
+        configManager.getProviders().stream().forEach(p -> {
+            if (p.getStatus().isPresent() && p.getStatus().get().equals("active")) {
+                injector.bind(CloudUtil.classForName(p.getBase())).to(p.getInstance());
+            } else {
+                injector.bind(p.getName()).toClass(CloudUtil.classForName(p.getImpl()));
+            }
+        });
     }
 
     @PreDestroy
@@ -109,9 +121,9 @@ public class Cluster {
                     .getContext().map(c -> c.getAuthentication())
                     .switchIfEmpty(this.node.requestReply(serviceName, msg))
                     .cast(PlatformAuthenticationToken.class)
-                    .map(t->PolicyStatementValidator.processPolicyStatements(wrapper.commandName(),wrapper.getRootType(), t))
-                    .doOnNext(g->wrapper.setGrant(g))
-                    .flatMap(g->this.node.requestReply(serviceName,msg));
+                    .map(t -> PolicyStatementValidator.processPolicyStatements(wrapper.commandName(), wrapper.getRootType(), t))
+                    .doOnNext(g -> wrapper.setGrant(g))
+                    .flatMap(g -> this.node.requestReply(serviceName, msg));
         }
 
         return this.node.requestReply(serviceName, msg);

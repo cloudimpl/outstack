@@ -16,8 +16,6 @@
 package com.cloudimpl.outstack.spring.repo;
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
-import com.amazonaws.services.dynamodbv2.document.Table;
-import com.amazonaws.services.dynamodbv2.model.Put;
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.EventStream;
@@ -45,11 +43,13 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     public static final String partitionKey = "partitionKey";
     public static final String rangeKey = "rangeKey";
     private final int partitionCount;
+   // private final String tableName;
     public DynamodbEventRepository(DynamoDB dynamodb, Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream,Provider.ProviderConfigs configs) {
         super(rootType, resourceHelper, eventStream);
         this.dynamodb = dynamodb;
         //this.loadTables();
         this.configs = configs;
+     //   this.tableName = this.configs.getOption("")
         this.partitionCount = Integer.valueOf(configs.getOption("partitionCount").get());
     }
 

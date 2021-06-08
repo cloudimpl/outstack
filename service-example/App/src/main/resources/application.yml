@@ -9,16 +9,20 @@ outstack:
   #    seeds:
   #        - 192.168.1.13:13000
     providers:
-      - name : com.cloudimpl.outstack.collection.CollectionProvider
-        impl: com.cloudimpl.outstack.collection.MemCollectionProvider
-        
-      - name:  com.cloudimpl.outstack.collection.CollectionProvider
-        impl: com.cloudimpl.outstack.collection.AwsCollectionProvider
-        status: active
-        configs:
-          endpoint: http://localhost:1234
-          leaderTable : LeaderTable 
-
+      com.cloudimpl.outstack.collection.CollectionProvider:
+          - name : MemCollection
+            impl: com.cloudimpl.outstack.collection.MemCollectionProvider
+            
+          - name:  com.cloudimpl.outstack.collection.CollectionProvider
+            impl: com.cloudimpl.outstack.collection.AwsCollectionProvider
+            status: active
+            configs:
+              endpoint: http://localhost:1234
+              leaderTable : LeaderTable 
+      com.cloudimpl.outstack.runtime.repo.EventRepositoryFactory:
+          - name : MemRepositoryFactory
+            impl: com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory
+            status: active
 spring:
   main:
     web-application-type: reactive
