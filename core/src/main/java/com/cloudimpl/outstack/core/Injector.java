@@ -174,11 +174,12 @@ public class Injector {
                     String[] p = named.value().split("\\.");
                     return ((ILogger) map.get(ILogger.class)).createSubLogger(p[0], p[1]);
                 }
-                if (nameBinds.get(named.value()) == null) {
-                    throw new InjectException("bind value for " + named.value() + " not found");
-                }
-
-                return nameBinds.get(named.value());
+                return nameBind(named.value());
+//                if (nameBinds.get(named.value()) == null) {
+//                    throw new InjectException("bind value for " + named.value() + " not found");
+//                }
+//
+//                return nameBinds.get(named.value());
             }
 
         }

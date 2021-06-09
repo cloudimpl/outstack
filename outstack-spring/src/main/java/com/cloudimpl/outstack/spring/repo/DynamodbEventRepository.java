@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.spring.repo;
 
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.EventStream;
@@ -27,6 +28,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.spring.component.SpringApplicationConfigManager.Provider;
+import java.util.LinkedList;
 import java.util.Optional;
 
 /**
@@ -42,15 +44,17 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     private  String eventTable;
     public static final String partitionKey = "partitionKey";
     public static final String rangeKey = "rangeKey";
-    private final int partitionCount;
-   // private final String tableName;
+    //private final int partitionCount;
+    private final String tableName;
+    private ThreadLocal<List<TransactWriteItem>> txContext = ThreadLocal.withInitial(new LinkedList<>());
     public DynamodbEventRepository(DynamoDB dynamodb, Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream,Provider.ProviderConfigs configs) {
         super(rootType, resourceHelper, eventStream);
         this.dynamodb = dynamodb;
         //this.loadTables();
         this.configs = configs;
-     //   this.tableName = this.configs.getOption("")
-        this.partitionCount = Integer.valueOf(configs.getOption("partitionCount").get());
+        this.tableName = this.configs.getOption(rootType.getSimpleName()+"Table","defaultTable").get();
+        System.out.println("table name "+this.tableName+" pick for root type: "+rootType.getSimpleName());
+        //this.partitionCount = Integer.valueOf(configs.getOption("partitionCount").get());
     }
 
     @Override

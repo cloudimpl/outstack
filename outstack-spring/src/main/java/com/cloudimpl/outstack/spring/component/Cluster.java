@@ -91,7 +91,9 @@ public class Cluster {
     private void bindVars(Injector injector) {
         configManager.getProviders().stream().forEach(p -> {
             if (p.getStatus().isPresent() && p.getStatus().get().equals("active")) {
-                injector.bind(CloudUtil.classForName(p.getBase())).to(p.getInstance());
+                Object instance = p.getInstance();
+                injector.bind(CloudUtil.classForName(p.getBase())).to(instance);
+                injector.bind(p.getName()).to(instance);
             } else {
                 injector.bind(p.getName()).toClass(CloudUtil.classForName(p.getImpl()));
             }

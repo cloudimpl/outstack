@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.spring.service;
 
 import com.cloudimpl.outstack.common.RouterType;
+import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
@@ -36,7 +37,7 @@ public class DomainContextQueryService extends SpringQueryService<DomainContext>
         $$(ServiceModuleRef.class);
     }
     
-    public DomainContextQueryService(EventRepositoryFactory factory) {
+    public DomainContextQueryService(@Named("MemRepositoryFactory")EventRepositoryFactory factory) {
         super(factory);
     }
     

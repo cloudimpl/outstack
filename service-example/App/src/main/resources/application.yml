@@ -5,9 +5,9 @@ outstack:
     cluster:
       servicePort: 12000
       gossipPort: 14000
-      seedName: localhost
-  #    seeds:
-  #        - 192.168.1.13:13000
+  #    seedName: localhost
+      seeds:
+          - 192.168.1.13:13000
     providers:
       com.cloudimpl.outstack.collection.CollectionProvider:
           - name : MemCollection
@@ -19,10 +19,18 @@ outstack:
             configs:
               endpoint: http://localhost:1234
               leaderTable : LeaderTable 
-      com.cloudimpl.outstack.runtime.repo.EventRepositoryFactory:
-          - name : MemRepositoryFactory
+      com.cloudimpl.outstack.runtime.EventRepositoryFactory:
+          - name: MemRepositoryFactory
             impl: com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory
+            
+          - name: DynamodbRepositoryFactory
+            impl: com.cloudimpl.outstack.spring.repo.DynamodbRepositoryFactory
             status: active
+            configs:
+                endpoint: http://localhost:8000
+                region: US_EAST_1
+                defaultTable: commandTable
+                UserTable: userTable
 spring:
   main:
     web-application-type: reactive

@@ -64,6 +64,58 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         }
     }
 
+    protected void startTransaction()
+    {
+        
+    }
+    
+    protected void endTransaction()
+    {
+        
+    }
+    
+    protected void createEntity(Entity e)
+    {
+        mapEntites.put(resourceHelper.getFQTrn(e), e);
+        mapEntites.put(resourceHelper.getFQBrn(e), e);
+    }
+    
+    protected <C extends ChildEntity<T>> Collection<C> getAllChildByType(String rootBrn,Class<T> rootType,String id,Class<C> childType)
+    {
+        return mapEntites.entrySet().stream()
+                .filter(e -> e.getValue().getClass() == childType)
+                .filter(e -> e.getKey().startsWith(rootBrn))
+                .map(e->e.getValue())
+                .map(c->(C)c)
+                .collect(Collectors.toList());
+    }
+    
+    protected Entity getEntity(String rn)
+    {
+        Entity e = mapEntites.get(rn);
+        return e;
+    }
+    
+    protected Entity deleteEntity(String rn)
+    {
+        return mapEntites.remove(rn);
+    }
+    
+    protected void renameEntity(Entity oldEntity,Entity newEntity)
+    {
+        
+    }
+   
+    protected void updateEntity(Entity e)
+    {
+        
+    }
+    
+    protected void addEvent(Event e)
+    {
+        
+    }
+    
     @Override
     public synchronized <T extends Entity> T applyEvent(Event event) {
         Entity e = null;
@@ -107,14 +159,15 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
             EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
         } else {
-            RootEntity root = (RootEntity) mapEntites.get(resourceHelper.getFQTrn(event.getRootEntityTRN()));
+            RootEntity root = (RootEntity) getEntity(resourceHelper.getFQTrn(event.getRootEntityTRN()));
             e = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
             e.applyEvent(event);
             EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
             EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
         }
-        mapEntites.put(resourceHelper.getFQTrn(e), e);
-        mapEntites.put(resourceHelper.getFQBrn(e), e);
+        createEntity(e);
+  //      mapEntites.put(resourceHelper.getFQTrn(e), e);
+  //      mapEntites.put(resourceHelper.getFQBrn(e), e);
         return e;
     }
 
@@ -124,14 +177,14 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     private Entity updateEntity(Event event) {
 
-        Entity e = mapEntites.get(resourceHelper.getFQTrn(event.getEntityTRN()));
+        Entity e = getEntity(resourceHelper.getFQTrn(event.getEntityTRN()));
         e.applyEvent(event);
         EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
         return e;
     }
 
     private Entity deleteEntity(Event event) {
-        return mapEntites.remove(resourceHelper.getFQBrn(event.getEntityRN()));
+        return deleteEntity(resourceHelper.getFQBrn(event.getEntityRN()));
     }
 
     private Entity renamEntity(EntityRenamed event) {
@@ -141,12 +194,13 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         } else {
             rn = ChildEntity.makeTRN(event.getRootOwner(), event.getMeta().getVersion(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
         }
-        Entity e = mapEntites.get(resourceHelper.getFQTrn(rn));
-        mapEntites.remove(resourceHelper.getFQBrn(e));
+        Entity e = getEntity(resourceHelper.getFQTrn(rn));
+        deleteEntity(resourceHelper.getFQBrn(e));
         e = e.rename(event.entityId());
         EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-        mapEntites.put(resourceHelper.getFQBrn(e), e);
-        mapEntites.put(resourceHelper.getFQTrn(e), e);
+        createEntity(e);
+   //     mapEntites.put(resourceHelper.getFQBrn(e), e);
+    //    mapEntites.put(resourceHelper.getFQTrn(e), e);
         return e;
     }
 
@@ -172,10 +226,10 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         }
         String fqtrn = trn;
       
-        Collection<K> result = mapEntites.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
-                .filter(e -> e.getKey().startsWith(fqtrn))
-                .map(e->e.getValue())
-                .map(e -> (K) e)
+        Collection<K> result = getAllChildByType(trn,rootType,id,childType)
+                .stream()
+                //mapEntites.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
+                //.filter(e -> e.getKey().startsWith(fqtrn))
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         ResultSet<K> col = onPageable(result, paging);

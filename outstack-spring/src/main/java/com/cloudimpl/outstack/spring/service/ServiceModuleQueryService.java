@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.spring.service;
 
 import com.cloudimpl.outstack.common.RouterType;
+import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
@@ -38,7 +39,7 @@ public class ServiceModuleQueryService extends SpringQueryService<ServiceModule>
         $$(QueryHandlerEntity.class);
     }
     
-    public ServiceModuleQueryService(EventRepositoryFactory factory) {
+    public ServiceModuleQueryService(@Named("MemRepositoryFactory")EventRepositoryFactory factory) {
         super(factory);
     }
     

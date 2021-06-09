@@ -58,7 +58,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     
     @Inject
     public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
-            ServiceDescriptorContextManager serviceManager, EventRepositoryFactory eventRepoFactory, ILogger logger) {
+            ServiceDescriptorContextManager serviceManager,@Named("MemRepositoryFactory") EventRepositoryFactory eventRepoFactory, ILogger logger) {
         this.logger = logger.createSubLogger(RestControllerService.class);
         this.eventRepoFactory = eventRepoFactory;
         this.serviceFlux = serviceFlux;
