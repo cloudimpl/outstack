@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
+import com.cloudimpl.outstack.runtime.EntityMetaDetail;
 import java.text.MessageFormat;
 import java.util.Objects;
 
@@ -17,6 +19,11 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
 
     private String _rootId;
 
+    public ChildEntity() {
+        _meta.setRootIdIgnoreCase(EntityMetaDetailCache.instance().getEntityMeta(rootType()).isIdIgnoreCase());
+    }
+
+    
     public final void setRootId(String rootId) {
         this._rootId = rootId;
     }
@@ -49,19 +56,20 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             }
             case OPTIONAL: {
-                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), getTenantId());
+                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), persistedId(), getTenantId());
             }
             default: {
-                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), entityId(), null);
+                return makeRN(rootType(), getMeta().getVersion(), rootId(), getClass(), persistedId(), null);
             }
         }
     }
 
     public static <R extends RootEntity, T extends ChildEntity<R>> String makeRN(Class<R> rootType, String version, String rootId, Class<T> childType, String entityId, String tenantId) {
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(childType);
         if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}/{5}", tenantId, version, rootType.getSimpleName(), rootId, childType.getSimpleName(), entityId);
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}/{4}/{5}", tenantId, version, rootType.getSimpleName(), rootId, childType.getSimpleName(), meta.isIdIgnoreCase()?entityId.toLowerCase():entityId);
         } else {
-            return MessageFormat.format("{0}/{1}/{2}/{3}/{4}", version, rootType.getSimpleName(), rootId, childType.getSimpleName(), entityId);
+            return MessageFormat.format("{0}/{1}/{2}/{3}/{4}", version, rootType.getSimpleName(), rootId, childType.getSimpleName(), meta.isIdIgnoreCase()?entityId.toLowerCase():entityId);
         }
     }
 

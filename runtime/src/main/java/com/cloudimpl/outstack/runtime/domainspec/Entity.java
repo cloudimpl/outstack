@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
+import com.cloudimpl.outstack.runtime.EntityMetaDetail;
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.util.TimeUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -18,14 +20,21 @@ public abstract class Entity implements IResource {
 
     @JsonProperty
     private String _id;
-    private final Meta _meta = new Meta();
-
+    protected final Meta _meta = new Meta();
     public Entity() {
-        this._meta.setVersion(this.getClass().getAnnotation(EntityMeta.class).version());
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getClass());
+        this._meta.setVersion(meta.getVersion());
+        this._meta.setIdIgnoreCase(meta.isIdIgnoreCase());
+        this._meta.setRootIdIgnoreCase(meta.isIdIgnoreCase());
     }
 
     final void setTid(String id) {
         this._id = id;
+    }
+
+    public String persistedId() {
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getClass());
+        return meta.isIdIgnoreCase()?entityId().toLowerCase():entityId();
     }
 
     public final String id() {
@@ -114,6 +123,8 @@ public abstract class Entity implements IResource {
         private long createdDate;
         private long updatedDate;
         private String version;
+        private boolean idIgnoreCase;
+        private boolean rootIdIgnoreCase;
 
         protected void setCreatedDate(long createdDate) {
             this.createdDate = createdDate;
@@ -135,6 +146,14 @@ public abstract class Entity implements IResource {
             return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(updatedDate));
         }
 
+        public void setIdIgnoreCase(boolean idIgnoreCase) {
+            this.idIgnoreCase = idIgnoreCase;
+        }
+
+        public void setRootIdIgnoreCase(boolean rootIdIgnoreCase) {
+            this.rootIdIgnoreCase = rootIdIgnoreCase;
+        }
+        
         public String getVersion() {
             return version;
         }

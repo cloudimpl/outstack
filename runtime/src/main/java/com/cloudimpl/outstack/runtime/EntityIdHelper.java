@@ -30,8 +30,6 @@ public class EntityIdHelper {
         }
     }
 
-
-
     public static boolean isTechnicalId(String id) {
         Objects.requireNonNull(id);
         return id.startsWith(EventRepositoy.TID_PREFIX);
@@ -53,9 +51,17 @@ public class EntityIdHelper {
                 throw new DomainEventException(DomainEventException.ErrorCode.TECHNICAL_ID_MISMATCHED, "invalid technical id {0} in entity. {1}", id, entity.getTRN());
             }
         } else {
-            if (!id.equals(entity.entityId())) {
-                throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED, "invalid entity id {0} in entity. {1}", id, entity.getBRN());
+            EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(entity.getClass());
+            if (meta.isIdIgnoreCase()) {
+                if (!id.equalsIgnoreCase(entity.entityId())) {
+                    throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED, "invalid entity id {0} in entity. {1}", id, entity.getBRN());
+                }
+            } else {
+                if (!id.equals(entity.entityId())) {
+                    throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED, "invalid entity id {0} in entity. {1}", id, entity.getBRN());
+                }
             }
+
         }
     }
 
@@ -67,9 +73,17 @@ public class EntityIdHelper {
                 throw new DomainEventException(DomainEventException.ErrorCode.TECHNICAL_ID_MISMATCHED, "invalid technical id {0} in event. {1}", id, event.getTRN());
             }
         } else {
-            if (!id.equals(event.entityId())) {
-                throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED, "invalid entity id {0} in event. {1}", id, event.getBRN());
+            EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(event.getOwner());
+            if (meta.isIdIgnoreCase()) {
+                if (!id.equalsIgnoreCase(event.entityId())) {
+                    throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED, "invalid entity id {0} in event. {1}", id, event.getBRN());
+                }
+            } else {
+                if (!id.equals(event.entityId())) {
+                    throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_ID_MISMATCHED, "invalid entity id {0} in event. {1}", id, event.getBRN());
+                }
             }
+
         }
     }
 
