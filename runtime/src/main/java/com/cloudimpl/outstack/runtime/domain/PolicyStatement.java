@@ -19,6 +19,7 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
@@ -35,6 +36,7 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     public enum EffectType {
         ALLOW, DENY
     }
+    @Id
     private final String sid;
     private  EffectType effect;
     private  Collection<ActionDescriptor> actions;

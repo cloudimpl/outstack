@@ -19,6 +19,7 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
@@ -29,6 +30,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 public class Policy extends RootEntity implements ITenantOptional {
 
     private String policyContext;
+    @Id
     private final String policyName;
     private final String tenantId;
 

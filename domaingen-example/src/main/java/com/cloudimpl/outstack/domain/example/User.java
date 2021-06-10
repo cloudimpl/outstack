@@ -2,9 +2,12 @@ package com.cloudimpl.outstack.domain.example;
 
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.IgnoreCase;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import javax.validation.constraints.NotBlank;
 import com.cloudimpl.outstack.domain.example.UserCreated;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
+import com.cloudimpl.outstack.domain.example.UserUpdated;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import javax.validation.constraints.NotEmpty;
@@ -17,7 +20,9 @@ public class User extends RootEntity implements ITenantOptional {
     @NotBlank(message = "password field cannot be blank in User entity")
     private String password ;
     @NotEmpty(message = "username field cannot be empty or null in User entity")
+    @IgnoreCase
     @NotBlank(message = "username field cannot be blank in User entity")
+    @Id
     private final String username ;
 
     public User(String username, String tenantId) {
@@ -52,6 +57,10 @@ public class User extends RootEntity implements ITenantOptional {
         this.password = evt.getPassword() ;
     }
 
+    private void applyEvent(UserUpdated evt) {
+        this.password = evt.getPassword() ;
+    }
+
     private void applyEvent(UserLoggedIn evt) {
     }
 
@@ -61,6 +70,10 @@ public class User extends RootEntity implements ITenantOptional {
         switch (event.getClass().getSimpleName() ) {
             case "UserCreated" : {
                 applyEvent((UserCreated) event) ;
+                break ;
+            }
+            case "UserUpdated" : {
+                applyEvent((UserUpdated) event) ;
                 break ;
             }
             case "UserLoggedIn" : {

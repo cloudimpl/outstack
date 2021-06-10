@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.domain;
 
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -27,6 +28,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 @EntityMeta(plural = "DomainContexts",version = "v1")
 public class DomainContext extends RootEntity {
 
+    @Id
     private String domainId;
     private String domainOwner;
     private String domainContext;

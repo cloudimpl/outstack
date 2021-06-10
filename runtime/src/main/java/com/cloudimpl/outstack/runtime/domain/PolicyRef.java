@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 
 /**
  *
@@ -28,6 +29,7 @@ import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 @EntityMeta(plural = "PolicyRef", version = "v1")
 public class PolicyRef extends ChildEntity<Role> implements ITenantOptional {
 
+    @Id
     private final String policyRef;
     private final String tenantId;
     private String domainContext;
