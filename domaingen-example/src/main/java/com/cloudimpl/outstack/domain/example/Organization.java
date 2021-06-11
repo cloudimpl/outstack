@@ -3,6 +3,7 @@ package com.cloudimpl.outstack.domain.example;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import javax.validation.constraints.NotBlank;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.domain.example.OrganizationCreated;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
@@ -12,6 +13,7 @@ import javax.validation.constraints.NotEmpty;
 public class Organization extends RootEntity {
     private String website ;
     @NotBlank(message = "orgName field cannot be blank in Organization entity")
+    @Id
     @NotEmpty(message = "orgName field cannot be empty or null in Organization entity")
     private final String orgName ;
 

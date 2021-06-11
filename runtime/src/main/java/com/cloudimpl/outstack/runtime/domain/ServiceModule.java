@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.domain;
 
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -18,6 +19,7 @@ import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 @EntityMeta(plural = "ServiceModules",version = "v1")
 public class ServiceModule extends RootEntity {
 
+    @Id
     private final String rootEntity;
     private  String serviceName;
     private String version;

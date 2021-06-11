@@ -49,18 +49,18 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         if (_id != null) {
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION, "rootId violation.");
         }
+       
         this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
                 .ifPresent(e -> {
                     throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EXIST, "root entity {0} already exist", ((T) e).getBRN());
                 });
 
-        if (!event.entityId().equals(id)) {
-            throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION, "event id and given id not equal. {0} , {1}", id, event.entityId());
-        }
+        EntityIdHelper.validateId(id, event);
+
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         EntityHelper.setVersion(event, version);
         T root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
-
+        
         event.setTenantId(getTenantId());
         event.setId(root.id());
         event.setRootId(root.id());
@@ -78,6 +78,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     public <C extends ChildEntity<T>> C create(Class<C> type, String id, Event<C> event) {
         ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+       
         return (C) childContext.create(id, event);
     }
 
@@ -89,6 +90,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         if (_id == null) {
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION, "root tid not available for entity {0}", entityType.getSimpleName());
         }
+       
         T root = (T) this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
                 .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity not available for entity {0}", entityType.getSimpleName()));
 
@@ -118,8 +120,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION, "root tid not available for entity {0}", entityType.getSimpleName());
         }
 
+        String temp = id;
         T root = (T) this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity id {0} not available for entity {1}", id, entityType.getSimpleName()));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity id {0} not available for entity {1}", temp, entityType.getSimpleName()));
 
         EntityIdHelper.validateId(id, root);
         EntityIdHelper.validateId(_id, root);
@@ -139,7 +142,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     public <C extends ChildEntity<T>> C delete(Class<C> type, String id) {
-        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type,null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
         return (C) childContext.delete(id);
     }
 
@@ -151,9 +154,10 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         if (_id == null) {
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION, "root tid not available for entity {0}", entityType.getSimpleName());
         }
-
+        
+        String temp = id;
         T root = (T) this.<T>getEntityProvider().loadEntity(entityType, id, null, null, getTenantId())
-                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity id {0} not available for entity {1}", id, entityType.getSimpleName()));
+                .orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity id {0} not available for entity {1}", temp, entityType.getSimpleName()));
 
         EntityIdHelper.validateId(id, root);
         EntityIdHelper.validateId(_id, root);

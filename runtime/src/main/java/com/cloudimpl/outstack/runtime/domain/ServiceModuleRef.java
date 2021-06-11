@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.domain;
 
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
@@ -27,6 +28,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 @EntityMeta(plural = "ServiceModuleRefs",version = "v1")
 public class ServiceModuleRef extends ChildEntity<DomainContext> {
 
+    @Id
     private final String serviceRef;
 
     public ServiceModuleRef(String serviceRef) {

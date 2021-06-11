@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
+import com.cloudimpl.outstack.runtime.EntityMetaDetail;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.text.MessageFormat;
 import java.util.Objects;
@@ -22,10 +24,10 @@ public abstract class RootEntity extends Entity {
                 Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
             }
             case OPTIONAL: {
-                return makeRN(this.getClass(), getMeta().getVersion(), entityId(), getTenantId());
+                return makeRN(this.getClass(), getMeta().getVersion(),persistedId(), getTenantId());
             }
             default: {
-                return makeRN(this.getClass(), getMeta().getVersion(), entityId(), null);
+                return makeRN(this.getClass(), getMeta().getVersion(), persistedId(), null);
             }
         }
     }
@@ -91,10 +93,11 @@ public abstract class RootEntity extends Entity {
     }
 
     public static String makeRN(Class<? extends RootEntity> type, String version, String entityId, String tenantId) {
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(type);
         if (tenantId != null) { //rrn:restrata:identity:tenant/1234/User/1/Device/12"
-            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}", tenantId, version, type.getSimpleName(), entityId);
+            return MessageFormat.format("tenant/{0}/{1}/{2}/{3}", tenantId, version, type.getSimpleName(), meta.isIdIgnoreCase()?entityId.toLowerCase():entityId);
         } else {
-            return MessageFormat.format("{0}/{1}/{2}", version, type.getSimpleName(), entityId);
+            return MessageFormat.format("{0}/{1}/{2}", version, type.getSimpleName(), meta.isIdIgnoreCase()?entityId.toLowerCase():entityId);
         }
     }
 
