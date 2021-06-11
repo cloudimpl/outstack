@@ -10,6 +10,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,14 +38,26 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         //this.eventStream.flux().publishOn(Schedulers.parallel()).doOnNext(this::onEvent).subscribe();
     }
 
-//    public void publish(EventTxList txList) {
-//        txList.getEvents().forEach(this::publish);
-//    }
+
+    public  void saveTx(EntityContextProvider.Transaction transaction) {
+        List<Event> events = transaction.getEventList();
+
+        startTransaction();
+        for (Event event : events) {
+            System.out.println("tx: " + event);
+            Entity e = applyEvent(event);
+            System.out.println("entity: " + e + " event : " + event);
+        }
+        endTransaction();
+    }
+    
+    protected abstract void startTransaction();
+    
+    protected abstract void endTransaction();
+    
     public String generateTid() {
         return TID_PREFIX+UUID.randomUUID().toString();
     }
-
-    public abstract void saveTx(EntityContextProvider.Transaction transaction);
     
 //    public <K extends Entity> K loadEntityWithClone(String resourceName) {
 //         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);

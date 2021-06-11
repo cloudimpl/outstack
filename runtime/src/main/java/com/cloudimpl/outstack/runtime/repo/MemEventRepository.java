@@ -53,28 +53,20 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         super(rootType, resourceHelper, eventStream);
     }
 
+
     @Override
-    public synchronized void saveTx(EntityContextProvider.Transaction transaction) {
-        List<Event> events = transaction.getEventList();
-
-        for (Event event : events) {
-            System.out.println("tx: " + event);
-            Entity e = applyEvent(event);
-            System.out.println("entity: " + e + " event : " + event);
-        }
-    }
-
     protected void startTransaction()
     {
         
     }
     
+    @Override
     protected void endTransaction()
     {
         
     }
     
-    protected void createEntity(Entity e)
+    protected void saveEntity(Entity e)
     {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
         mapEntites.put(resourceHelper.getFQBrn(e), e);
@@ -165,7 +157,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
             EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
         }
-        createEntity(e);
+        saveEntity(e);
   //      mapEntites.put(resourceHelper.getFQTrn(e), e);
   //      mapEntites.put(resourceHelper.getFQBrn(e), e);
         return e;
@@ -198,7 +190,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         deleteEntity(resourceHelper.getFQBrn(e));
         e = e.rename(event.entityId());
         EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-        createEntity(e);
+        saveEntity(e);
    //     mapEntites.put(resourceHelper.getFQBrn(e), e);
     //    mapEntites.put(resourceHelper.getFQTrn(e), e);
         return e;
