@@ -10,42 +10,45 @@ import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.spring.component.Cluster;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
-import java.time.Duration;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.net.URISyntaxException;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
  *
@@ -62,7 +65,7 @@ public class Controller {
     @PostMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
-    private Mono<Object> createRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
+    private Mono<ResponseEntity<Object>> createRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) throws URISyntaxException {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
@@ -72,7 +75,9 @@ public class Controller {
                 .withCommand(action.getName()).withPayload(body)
                 .withVersion(version)
                 .withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onRootEntityCreation(context, version, rootEntity, r));
+        return cluster.requestReply(serviceDesc.getServiceName(), request)
+                .onErrorMap(this::onError)
+                .map(e -> onRootEntityCreation(context, version, rootEntity, e));
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
@@ -95,7 +100,7 @@ public class Controller {
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
-    private Mono<Object> createChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
+    private Mono<ResponseEntity<Object>> createChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + child.getName());
@@ -312,26 +317,37 @@ public class Controller {
         }
     }
 
-    private Object onRootEntityCreation(String context, String version, String rootEntity, Object resource) {
-        if (Entity.class.isInstance(resource)) {
-            // HttpHeaders headers = new HttpHeaders();
-            // headers.setLocation(WebFluxLinkBuilder.linkTo(Controller.class).slash(context).slash(version).slash(rootEntity).slash(Entity.class.cast(resource).id()).withSelfRel().);
-            return ResponseEntity.created(WebMvcLinkBuilder.linkTo(Controller.class).slash(context).slash(version).slash(rootEntity).slash(Entity.class.cast(resource).id()).toUri()).build();
-            //return created(URI.create(MessageFormat.format("{0}/{1}/{2}/{3}", context, version, rootEntity, Entity.class.cast(resource).id()))).build();
-            //return created(WebMvcLinkBuilder.linkTo(Controller.class).slash(context).slash(version).slash(rootEntity).slash(Entity.class.cast(resource).id()).toUri()).build();
-        } else {
-            return resource;
+    private ResponseEntity<Object> onRootEntityCreation(String context, String version, String rootEntity, Object resource) {
+        if (resource instanceof LinkedHashMap) {
+            LinkedHashMap<?, ?> response = (LinkedHashMap<?, ?>) resource;
+            if (response.containsKey("_id")) {
+                return ResponseEntity
+                        .created(WebMvcLinkBuilder.linkTo(Controller.class)
+                                .slash(context)
+                                .slash(version)
+                                .slash(rootEntity)
+                                .slash(response.get("_id")).toUri())
+                        .body(resource);
+            }
         }
+        return ResponseEntity.status(HttpStatus.CREATED).body(resource);
     }
 
-    private Object onChildEntityCreation(String context, String version, String rootEntity, String rootId, String childType, Object resource) {
-        if (Entity.class.isInstance(resource)) {
-            return ResponseEntity.created(WebMvcLinkBuilder.linkTo(Controller.class).slash(context).slash(version).slash(rootEntity).slash(rootId).slash(childType).slash(Entity.class.cast(resource).id()).toUri()).build();
-            //return created(URI.create(MessageFormat.format("{0}/{1}/{2}/{3}", context, version, rootEntity, Entity.class.cast(resource).id()))).build();
-            //return created(WebMvcLinkBuilder.linkTo(Controller.class).slash(context).slash(version).slash(rootEntity).slash(rootId).slash(childType).slash(Entity.class.cast(resource).id()).toUri()).build();
-        } else {
-            return resource;
+    private ResponseEntity<Object> onChildEntityCreation(String context, String version, String rootEntity, String rootId, String childType, Object resource) {
+        if (resource instanceof LinkedHashMap) {
+            LinkedHashMap<?, ?> response = (LinkedHashMap<?, ?>) resource;
+            if (response.containsKey("_id")) {
+                return ResponseEntity.created(WebMvcLinkBuilder.linkTo(Controller.class)
+                        .slash(context)
+                        .slash(version)
+                        .slash(rootEntity)
+                        .slash(rootId)
+                        .slash(childType)
+                        .slash(response.get("_id")).toUri())
+                        .body(resource);
+            }
         }
+        return ResponseEntity.status(HttpStatus.CREATED).body(resource);
     }
 
     private Throwable onError(Throwable thr) {
