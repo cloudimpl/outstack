@@ -53,147 +53,37 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         super(rootType, resourceHelper, eventStream);
     }
 
+    @Override
+    protected void startTransaction() {
+
+    }
 
     @Override
-    protected void startTransaction()
-    {
-        
+    protected void endTransaction() {
+
     }
-    
-    @Override
-    protected void endTransaction()
-    {
-        
-    }
-    
-    protected void saveEntity(Entity e)
-    {
+
+    protected void saveEntity(Entity e) {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
         mapEntites.put(resourceHelper.getFQBrn(e), e);
     }
-    
-    protected <C extends ChildEntity<T>> Collection<C> getAllChildByType(String rootBrn,Class<T> rootType,String id,Class<C> childType)
-    {
+
+    protected <C extends ChildEntity<T>> Collection<C> getAllChildByType(String rootBrn, Class<T> rootType, String id, Class<C> childType) {
         return mapEntites.entrySet().stream()
                 .filter(e -> e.getValue().getClass() == childType)
                 .filter(e -> e.getKey().startsWith(rootBrn))
-                .map(e->e.getValue())
-                .map(c->(C)c)
+                .map(e -> e.getValue())
+                .map(c -> (C) c)
                 .collect(Collectors.toList());
     }
-    
-    protected Entity getEntity(String rn)
-    {
-        Entity e = mapEntites.get(rn);
-        return e;
-    }
-    
-    protected Entity deleteEntity(String rn)
-    {
-        return mapEntites.remove(rn);
-    }
-    
-    protected void renameEntity(Entity oldEntity,Entity newEntity)
-    {
-        
-    }
-   
-    protected void updateEntity(Entity e)
-    {
-        
-    }
-    
-    protected void addEvent(Event e)
-    {
-        
-    }
-    
+
     @Override
-    public synchronized <T extends Entity> T applyEvent(Event event) {
-        Entity e = null;
-        switch (event.getAction()) {
-            case CREATE: {
-                e = createEntity(event);
-                break;
-            }
-            case UPDATE: {
-                e = updateEntity(event);
-                break;
-            }
-            case DELETE: {
-                e = deleteEntity(event);
-                break;
-            }
-            case RENAME: {
-                EntityRenamed renamedEvent = (EntityRenamed) event;
-                e = renamEntity(renamedEvent);
-                break;
-            }
-        }
-        System.out.println("entity: " + e);
-        System.out.println("event: " + event);
-        long nextSeq = getCheckpoint(event.getRootEntityTRN()).getSeq() + 1;
-        event.setSeqNum(nextSeq);
-        getCheckpoint(event.getRootEntityTRN()).setSeq(nextSeq);
-        events.add(event);
-        return (T) e;
-    }
-
-    private EntityCheckpoint getCheckpoint(String rootTrn) {
+    protected EntityCheckpoint getCheckpoint(String rootTrn) {
         return checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn));
-    }
-
-    private Entity createEntity(Event event) {
-        Entity e;
-        if (event.isRootEvent()) {
-            e = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
-            e.applyEvent(event);
-            EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
-            EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-        } else {
-            RootEntity root = (RootEntity) getEntity(resourceHelper.getFQTrn(event.getRootEntityTRN()));
-            e = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
-            e.applyEvent(event);
-            EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
-            EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-        }
-        saveEntity(e);
-  //      mapEntites.put(resourceHelper.getFQTrn(e), e);
-  //      mapEntites.put(resourceHelper.getFQBrn(e), e);
-        return e;
     }
 
     private String resourcePrefix(String prefix) {
         return MessageFormat.format("{0}:{1}", prefix, resourceHelper);
-    }
-
-    private Entity updateEntity(Event event) {
-
-        Entity e = getEntity(resourceHelper.getFQTrn(event.getEntityTRN()));
-        e.applyEvent(event);
-        EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-        return e;
-    }
-
-    private Entity deleteEntity(Event event) {
-        return deleteEntity(resourceHelper.getFQBrn(event.getEntityRN()));
-    }
-
-    private Entity renamEntity(EntityRenamed event) {
-        String rn;
-        if (event.isRootEvent()) {
-            rn = RootEntity.makeTRN(event.getOwner(), event.getMeta().getVersion(), event.id(), event.tenantId());
-        } else {
-            rn = ChildEntity.makeTRN(event.getRootOwner(), event.getMeta().getVersion(), event.rootId(), event.getOwner(), event.id(), event.tenantId());
-        }
-        Entity e = getEntity(resourceHelper.getFQTrn(rn));
-        deleteEntity(resourceHelper.getFQBrn(e));
-        e = e.rename(event.entityId());
-        EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-        saveEntity(e);
-   //     mapEntites.put(resourceHelper.getFQBrn(e), e);
-    //    mapEntites.put(resourceHelper.getFQTrn(e), e);
-        return e;
     }
 
     @Override
@@ -217,8 +107,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 break;
         }
         String fqtrn = trn;
-      
-        Collection<K> result = getAllChildByType(trn,rootType,id,childType)
+
+        Collection<K> result = getAllChildByType(trn, rootType, id, childType)
                 .stream()
                 //mapEntites.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
                 //.filter(e -> e.getKey().startsWith(fqtrn))
@@ -420,6 +310,98 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 .filter(e -> onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         return onPageable(cols, paging);
+    }
+
+    @Override
+    protected <C extends ChildEntity<T>> Collection<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    protected void saveRootEntityBrnIfNotExist(Entity e) {
+        Entity old = mapEntites.putIfAbsent(resourceHelper.getFQBrn(e), e);
+        if (old != null) {
+            throw new RepositoryException("{0} exist.", e.getBRN());
+        }
+    }
+
+    @Override
+    protected void saveRootEntityTrnIfNotExist(Entity e) {
+        Entity old = mapEntites.putIfAbsent(resourceHelper.getFQTrn(e), e);
+        if (old != null) {
+            throw new RepositoryException("{0} exist.", e.getTRN());
+        }
+    }
+
+    @Override
+    protected void saveRootEntityBrnIfExist(Entity e) {
+        mapEntites.put(resourceHelper.getFQBrn(e), e);
+    }
+
+    @Override
+    protected void saveRootEntityTrnIfExist(Entity e) {
+        mapEntites.put(resourceHelper.getFQTrn(e), e);
+    }
+
+    @Override
+    protected void saveChildEntityBrnIfNotExist(Entity e) {
+        Entity old = mapEntites.putIfAbsent(resourceHelper.getFQBrn(e), e);
+        if (old != null) {
+            throw new RepositoryException("{0} exist.", e.getBRN());
+        }
+    }
+
+    @Override
+    protected void saveChildEntityTrnIfNotExist(Entity e) {
+        Entity old = mapEntites.putIfAbsent(resourceHelper.getFQTrn(e), e);
+        if (old != null) {
+            throw new RepositoryException("{0} exist.", e.getTRN());
+        }
+    }
+
+    @Override
+    protected void saveChildEntityBrnIfExist(Entity e) {
+        mapEntites.put(resourceHelper.getFQBrn(e), e);
+    }
+
+    @Override
+    protected void saveChildEntityTrnIfExist(Entity e) {
+        mapEntites.put(resourceHelper.getFQTrn(e), e);
+    }
+
+    @Override
+    protected void deleteRootEntityBrnById(Class<T> rootType, String id, String tenantId) {
+        EntityIdHelper.validateEntityId(id);
+        String brn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId));
+        mapEntites.remove(brn);
+    }
+
+    @Override
+    protected void deleteRootEntityTrnById(Class<T> rootType, String id, String tenantId) {
+        EntityIdHelper.validateTechnicalId(id);
+        String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
+        mapEntites.remove(trn);
+    }
+
+    @Override
+    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
+        EntityIdHelper.validateTechnicalId(id);
+        EntityIdHelper.validateEntityId(childId);
+        String brn = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId));
+        mapEntites.remove(brn);
+    }
+
+    @Override
+    protected <C extends ChildEntity<T>> void deleteChildEntityTrnById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
+        EntityIdHelper.validateTechnicalId(id);
+        EntityIdHelper.validateTechnicalId(childId);
+        String brn = resourceHelper.getFQTrn(ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId));
+        mapEntites.remove(brn);
+    }
+
+    @Override
+    protected void addEvent(Event event) {
+        events.add(event);
     }
 
 }

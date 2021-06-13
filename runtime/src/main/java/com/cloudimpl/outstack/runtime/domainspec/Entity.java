@@ -122,6 +122,7 @@ public abstract class Entity implements IResource {
 
         private long createdDate;
         private long updatedDate;
+        private long lastSeq;
         private String version;
         private boolean idIgnoreCase;
         private boolean rootIdIgnoreCase;
@@ -158,6 +159,15 @@ public abstract class Entity implements IResource {
             return version;
         }
 
+        public long getLastSeq() {
+            return lastSeq;
+        }
+
+        public void setLastSeq(long lastSeq) {
+            this.lastSeq = lastSeq;
+        }
+
+        
         public long createdDate() {
             return this.createdDate;
         }

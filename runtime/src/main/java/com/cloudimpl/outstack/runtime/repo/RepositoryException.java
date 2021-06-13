@@ -16,5 +16,11 @@ public class RepositoryException extends RuntimeException{
     public RepositoryException(String format,Object... args) {
         super(MessageFormat.format(format, args));
     }
+
+    public RepositoryException(Throwable thr) {
+        super(thr);
+    }
+    
+    
     
 }
