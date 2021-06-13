@@ -5,6 +5,10 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+
 /**
  *
  * @author nuwansa
@@ -16,6 +20,7 @@ public abstract class Command implements Input, ICommand {
     private String _tenantId;
     private String _version;
     private final String _commandName;
+    private List<MultipartFile> _files;
 
     public Command(Builder builder) {
         this._rootId = builder.rootId;
@@ -23,6 +28,7 @@ public abstract class Command implements Input, ICommand {
         this._id = builder.id;
         this._version = builder.version;
         this._commandName = builder.commandName;
+        this._files = builder.files;
     }
 
     public final String rootId() {
@@ -47,6 +53,14 @@ public abstract class Command implements Input, ICommand {
 
     protected void setVersion(String version) {
         this._version = version;
+    }
+
+    public List<MultipartFile> get_files() {
+        return _files;
+    }
+
+    public void set_files(List<MultipartFile> _files) {
+        this._files = _files;
     }
 
     @Override
@@ -76,6 +90,7 @@ public abstract class Command implements Input, ICommand {
         protected String tenantId;
         protected String version;
         protected String commandName;
+        protected List<MultipartFile> files;
 
         public Builder withRootId(String rootId) {
             this.rootId = rootId;
@@ -99,6 +114,11 @@ public abstract class Command implements Input, ICommand {
 
         public Builder withCommandName(String commandName) {
             this.commandName = commandName;
+            return this;
+        }
+
+        public Builder withFiles(List<MultipartFile> files) {
+            this.files = files;
             return this;
         }
 
