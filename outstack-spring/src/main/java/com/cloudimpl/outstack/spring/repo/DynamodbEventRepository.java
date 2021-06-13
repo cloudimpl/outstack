@@ -23,6 +23,7 @@ import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
 import com.amazonaws.services.dynamodbv2.model.ReturnValuesOnConditionCheckFailure;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
+import com.amazonaws.services.dynamodbv2.model.Update;
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.EntityCheckpoint;
 import com.cloudimpl.outstack.runtime.EntityContextProvider;
@@ -42,6 +43,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -111,14 +113,14 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         item.put(this.partitionKey, new AttributeValue(prefix));
         item.put(this.rangeKey, new AttributeValue(rn));
         item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(""+e.getMeta().getLastSeq()));
+        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
-        Put createProduct = new Put()
+        Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
                 .withConditionExpression("attribute_not_exists(" + this.rangeKey + ")");
-        txContext.get().add(new TransactWriteItem().withPut(createProduct));
+        txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
 
     @Override
@@ -128,24 +130,58 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         item.put(this.partitionKey, new AttributeValue(trn));
         item.put(this.rangeKey, new AttributeValue(trn));
         item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
+        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
-        Put createProduct = new Put()
+        Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
                 .withConditionExpression("attribute_not_exists(" + this.partitionKey + ")");
+
+        txContext.get().add(new TransactWriteItem().withPut(createEntity));
+    }
+
+    @Override
+    protected void saveRootEntityBrnIfExist(long lastSeq,Entity e) {
+        String rn = resourceHelper.getFQBrn(e.getBRN());
+        String prefix = rn.substring(rn.lastIndexOf("/"));
+        HashMap<String, AttributeValue> item = new HashMap<>();
+        item.put(this.partitionKey, new AttributeValue(prefix));
+        item.put(this.rangeKey, new AttributeValue(rn));
+
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":lastSeq", new AttributeValue().withN(String.valueOf(lastSeq)));
+        expressionAttributeValues.put(":checkLastSeq", new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        expressionAttributeValues.put(":json", new AttributeValue(GsonCodec.encode(e)));
         
-        txContext.get().add(new TransactWriteItem().withPut(createProduct));
+        Update updateEntity = new Update()
+                .withTableName(this.tableName)
+                .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
+                .withExpressionAttributeValues(expressionAttributeValues)
+                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKey + ")")
+                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
+        txContext.get().add(new TransactWriteItem().withUpdate(updateEntity));
     }
-
+    
     @Override
-    protected void saveRootEntityBrnIfExist(Entity e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    protected void saveRootEntityTrnIfExist(long lastSeq,Entity e) {
+        String trn = resourceHelper.getFQBrn(e.getTRN());
+        HashMap<String, AttributeValue> item = new HashMap<>();
+        item.put(this.partitionKey, new AttributeValue(trn));
+        item.put(this.rangeKey, new AttributeValue(trn));
+        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
+        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
-    @Override
-    protected void saveRootEntityTrnIfExist(Entity e) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":lastSeq", new AttributeValue().withN(String.valueOf(lastSeq)));
+        
+        Put createEntity = new Put()
+                .withTableName(this.tableName)
+                .withItem(item)
+                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
+                .withConditionExpression("attribute_exists(" + this.partitionKey + ")");
+
+        txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
 
     @Override
@@ -159,12 +195,12 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void saveChildEntityBrnIfExist(Entity e) {
+    protected void saveChildEntityBrnIfExist(long lastSeq,Entity e) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    protected void saveChildEntityTrnIfExist(Entity e) {
+    protected void saveChildEntityTrnIfExist(long lastSeq,Entity e) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -209,12 +245,12 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    public <T extends ChildEntity<T>> Optional<T> getChildById(Class<T> rootType, String id, Class<T> childType, String childId, String tenantId) {
+    public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public <T extends ChildEntity<T>> ResultSet<T> getAllChildByType(Class<T> rootType, String id, Class<T> childType, String tenantId, Query.PagingRequest paging) {
+    public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -224,7 +260,12 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    public <T extends ChildEntity<T>> ResultSet<Event<T>> getEventsByChildId(Class<T> rootType, String id, Class<T> childType, String childId, String tenantId, Query.PagingRequest paging) {
+    public <C extends ChildEntity<T>> ResultSet<Event<C>> getEventsByChildId(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    protected void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

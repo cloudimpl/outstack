@@ -44,6 +44,11 @@ public class EntityHelper {
         e.getMeta().setCreatedDate(millis);
     }
     
+    public static void setLastEq(Entity e,long lastSeq)
+    {
+        e.getMeta().setLastSeq(lastSeq);
+    }
+    
     public  static  void validateEvent(Class<? extends RootEntity> rootType, Event event){
         if(event.getRootOwner()!= rootType){
             throw new DomainEventException(ErrorCode.BASIC_VIOLATION,"root entity type {0} mismatched with event root owner {1}",rootType,event.getRootOwner());
