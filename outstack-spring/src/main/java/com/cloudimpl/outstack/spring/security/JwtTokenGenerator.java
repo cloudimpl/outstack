@@ -45,12 +45,14 @@ public class JwtTokenGenerator {
 
     private final JWSSigner signer;
 
+    public static JwtTokenGenerator instance;
     public JwtTokenGenerator(@Autowired(required = false) JwtKeyProvider keyProvider) {
         if (keyProvider != null) {
             signer = new RSASSASigner(keyProvider.getPrivateKey());
         } else {
             signer = null;
         }
+        JwtTokenGenerator.instance = this;
     }
 
     public JwtToken createAccessToken(JwtTokenBuilder builder) {
@@ -65,6 +67,11 @@ public class JwtTokenGenerator {
         return builder.build();
     }
 
+    public static JwtTokenGenerator instance()
+    {
+        return JwtTokenGenerator.instance;
+    }
+    
     private String createToken(JwtToken token) {
         try {
             SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).build(), token.getJwt());
