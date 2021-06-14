@@ -11,6 +11,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -90,22 +91,24 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private Entity createEntity(Event event) {
         Entity e;
         if (event.isRootEvent()) {
-            e = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
-            e.applyEvent(event);
-            EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
-            EntityHelper.setLastEq(e, event.getSeqNum());
-            EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-            saveRootEntityBrnIfNotExist(e);
-            saveRootEntityTrnIfNotExist(e);
+            RootEntity root = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
+            root.applyEvent(event);
+            EntityHelper.setCreatedDate(root, event.getMeta().createdDate());
+            EntityHelper.setLastEq(root, event.getSeqNum());
+            EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+            saveRootEntityBrnIfNotExist(root);
+            saveRootEntityTrnIfNotExist(root);
+            e = root;
         } else {
             RootEntity root = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
-            e = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
-            e.applyEvent(event);
-            EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
-            EntityHelper.setLastEq(e, event.getSeqNum());
-            EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-            saveChildEntityBrnIfNotExist(e);
-            saveChildEntityTrnIfNotExist(e);
+            ChildEntity child = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
+            child.applyEvent(event);
+            EntityHelper.setCreatedDate(child, event.getMeta().createdDate());
+            EntityHelper.setLastEq(child, event.getSeqNum());
+            EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
+            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), child);
+            saveChildEntityTrnIfNotExist(event.getRootEntityTRN(), child);
+            e = child;
         }
         //      mapEntites.put(resourceHelper.getFQTrn(e), e);
         //      mapEntites.put(resourceHelper.getFQBrn(e), e);
@@ -116,21 +119,23 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
         Entity e;
         if (event.isRootEvent()) {
-            e = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
-            EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-            long lastSeq = e.getMeta().getLastSeq();
-            EntityHelper.setLastEq(e, event.getSeqNum());
-            e.applyEvent(event);
-            saveRootEntityBrnIfExist(lastSeq,e);
-            saveRootEntityTrnIfExist(lastSeq,e);
+            RootEntity root = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
+            EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+            long lastSeq = root.getMeta().getLastSeq();
+            EntityHelper.setLastEq(root, event.getSeqNum());
+            root.applyEvent(event);
+            saveRootEntityBrnIfExist(lastSeq, root);
+            saveRootEntityTrnIfExist(lastSeq, root);
+            e = root;
         } else {
-            e = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
-            EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
-            long lastSeq = e.getMeta().getLastSeq();
-            EntityHelper.setLastEq(e, event.getSeqNum());
-            e.applyEvent(event);
-            saveChildEntityBrnIfExist(lastSeq,e);
-            saveChildEntityTrnIfExist(lastSeq,e);
+            ChildEntity child = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
+            EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
+            long lastSeq = child.getMeta().getLastSeq();
+            EntityHelper.setLastEq(child, event.getSeqNum());
+            child.applyEvent(event);
+            saveChildEntityBrnIfExist(lastSeq, event.getRootEntityTRN(), child);
+            saveChildEntityTrnIfExist(lastSeq, event.getRootEntityTRN(), child);
+            e = child;
         }
         return e;
     }
@@ -146,20 +151,20 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private void renameEntity(EntityRenamed event) {
         if (event.isRootEvent()) {
             deleteRootEntityBrnById(event.getOwner(), event.getOldEntityId(), event.tenantId());
-            Entity e = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
+            RootEntity e = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
             long lastSeq = e.getMeta().getLastSeq();
             e = e.rename(event.entityId());
             EntityHelper.setLastEq(e, event.getSeqNum());
-            saveRootEntityTrnIfExist(lastSeq,e);
+            saveRootEntityTrnIfExist(lastSeq, e);
             saveRootEntityBrnIfNotExist(e);
         } else {
             deleteChildEntityBrnById(event.getRootOwner(), event.rootId(), event.getOwner(), event.getOldEntityId(), event.tenantId());
-            Entity e = (RootEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
+            ChildEntity e = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
             long lastSeq = e.getMeta().getLastSeq();
             e = e.rename(event.entityId());
             EntityHelper.setLastEq(e, event.getSeqNum());
-            saveChildEntityTrnIfExist(lastSeq,e);
-            saveChildEntityBrnIfNotExist(e);
+            saveChildEntityTrnIfExist(lastSeq, event.getRootEntityTRN(), e);
+            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), e);
         }
     }
 
@@ -169,21 +174,21 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     protected abstract <C extends ChildEntity<T>> Collection<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType);
 
-    protected abstract void saveRootEntityBrnIfNotExist(Entity e);
+    protected abstract void saveRootEntityBrnIfNotExist(RootEntity e);
 
-    protected abstract void saveRootEntityTrnIfNotExist(Entity e);
+    protected abstract void saveRootEntityTrnIfNotExist(RootEntity e);
 
-    protected abstract void saveRootEntityBrnIfExist(long lastSeq, Entity e);
+    protected abstract void saveRootEntityBrnIfExist(long lastSeq, RootEntity e);
 
-    protected abstract void saveRootEntityTrnIfExist(long lastSeq, Entity e);
+    protected abstract void saveRootEntityTrnIfExist(long lastSeq, RootEntity e);
 
-    protected abstract void saveChildEntityBrnIfNotExist(Entity e);
+    protected abstract void saveChildEntityBrnIfNotExist(String rootTrn, ChildEntity e);
 
-    protected abstract void saveChildEntityTrnIfNotExist(Entity e);
+    protected abstract void saveChildEntityTrnIfNotExist(String rootTrn, ChildEntity e);
 
-    protected abstract void saveChildEntityBrnIfExist(long lastSeq, Entity e);
+    protected abstract void saveChildEntityBrnIfExist(long lastSeq, String rootTrn, ChildEntity e);
 
-    protected abstract void saveChildEntityTrnIfExist(long lastSeq, Entity e);
+    protected abstract void saveChildEntityTrnIfExist(long lastSeq, String rootTrn, ChildEntity e);
 
     protected abstract void deleteRootEntityBrnById(Class<T> rootType, String id, String tenantId);
 
@@ -195,8 +200,8 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     protected abstract EntityCheckpoint getCheckpoint(String rootTrn);
 
-    protected abstract void updateCheckpoint(long lastSeq,EntityCheckpoint checkpoint);
-  
+    protected abstract void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint);
+
     protected abstract void addEvent(Event event);
 
     public String generateTid() {
@@ -212,5 +217,9 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         } else {
             return getChildById(rootType, id, childType, childId, tenantId).map(e -> e.cloneEntity());
         }
+    }
+
+    protected String resourcePrefix(String prefix) {
+        return MessageFormat.format("{0}:{1}", prefix, resourceHelper);
     }
 }

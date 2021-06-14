@@ -82,10 +82,6 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         return checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn));
     }
 
-    private String resourcePrefix(String prefix) {
-        return MessageFormat.format("{0}:{1}", prefix, resourceHelper);
-    }
-
     @Override
     public synchronized <K extends ChildEntity<T>> ResultSet<K> getAllChildByType(Class<T> rootType, String id, Class<K> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
@@ -112,9 +108,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 .stream()
                 //mapEntites.entrySet().stream().filter(e -> e.getValue().getClass() == childType)
                 //.filter(e -> e.getKey().startsWith(fqtrn))
-                .filter(e -> onFilter(e, paging.getParams()))
+                .filter(e -> EventRepoUtil.onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
-        ResultSet<K> col = onPageable(result, paging);
+        ResultSet<K> col = EventRepoUtil.onPageable(result, paging);
         return col;
     }
 
@@ -161,103 +157,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 .filter(e -> e.getKey().startsWith(fqtrn))
                 .filter(e -> e.getValue().getClass() == rootType)
                 .map(e -> (T) e.getValue())
-                .filter(e -> onFilter(e, paging.getParams()))
+                .filter(e -> EventRepoUtil.onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
-        return onPageable(filterCollection, paging);
-    }
-
-    private int compare(String name, Object left, Object right) {
-        JsonObject leftJson = GsonCodecRuntime.encodeToJson(left).getAsJsonObject();
-        JsonObject rightJson = GsonCodecRuntime.encodeToJson(right).getAsJsonObject();
-        JsonElement leftEl = leftJson.get(name);
-        JsonElement rightEl = rightJson.get(name);
-        if (leftEl == null && rightEl == null) {
-            //throw new RepositoryException("null not supported for sorting: " + name + " field");
-            return 0;
-        } else if (leftEl == null && rightEl != null) {
-            return 1;
-        } else if (leftEl != null && rightEl == null) {
-            return -1;
-        }
-        if (!leftEl.isJsonPrimitive() || !rightEl.isJsonPrimitive()) {
-            throw new RepositoryException("only primitive types supported for sorting");
-        }
-        JsonPrimitive leftPrim = leftEl.getAsJsonPrimitive();
-        JsonPrimitive rightPrim = rightEl.getAsJsonPrimitive();
-        if (leftPrim.isNumber() && rightPrim.isNumber()) {
-            return leftPrim.getAsBigDecimal().compareTo(rightPrim.getAsBigDecimal());
-        } else if (leftPrim.isString() && rightPrim.isString()) {
-            return leftPrim.getAsString().compareToIgnoreCase(rightPrim.getAsString());
-        } else if (leftPrim.isBoolean() && rightPrim.isBoolean()) {
-            return Boolean.compare(leftPrim.getAsBoolean(), rightPrim.getAsBoolean());
-        }
-        throw new RepositoryException("unsupported data type for sorting . {0} : {1} ", leftJson, rightJson);
-    }
-
-    private <T> boolean onFilter(T item, Map<String, String> params) {
-        if (params.isEmpty()) {
-            return true;
-        }
-        JsonObject json = GsonCodecRuntime.encodeToJson(item).getAsJsonObject();
-        for (Map.Entry<String, String> entry : params.entrySet()) {
-            JsonElement el = json.get(entry.getKey());
-            if (el == null || !el.isJsonPrimitive()) {
-                System.out.println("el " + entry.getKey() + " not found or not an primitive data type");
-                return false;
-            } else {
-                JsonPrimitive jsonPrim = (JsonPrimitive) el;
-                if (jsonPrim.isNumber()) {
-                    BigDecimal target = new BigDecimal(entry.getValue());
-                    if (jsonPrim.getAsBigDecimal().compareTo(target) != 0) {
-                        return false;
-                    }
-                } else if (jsonPrim.isString()) {
-                    if (entry.getValue().startsWith("%") && entry.getValue().length() > 1) {
-                        if (!jsonPrim.getAsString().toLowerCase().endsWith(entry.getValue().substring(1).toLowerCase())) {
-                            return false;
-                        }
-                    } else if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
-                        if (!jsonPrim.getAsString().toLowerCase().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1).toLowerCase())) {
-                            return false;
-                        }
-                    } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
-                        return false;
-                    }
-                } else if (jsonPrim.isBoolean()) {
-                    if (jsonPrim.getAsBoolean() != Boolean.valueOf(entry.getValue())) {
-                        return false;
-                    }
-                } else {
-                    System.out.println("unhandle primitive data type:" + jsonPrim);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    private <T> ResultSet<T> onPageable(Collection<T> result, Query.PagingRequest paging) {
-        if (paging == null) {
-            return new ResultSet<>(result.size(), 1, 0, result);
-        }
-
-        Comparator<T> comparator = null;
-        for (Query.Order order : paging.orders()) {
-            Comparator<T> comp = (left, right) -> compare(order.getName(), left, right);
-            if (order.getDirection() == Query.Direction.DESC) {
-                comp = comp.reversed();
-            }
-            comparator = (comparator == null) ? comp : comparator.thenComparing(comp);
-        }
-        int offset = paging.pageNum() * paging.pageSize();
-        int min = Math.min(result.size() - offset, paging.pageSize());
-        Collection<T> out;
-        if (comparator != null) {
-            out = result.stream().sorted(comparator).skip(offset).limit(min).collect(Collectors.toList());
-        } else {
-            out = result.stream().skip(offset).limit(min < 0 ? 0 : min).collect(Collectors.toList());
-        }
-        return new ResultSet<>(result.size(), (int) Math.ceil(((double) result.size()) / paging.pageSize()), paging.pageNum(), out);
+        return EventRepoUtil.onPageable(filterCollection, paging);
     }
 
     @Override
@@ -281,9 +183,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
         Collection<Event<T>> cols = stream.map(e -> (Event<T>) e)
-                .filter(e -> onFilter(e, paging.getParams()))
+                .filter(e -> EventRepoUtil.onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
-        return onPageable(cols, paging);
+        return EventRepoUtil.onPageable(cols, paging);
     }
 
     @Override
@@ -307,9 +209,9 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             stream = stream.filter(e -> e.getEntityRN().equals(rn));
         }
         Collection<Event<K>> cols = stream.map(e -> (Event<K>) e)
-                .filter(e -> onFilter(e, paging.getParams()))
+                .filter(e -> EventRepoUtil.onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
-        return onPageable(cols, paging);
+        return EventRepoUtil.onPageable(cols, paging);
     }
 
     @Override
@@ -318,7 +220,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveRootEntityBrnIfNotExist(Entity e) {
+    protected void saveRootEntityBrnIfNotExist(RootEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQBrn(e), e);
         if (old != null) {
             throw new RepositoryException("{0} exist.", e.getBRN());
@@ -326,7 +228,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveRootEntityTrnIfNotExist(Entity e) {
+    protected void saveRootEntityTrnIfNotExist(RootEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQTrn(e), e);
         if (old != null) {
             throw new RepositoryException("{0} exist.", e.getTRN());
@@ -334,17 +236,17 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveRootEntityBrnIfExist(Entity e) {
+    protected void saveRootEntityBrnIfExist(long lastSeq,RootEntity e) {
         mapEntites.put(resourceHelper.getFQBrn(e), e);
     }
 
     @Override
-    protected void saveRootEntityTrnIfExist(Entity e) {
+    protected void saveRootEntityTrnIfExist(long lastSeq,RootEntity e) {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
     }
 
     @Override
-    protected void saveChildEntityBrnIfNotExist(Entity e) {
+    protected void saveChildEntityBrnIfNotExist(String rootTrn,ChildEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQBrn(e), e);
         if (old != null) {
             throw new RepositoryException("{0} exist.", e.getBRN());
@@ -352,7 +254,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveChildEntityTrnIfNotExist(Entity e) {
+    protected void saveChildEntityTrnIfNotExist(String rootTrn,ChildEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQTrn(e), e);
         if (old != null) {
             throw new RepositoryException("{0} exist.", e.getTRN());
@@ -360,12 +262,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveChildEntityBrnIfExist(Entity e) {
+    protected void saveChildEntityBrnIfExist(long lastSeq,String rootTrn,ChildEntity e) {
         mapEntites.put(resourceHelper.getFQBrn(e), e);
     }
 
     @Override
-    protected void saveChildEntityTrnIfExist(Entity e) {
+    protected void saveChildEntityTrnIfExist(long lastSeq,String rootTrn,ChildEntity e) {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
     }
 
@@ -402,6 +304,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     protected void addEvent(Event event) {
         events.add(event);
+    }
+
+    @Override
+    protected void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint) {
+        checkpoints.put(checkpoint.getRootTrn(), checkpoint);
     }
 
 }
