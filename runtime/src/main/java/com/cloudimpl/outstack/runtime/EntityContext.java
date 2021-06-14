@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
+import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -113,6 +114,14 @@ public abstract class EntityContext<T extends Entity> implements Context {
     public abstract <R extends RootEntity, K extends ChildEntity<R>> ChildEntityContext<R, K> asChildContext();
 
     public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType) {
+        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, getTenantId());
+    }
+    
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String tenantId) {
+        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
+        {
+            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowd");
+        }
         return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, getTenantId());
     }
 }
