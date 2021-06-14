@@ -36,6 +36,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected final Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector;
     protected final String version;
     protected EntityMetaDetail entityMeta;
+
     public EntityContext(Class<T> entityType, String tenantId, Optional<EntityProvider<? extends RootEntity>> entitySupplier, Supplier<String> idGenerator, Optional<CRUDOperations> crudOperations,
             QueryOperations<?> queryOperation, Optional<Consumer<Event>> eventPublisher, Consumer<Object> validator,
             Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version) {
@@ -92,12 +93,11 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected void addEvent(Event<T> event) {
         this.events.add(event);
     }
-    
-    protected EntityMetaDetail getEntityMeta()
-    {
+
+    protected EntityMetaDetail getEntityMeta() {
         return entityMeta;
     }
-    
+
     public abstract T create(String id, Event<T> event);
 
     public abstract T update(String id, Event<T> event);
@@ -112,8 +112,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
 
     public abstract <R extends RootEntity, K extends ChildEntity<R>> ChildEntityContext<R, K> asChildContext();
 
-    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType, String id) {
-        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, id, getTenantId());
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType) {
+        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, getTenantId());
     }
-
 }

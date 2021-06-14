@@ -29,7 +29,7 @@ public interface EntityQueryContext<T extends Entity>{
     
     <R extends RootEntity> AsyncRootEntityQueryContext<R> asAsyncQueryContext();
     
-    <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String id);
+    <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType);
     
     ResultSet<Event<T>> getEntityEventsById(String id,Query.PagingRequest pageRequest);
     
