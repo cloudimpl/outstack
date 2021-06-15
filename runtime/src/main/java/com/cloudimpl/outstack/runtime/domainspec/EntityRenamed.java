@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityMetaDetail;
+import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**
@@ -25,16 +27,29 @@ public class EntityRenamed extends Event{
         this.entityId = entityId;
         this.rootId = rootId;
         this.oldEntityId = oldEntityId;
+
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getOwner());
+        EntityMetaDetail rootMeta = EntityMetaDetailCache.instance().getEntityMeta(this.getRootOwner());
+        _meta.setIdIgnoreCase(meta.isIdIgnoreCase());
+        _meta.setRootIdIgnoreCase(rootMeta.isIdIgnoreCase());
     }
     
     @Override
     public Class getOwner() {
-        return Util.classForName(this.entityType);
+        if (entityType != null) {
+            return Util.classForName(this.entityType);
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Class getRootOwner() {
-        return Util.classForName(this.rootType);
+        if (rootType != null) {
+            return Util.classForName(this.rootType);
+        } else {
+            return null;
+        }
     }
 
     

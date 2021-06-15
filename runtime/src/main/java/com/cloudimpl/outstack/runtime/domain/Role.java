@@ -15,11 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.domain;
 
-import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
-import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
-import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
-import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.domainspec.*;
 
 /**
  *
@@ -28,6 +24,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 @EntityMeta(plural = "Roles" , version = "v1")
 public class Role extends RootEntity implements ITenantOptional {
 
+    @Id
     private final String roleName;
     private final String tenantId;
     
