@@ -26,13 +26,15 @@ public abstract class Event<T extends Entity> implements IResource, Input {
     private String _id;
     private String _rootId;
     private Action _action;
-    private Meta _meta = new Meta();
+    protected Meta _meta = new Meta();
 
     public Event() {
-        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getOwner());
-        EntityMetaDetail rootMeta = EntityMetaDetailCache.instance().getEntityMeta(this.getRootOwner());
-        _meta.setIdIgnoreCase(meta.isIdIgnoreCase());
-        _meta.setRootIdIgnoreCase(rootMeta.isIdIgnoreCase());
+        if (this.getOwner() != null) {
+            EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getOwner());
+            EntityMetaDetail rootMeta = EntityMetaDetailCache.instance().getEntityMeta(this.getRootOwner());
+            _meta.setIdIgnoreCase(meta.isIdIgnoreCase());
+            _meta.setRootIdIgnoreCase(rootMeta.isIdIgnoreCase());
+        }
     }
 
     public void setTenantId(String tenantId) {

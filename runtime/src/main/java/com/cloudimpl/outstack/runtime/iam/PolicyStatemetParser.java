@@ -76,7 +76,7 @@ public class PolicyStatemetParser {
                 case ROOT_ID_CHILD_ID_ONLY:
                 case ROOT_ID_CHILD_TYPE_ONLY:
                 case ROOT_ID_ONLY: {
-                    ServiceModule serviceModule = context.getEntityQueryProvider(ServiceModule.class, desc.getRootType()).getRoot().orElseThrow(() -> new PolicyValidationError("resource " + desc.getRootType() + " not found"));
+                    ServiceModule serviceModule = context.getEntityQueryProvider(ServiceModule.class).getRoot(desc.getRootType()).orElseThrow(() -> new PolicyValidationError("resource " + desc.getRootType() + " not found"));
                     if (rootType == null) {
                         rootType = desc.getRootType();
 
@@ -106,9 +106,9 @@ public class PolicyStatemetParser {
        
         List<String> actionsList = new LinkedList<>();
         if (!rootType.equals("*")) {
-             ServiceModule service = context.getEntityQueryProvider(ServiceModule.class, rootType).getRoot().get();
-            context.getEntityQueryProvider(ServiceModule.class, service.id()).getChildsByType(CommandHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
-            context.getEntityQueryProvider(ServiceModule.class, service.id()).getChildsByType(QueryHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
+             ServiceModule service = context.getEntityQueryProvider(ServiceModule.class).getRoot(rootType).get();
+            context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),CommandHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
+            context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),QueryHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
         }
 
         for (ActionDescriptor action : actions) {
