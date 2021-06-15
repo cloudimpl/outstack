@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityMetaDetail;
+import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
 import com.cloudimpl.outstack.runtime.util.Util;
 
 /**
@@ -23,16 +25,29 @@ public class EntityDeleted extends Event{
         this.rootType = rootType.getName();
         this.entityId = entityId;
         this.rootEntityId = rootEntityId;
+
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getOwner());
+        EntityMetaDetail rootMeta = EntityMetaDetailCache.instance().getEntityMeta(this.getRootOwner());
+        _meta.setIdIgnoreCase(meta.isIdIgnoreCase());
+        _meta.setRootIdIgnoreCase(rootMeta.isIdIgnoreCase());
     }
     
     @Override
     public Class<? extends Entity> getOwner() {
-        return Util.classForName(entityType);
+        if (entityType != null) {
+            return Util.classForName(entityType);
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return  Util.classForName(rootType);
+        if (rootType != null) {
+            return Util.classForName(rootType);
+        } else {
+            return null;
+        }
     }
 
     @Override
