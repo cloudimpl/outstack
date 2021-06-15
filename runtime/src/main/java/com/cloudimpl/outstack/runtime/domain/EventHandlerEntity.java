@@ -18,6 +18,7 @@ package com.cloudimpl.outstack.runtime.domain;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 
 /**
  *
@@ -25,6 +26,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
  */
 @EntityMeta(plural = "EventHandlers",version = "v1")
 public class EventHandlerEntity extends ChildEntity<ServiceModule>{
+    @Id
     private String handlerName;
     private String entityName;
 
