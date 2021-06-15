@@ -120,10 +120,18 @@ public class SpringServiceDescriptor {
         }
         private final String name;
         private final ActionType actionType;
+        private final boolean fileUploadEnabled;
 
         public ActionDescriptor(String name, ActionType actionType) {
             this.name = name;
             this.actionType = actionType;
+            this.fileUploadEnabled = false;
+        }
+
+        public ActionDescriptor(String name, ActionType actionType, boolean fileUploadEnabled) {
+            this.name = name;
+            this.actionType = actionType;
+            this.fileUploadEnabled = fileUploadEnabled;
         }
 
         public ActionType getActionType() {
