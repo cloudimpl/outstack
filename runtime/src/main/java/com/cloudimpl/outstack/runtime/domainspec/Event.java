@@ -33,6 +33,7 @@ public abstract class Event<T extends Entity> implements IResource, Input {
             EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getOwner());
             EntityMetaDetail rootMeta = EntityMetaDetailCache.instance().getEntityMeta(this.getRootOwner());
             _meta.setIdIgnoreCase(meta.isIdIgnoreCase());
+            _meta.setVersion(rootMeta.getVersion());
             _meta.setRootIdIgnoreCase(rootMeta.isIdIgnoreCase());
         }
     }

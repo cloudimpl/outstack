@@ -65,11 +65,12 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     private final AmazonDynamoDB client;
     private String entityTable;
     private String eventTable;
-    public static final String partitionKey = "partitionKey";
-    public static final String rangeKey = "rangeKey";
-    public static final String json = "json";
-    public static final String lastSeq = "lastSeq";
-    public static final String eventType = "eventType";
+    public static final String partitionKeyColumn = "partitionKey";
+    public static final String rangeKeyColumn = "rangeKey";
+    public static final String jsonColumn = "json";
+    public static final String lastSeqColumn = "lastSeq";
+    public static final String eventTypeColumn = "eventType";
+    public static final String eventOwnerColumn = "eventOwner";
     //private final int partitionCount;
     private final String tableName;
     ThreadLocal<List<TransactWriteItem>> txContext = ThreadLocal.withInitial(() -> new LinkedList<>());
@@ -94,13 +95,13 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
     @Override
     protected void endTransaction() {
-        TransactWriteItemsRequest placeOrderTransaction = new TransactWriteItemsRequest()
+        TransactWriteItemsRequest transaction = new TransactWriteItemsRequest()
                 .withTransactItems(txContext.get())
                 .withReturnConsumedCapacity(ReturnConsumedCapacity.TOTAL);
 
         // Execute the transaction and process the result.
         try {
-            client.transactWriteItems(placeOrderTransaction);
+            client.transactWriteItems(transaction);
             System.out.println("Transaction Successful");
 
         } catch (Exception ex) {
@@ -109,42 +110,37 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected <C extends ChildEntity<T>> Collection<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     protected void saveRootEntityBrnIfNotExist(RootEntity e) {
         String rn = resourceHelper.getFQBrn(e.getBRN());
-        String prefix = rn.substring(rn.lastIndexOf("/"));
+        String prefix = rn.substring(0, rn.lastIndexOf("/"));
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(prefix));
-        item.put(this.rangeKey, new AttributeValue(rn));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        item.put(this.partitionKeyColumn, new AttributeValue(prefix));
+        item.put(this.rangeKeyColumn, new AttributeValue(rn));
+        item.put(this.jsonColumn, new AttributeValue(GsonCodec.encode(e)));
+        item.put(this.lastSeqColumn, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
         Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
-                .withConditionExpression("attribute_not_exists(" + this.rangeKey + ")");
+                .withConditionExpression("attribute_not_exists(" + this.rangeKeyColumn + ")");
         txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
 
     @Override
     protected void saveRootEntityTrnIfNotExist(RootEntity e) {
-        String trn = resourceHelper.getFQBrn(e.getTRN());
+        String trn = resourceHelper.getFQTrn(e.getTRN());
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(trn));
-        item.put(this.rangeKey, new AttributeValue(trn));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        item.put(this.partitionKeyColumn, new AttributeValue(trn));
+        item.put(this.rangeKeyColumn, new AttributeValue(trn));
+        item.put(this.jsonColumn, new AttributeValue(GsonCodec.encode(e)));
+        item.put(this.lastSeqColumn, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
         Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
-                .withConditionExpression("attribute_not_exists(" + this.partitionKey + ")");
+                .withConditionExpression("attribute_not_exists(" + this.partitionKeyColumn + ")");
 
         txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
@@ -152,10 +148,10 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     @Override
     protected void saveRootEntityBrnIfExist(long lastSeq, RootEntity e) {
         String rn = resourceHelper.getFQBrn(e.getBRN());
-        String prefix = rn.substring(rn.lastIndexOf("/"));
+        String prefix = rn.substring(0, rn.lastIndexOf("/"));
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(prefix));
-        item.put(this.rangeKey, new AttributeValue(rn));
+        item.put(this.partitionKeyColumn, new AttributeValue(prefix));
+        item.put(this.rangeKeyColumn, new AttributeValue(rn));
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":lastSeq", new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
@@ -164,9 +160,10 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
         Update updateEntity = new Update()
                 .withTableName(this.tableName)
+                .withKey(item)
                 .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
                 .withExpressionAttributeValues(expressionAttributeValues)
-                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKey + ")")
+                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
         txContext.get().add(new TransactWriteItem().withUpdate(updateEntity));
     }
@@ -175,8 +172,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     protected void saveRootEntityTrnIfExist(long lastSeq, RootEntity e) {
         String trn = resourceHelper.getFQBrn(e.getTRN());
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(trn));
-        item.put(this.rangeKey, new AttributeValue(trn));
+        item.put(this.partitionKeyColumn, new AttributeValue(trn));
+        item.put(this.rangeKeyColumn, new AttributeValue(trn));
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":lastSeq", new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
@@ -185,9 +182,10 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
         Update updateEntity = new Update()
                 .withTableName(this.tableName)
+                .withKey(item)
                 .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
                 .withExpressionAttributeValues(expressionAttributeValues)
-                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKey + ")")
+                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
         txContext.get().add(new TransactWriteItem().withUpdate(updateEntity));
     }
@@ -197,16 +195,16 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         String partitionKey = resourceHelper.getFQTrn(rootTrn);
         String rangeKey = e.getBRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(partitionKey));
-        item.put(this.rangeKey, new AttributeValue(rangeKey));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
+        item.put(this.rangeKeyColumn, new AttributeValue(rangeKey));
+        item.put(this.jsonColumn, new AttributeValue(GsonCodec.encode(e)));
+        item.put(this.lastSeqColumn, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
         Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
-                .withConditionExpression("attribute_not_exists(" + this.rangeKey + ")");
+                .withConditionExpression("attribute_not_exists(" + this.rangeKeyColumn + ")");
         txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
 
@@ -215,16 +213,16 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         String partitionKey = resourceHelper.getFQTrn(rootTrn);
         String rangeKey = e.getTRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(partitionKey));
-        item.put(this.rangeKey, new AttributeValue(rangeKey));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
+        item.put(this.rangeKeyColumn, new AttributeValue(rangeKey));
+        item.put(this.jsonColumn, new AttributeValue(GsonCodec.encode(e)));
+        item.put(this.lastSeqColumn, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
 
         Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
-                .withConditionExpression("attribute_not_exists(" + this.rangeKey + ")");
+                .withConditionExpression("attribute_not_exists(" + this.rangeKeyColumn + ")");
         txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
 
@@ -233,10 +231,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         String partitionKey = resourceHelper.getFQTrn(rootTrn);
         String rangeKey = e.getBRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(partitionKey));
-        item.put(this.rangeKey, new AttributeValue(rangeKey));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
+        item.put(this.rangeKeyColumn, new AttributeValue(rangeKey));
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":lastSeq", new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
@@ -245,8 +241,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
         Update updateEntity = new Update()
                 .withTableName(this.tableName)
+                .withKey(item)
                 .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
-                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKey + ")")
+                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
 
         txContext.get().add(new TransactWriteItem().withUpdate(updateEntity));
@@ -257,10 +254,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         String partitionKey = resourceHelper.getFQTrn(rootTrn);
         String rangeKey = e.getTRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(partitionKey));
-        item.put(this.rangeKey, new AttributeValue(rangeKey));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(e)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
+        item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
+        item.put(this.rangeKeyColumn, new AttributeValue(rangeKey));
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":lastSeq", new AttributeValue().withN(String.valueOf(e.getMeta().getLastSeq())));
@@ -269,8 +264,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
         Update updateEntity = new Update()
                 .withTableName(this.tableName)
+                .withKey(item)
                 .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
-                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKey + ")")
+                .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
 
         txContext.get().add(new TransactWriteItem().withUpdate(updateEntity));
@@ -279,10 +275,10 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     @Override
     protected void deleteRootEntityBrnById(Class<T> rootType, String id, String tenantId) {
         String rn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId));
-        String prefix = rn.substring(rn.lastIndexOf("/"));
+        String prefix = rn.substring(0, rn.lastIndexOf("/"));
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(prefix));
-        item.put(this.rangeKey, new AttributeValue(rn));
+        item.put(this.partitionKeyColumn, new AttributeValue(prefix));
+        item.put(this.rangeKeyColumn, new AttributeValue(rn));
         Delete delete = new Delete()
                 .withTableName(tableName)
                 .withKey(item);
@@ -299,8 +295,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         String partitionKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
         String rangeKey = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId));
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(partitionKey));
-        item.put(this.rangeKey, new AttributeValue(rangeKey));
+        item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
+        item.put(this.rangeKeyColumn, new AttributeValue(rangeKey));
         Delete delete = new Delete()
                 .withTableName(tableName)
                 .withKey(item);
@@ -319,6 +315,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         Map<String, String> expressionAttributesNames = new HashMap<>();
         expressionAttributesNames.put("#partitionKey", "partitionKey");
         expressionAttributesNames.put("#rangeKey", "rangeKey");
+        expressionAttributesNames.put("#json", "json");
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(partitionKey));
@@ -326,9 +323,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(this.tableName)
-                .withAttributesToGet("json")
-                .withKeyConditionExpression("#partitionKey = :partitionKey AND #rangeKey = :rangeKey")
-                .withExpressionAttributeNames(expressionAttributesNames)
+                //.withAttributesToGet("json")
+                .withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey = :rangeKey")
+                //  .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
 
         QueryResult queryResult = client.query(queryRequest);
@@ -342,18 +339,19 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
     @Override
     protected void addEvent(Event event) {
-        String trn = resourceHelper.getFQBrn(event.getRootEntityTRN() + "/events");
+        String trn = resourceHelper.getFQTrn(event.getRootEntityTRN() + "/events");
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(trn));
-        item.put(this.rangeKey, new AttributeValue(String.format("%019d", event.getSeqNum())));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(event)));
-        item.put(this.lastSeq, new AttributeValue().withN(String.valueOf(event.getSeqNum())));
-        item.put(this.eventType, new AttributeValue(event.getClass().getSimpleName()));
+        item.put(this.partitionKeyColumn, new AttributeValue(trn));
+        item.put(this.rangeKeyColumn, new AttributeValue(String.format("%019d", event.getSeqNum())));
+        item.put(this.jsonColumn, new AttributeValue(GsonCodec.encode(event)));
+        item.put(this.lastSeqColumn, new AttributeValue().withN(String.valueOf(event.getSeqNum())));
+        item.put(this.eventTypeColumn, new AttributeValue(event.getClass().getSimpleName()));
+        item.put(this.eventOwnerColumn, new AttributeValue(event.getOwner().getSimpleName()));
 
         Put createEvent = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
-                .withConditionExpression("attribute_not_exists(" + this.rangeKey + ")")
+                .withConditionExpression("attribute_not_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
         txContext.get().add(new TransactWriteItem().withPut(createEvent));
     }
@@ -379,20 +377,42 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         return trn;
     }
 
+    private <C extends ChildEntity<T>> String getChildBrn(Class<T> rootType, String id, Class<C> childType, String tenantId) {
+        EntityIdHelper.validateTechnicalId(id);
+        String trn = null;
+        TenantRequirement tenantReq = Entity.checkTenantRequirement(rootType);
+        switch (tenantReq) {
+            case REQUIRED:
+                trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/" + id + "/" + childType.getSimpleName() + "/";
+                break;
+            case OPTIONAL:
+                if (tenantId != null) {
+                    trn = resourcePrefix("brn") + ":tenant/" + tenantId + "/" + version + "/" + rootType.getSimpleName() + "/" + id + "/" + childType.getSimpleName() + "/";
+                } else {
+                    trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/" + id + "/" + childType.getSimpleName() + "/";
+                }
+                break;
+            default:
+                trn = resourcePrefix("brn") + ":" + version + "/" + rootType.getSimpleName() + "/" + id + "/" + childType.getSimpleName() + "/";
+                break;
+        }
+        return trn;
+    }
+
     @Override
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String partitionKey = getRootBrn(rootType, tenantId);
-        Map<String, String> expressionAttributesNames = new HashMap<>();
-        expressionAttributesNames.put("#partitionKey", "partitionKey");
+        //    Map<String, String> expressionAttributesNames = new HashMap<>();
+        //    expressionAttributesNames.put("#partitionKey", "partitionKey");
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(partitionKey));
 
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(this.tableName)
-                .withAttributesToGet("json")
-                .withKeyConditionExpression("#partitionKey = :partitionKey")
-                .withExpressionAttributeNames(expressionAttributesNames)
+                //           .withAttributesToGet("json")
+                .withKeyConditionExpression("partitionKey = :partitionKey")
+                //           .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
 
         QueryResult queryResult = client.query(queryRequest);
@@ -412,19 +432,18 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
             rKey = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId));
         }
 
-        Map<String, String> expressionAttributesNames = new HashMap<>();
-        expressionAttributesNames.put("#partitionKey", "partitionKey");
-        expressionAttributesNames.put("#rangeKey", "rangeKey");
-
+        //      Map<String, String> expressionAttributesNames = new HashMap<>();
+        //      expressionAttributesNames.put("#partitionKey", "partitionKey");
+        //      expressionAttributesNames.put("#rangeKey", "rangeKey");
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(pKey));
         expressionAttributeValues.put(":rangeKey", new AttributeValue().withS(rKey));
 
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(this.tableName)
-                .withAttributesToGet("json")
-                .withKeyConditionExpression("#partitionKey = :partitionKey AND #rangeKey = :rangeKey")
-                .withExpressionAttributeNames(expressionAttributesNames)
+                //    .withAttributesToGet("json")
+                .withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey = :rangeKey")
+                //          .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
 
         QueryResult queryResult = client.query(queryRequest);
@@ -440,43 +459,142 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         String pKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
         String rKey;
-        if(EntityIdHelper.isTechnicalId(childId))
-        {
+        if (EntityIdHelper.isTechnicalId(childId)) {
             rKey = ChildEntity.makeTRN(rootType, version, id, childType, childId, tenantId);
-        }
-        else
-        {
+        } else {
             rKey = ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId);
+        }
+        //   Map<String, String> expressionAttributesNames = new HashMap<>();
+        //    expressionAttributesNames.put("#partitionKey", "partitionKey");
+        //    expressionAttributesNames.put("#rangeKey", "rangeKey");
+
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(pKey));
+        expressionAttributeValues.put(":rangeKey", new AttributeValue().withS(rKey));
+
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(this.tableName)
+                //        .withAttributesToGet("json")
+                .withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey = :rangeKey")
+                //            .withExpressionAttributeNames(expressionAttributesNames)
+                .withExpressionAttributeValues(expressionAttributeValues);
+
+        QueryResult queryResult = client.query(queryRequest);
+        List<Map<String, AttributeValue>> items = queryResult.getItems();
+        if (items.size() > 0) {
+            return Optional.of(GsonCodec.decode(childType, items.get(0).get("json").getS()));
+        } else {
+            return Optional.empty();
         }
     }
 
     @Override
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String pKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
+        String rkey = getChildBrn(rootType, id, childType, tenantId);
+        //   Map<String, String> expressionAttributesNames = new HashMap<>();
+        //   expressionAttributesNames.put("#partitionKey", "partitionKey");
+        //   expressionAttributesNames.put("#rangeKey", "rangeKey");
+
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(pKey));
+        expressionAttributeValues.put(":rangeKey", new AttributeValue().withS(rkey));
+
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(this.tableName)
+                //     .withAttributesToGet("json")
+                .withKeyConditionExpression("partitionKey = :partitionKey AND begins_with(rangeKey ,:rangeKey)")
+                //       .withExpressionAttributeNames(expressionAttributesNames)
+                .withExpressionAttributeValues(expressionAttributeValues);
+
+        QueryResult queryResult = client.query(queryRequest);
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(childType, attr.get("json").getS())).collect(Collectors.toList());
+        return EventRepoUtil.onPageable(items, paging);
     }
 
     @Override
     public ResultSet<Event<T>> getEventsByRootId(Class<T> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String trn = resourceHelper.getFQBrn(RootEntity.makeTRN(rootType, version, rootId, tenantId) + "/events");
+        Map<String, String> expressionAttributesNames = new HashMap<>();
+        expressionAttributesNames.put("#partitionKey", "partitionKey");
+        expressionAttributesNames.put("#eventOwner", "eventOwner");
+
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(trn));
+        expressionAttributeValues.put(":eventOwner", new AttributeValue().withS(rootType.getSimpleName()));
+
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(this.tableName)
+                //     .withAttributesToGet("json")
+                .withScanIndexForward(Boolean.FALSE)
+                .withKeyConditionExpression("#partitionKey = :partitionKey AND #eventOwner = :eventOwner")
+                .withExpressionAttributeNames(expressionAttributesNames)
+                .withExpressionAttributeValues(expressionAttributeValues);
+        QueryResult queryResult = client.query(queryRequest);
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(rootType, attr.get("json").getS())).collect(Collectors.toList());
+        return EventRepoUtil.onPageable(items, paging);
     }
 
     @Override
     public <C extends ChildEntity<T>> ResultSet<Event<C>> getEventsByChildId(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId, Query.PagingRequest paging) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        String trn = resourceHelper.getFQBrn(RootEntity.makeTRN(rootType, version, id, tenantId) + "/events");
+        Map<String, String> expressionAttributesNames = new HashMap<>();
+        expressionAttributesNames.put("#partitionKey", "partitionKey");
+        expressionAttributesNames.put("#eventOwner", "eventOwner");
+
+        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
+        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(trn));
+        expressionAttributeValues.put(":eventOwner", new AttributeValue().withS(childType.getSimpleName()));
+
+        QueryRequest queryRequest = new QueryRequest()
+                .withTableName(this.tableName)
+                .withAttributesToGet("json")
+                .withScanIndexForward(Boolean.FALSE)
+                .withKeyConditionExpression("#partitionKey = :partitionKey AND #eventOwner = :eventOwner")
+                .withExpressionAttributeNames(expressionAttributesNames)
+                .withExpressionAttributeValues(expressionAttributeValues);
+        QueryResult queryResult = client.query(queryRequest);
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(childType, attr.get("json").getS())).collect(Collectors.toList());
+        return EventRepoUtil.onPageable(items, paging);
     }
 
     @Override
     protected void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint) {
-        String partitionKey = resourceHelper.getFQTrn(rootTrn);
-        String rangeKey = resourceHelper.getFQBrn(rootTrn);
+        String partitionKey = resourceHelper.getFQTrn(checkpoint.getRootTrn());
         HashMap<String, AttributeValue> item = new HashMap<>();
-        item.put(this.partitionKey, new AttributeValue(partitionKey));
-        item.put(this.rangeKey, new AttributeValue(rangeKey));
-        item.put(this.json, new AttributeValue(GsonCodec.encode(rootTrn)));
+        item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
+        item.put(this.rangeKeyColumn, new AttributeValue(EntityCheckpoint.class.getSimpleName()));
+        item.put(this.jsonColumn, new AttributeValue(GsonCodec.encode(checkpoint)));
+
         Put createEntity = new Put()
                 .withTableName(this.tableName)
                 .withItem(item)
-                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD)
+                .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
     }
 
+    public static final class TransactionContext {
+
+        private final List<TransactWriteItem> list;
+        private final Map<String, Entity> txEntites;
+
+        public TransactionContext() {
+            list = new LinkedList<>();
+            txEntites = new HashMap<>();
+        }
+
+        public List<TransactWriteItem> getList() {
+            return list;
+        }
+
+        public Map<String, Entity> getTxEntites() {
+            return txEntites;
+        }
+
+        
+        public void reset()
+        {
+            list.clear();
+            txEntites.clear();
+        }
+    }
 }

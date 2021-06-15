@@ -215,11 +215,6 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected <C extends ChildEntity<T>> Collection<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
     protected void saveRootEntityBrnIfNotExist(RootEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQBrn(e), e);
         if (old != null) {

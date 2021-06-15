@@ -43,19 +43,24 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         //this.eventStream.flux().publishOn(Schedulers.parallel()).doOnNext(this::onEvent).subscribe();
     }
 
-    public void saveTx(EntityContextProvider.Transaction transaction) {
-        List<Event> events = transaction.getEventList();
-
+    public void saveTx(List<Event> events) {
         startTransaction();
         for (Event event : events) {
             System.out.println("tx: " + event);
-            Entity e = applyEvent(event);
+            Entity e = _applyEvent(event);
             System.out.println("entity: " + e + " event : " + event);
         }
         endTransaction();
     }
 
     public <T extends Entity> T applyEvent(Event event) {
+        startTransaction();
+        T e = _applyEvent(event);
+        endTransaction();
+        return e;
+    }
+
+    private <T extends Entity> T _applyEvent(Event event) {
         EntityCheckpoint checkpoint = getCheckpoint(event.getRootEntityTRN());
         long nextSeq = checkpoint.getSeq() + 1;
         event.setSeqNum(nextSeq);
@@ -171,8 +176,6 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     protected abstract void startTransaction();
 
     protected abstract void endTransaction();
-
-    protected abstract <C extends ChildEntity<T>> Collection<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType);
 
     protected abstract void saveRootEntityBrnIfNotExist(RootEntity e);
 
