@@ -22,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
@@ -35,18 +36,24 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
+import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 /**
  *
@@ -59,7 +66,7 @@ public class Controller {
 
     @Autowired
     Cluster cluster;
-    
+
     @PostMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
@@ -95,7 +102,36 @@ public class Controller {
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
+    @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/files", consumes = {MULTIPART_FORM_DATA_VALUE})
+    @SuppressWarnings("unused")
+    @ResponseStatus(HttpStatus.OK)
+    private Mono<Void> uploadRootEntityFiles(@PathVariable String context,
+                                             @PathVariable String version,
+                                             @PathVariable String rootEntity,
+                                             @RequestHeader("Content-Type") String contentType,
+                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+                                             @RequestPart("files") Flux<FilePart> files) {
+//        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+//        String rootType = serviceDesc.getRootType();
+//        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
+//        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd).orElseThrow(() -> new NotImplementedException("file  {0} upload not implemented", rootType));
+//        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.FILE_UPLOAD_HANDLER);
+//
+//        CommandWrapper request = CommandWrapper.builder()
+//                .withCommand(action.getName())
+//                .withPayload("body")
+//                .withVersion(version)
+//                .withTenantId(tenantId).build();
+//        return cluster.requestReply(serviceDesc.getServiceName(), request)
+//                .onErrorMap(this::onError)
+//                .map(e -> onRootEntityCreation(context, version, rootEntity, e));
+        return files.doOnNext(fp -> System.out.println(fp.filename()))
+                .flatMap(fp -> fp.transferTo(Paths.get("").resolve(fp.filename())))
+                .then().log();
+    }
+
+
+    @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
     private Mono<ResponseEntity<Object>> createChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, @RequestBody String body) {
@@ -127,6 +163,29 @@ public class Controller {
                 .withPayload(body)
                 .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+    }
+
+    @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/files", consumes = {APPLICATION_JSON_VALUE})
+    @SuppressWarnings("unused")
+    @ResponseStatus(HttpStatus.OK)
+    private Mono<ResponseEntity<Object>> uploadChildEntityFiles(@PathVariable String context, @PathVariable String version,
+                                                                @PathVariable String rootEntity, @PathVariable String rootId,
+                                                                @PathVariable String childEntity,
+                                                                @RequestHeader("Content-Type") String contentType,
+                                                                @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+                                                                @RequestParam("files") MultipartFile[] files) {
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("file {0} upload not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withCommand(action.getName())
+                .withVersion(version)
+                .withPayload("body")
+                .withRootId(rootId)
+                .withTenantId(tenantId).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
