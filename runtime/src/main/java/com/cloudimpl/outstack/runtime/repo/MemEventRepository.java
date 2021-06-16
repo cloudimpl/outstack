@@ -285,7 +285,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                         if (!jsonPrim.getAsString().toLowerCase().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1).toLowerCase())) {
                             return false;
                         }
-                    } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
+                    } else if (!jsonPrim.getAsString().equalsIgnoreCase(entry.getValue())) {
                         return false;
                     }
                 } else if (jsonPrim.isBoolean()) {
