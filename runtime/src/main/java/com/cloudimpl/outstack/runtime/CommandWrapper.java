@@ -9,6 +9,8 @@ import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -25,7 +27,9 @@ public class CommandWrapper implements ICommand {
     private final String version;
     private final String rootType;
     private final String childType;
+    private final List<Object> files;
     private Object grant;
+
     public CommandWrapper(Builder builder) {
         this.command = builder.command;
         this.rootId = builder.rootId;
@@ -35,6 +39,7 @@ public class CommandWrapper implements ICommand {
         this.version = builder.version;
         this.rootType = builder.rootType;
         this.childType = builder.childType;
+        this.files = builder.files;
     }
 
     @Override
@@ -44,6 +49,7 @@ public class CommandWrapper implements ICommand {
         CommandHelper.withTenantId(cmd, tenantId);
         CommandHelper.withId(cmd, id);
         CommandHelper.withVersion(cmd, version);
+        CommandHelper.withFiles(cmd, files);
         return cmd;
     }
 
@@ -92,6 +98,7 @@ public class CommandWrapper implements ICommand {
         private String version;
         private String rootType;
         private String childType;
+        private List<Object> files;
 
         public Builder withCommand(String command) {
             this.command = command;
@@ -135,6 +142,11 @@ public class CommandWrapper implements ICommand {
 
         public Builder withObject(Object payload) {
             this.payload = GsonCodecRuntime.encode(payload);
+            return this;
+        }
+
+        public Builder withFiles(List<Object> files) {
+            this.files = files;
             return this;
         }
 

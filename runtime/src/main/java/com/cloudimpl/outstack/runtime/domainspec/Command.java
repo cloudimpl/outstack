@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import java.util.List;
+
 /**
  *
  * @author nuwansa
@@ -16,6 +18,7 @@ public abstract class Command implements Input, ICommand {
     private String _tenantId;
     private String _version;
     private final String _commandName;
+    private List<Object> _files;
 
     public Command(Builder builder) {
         this._rootId = builder.rootId;
@@ -23,6 +26,7 @@ public abstract class Command implements Input, ICommand {
         this._id = builder.id;
         this._version = builder.version;
         this._commandName = builder.commandName;
+        this._files = builder.files;
     }
 
     public final String rootId() {
@@ -47,6 +51,14 @@ public abstract class Command implements Input, ICommand {
 
     protected void setVersion(String version) {
         this._version = version;
+    }
+
+    public List<Object> getFiles() {
+        return _files;
+    }
+
+    public void setFiles(List<Object> _files) {
+        this._files = _files;
     }
 
     @Override
@@ -76,6 +88,7 @@ public abstract class Command implements Input, ICommand {
         protected String tenantId;
         protected String version;
         protected String commandName;
+        protected List<Object> files;
 
         public Builder withRootId(String rootId) {
             this.rootId = rootId;
@@ -99,6 +112,11 @@ public abstract class Command implements Input, ICommand {
 
         public Builder withCommandName(String commandName) {
             this.commandName = commandName;
+            return this;
+        }
+
+        public Builder withFiles(List<Object> files) {
+            this.files = files;
             return this;
         }
 
