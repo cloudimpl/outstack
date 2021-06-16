@@ -25,10 +25,14 @@ import com.cloudimpl.outstack.spring.component.SpringQueryService;
 import com.cloudimpl.outstack.spring.component.SpringService;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import java.security.MessageDigest;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javax.xml.bind.DatatypeConverter;
 
 /**
@@ -73,13 +77,20 @@ public class SpringUtil {
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(), eMeta.plural());
 
-            boolean fileUploadEnabled = h.isAnnotationPresent(EnableFileUpload.class);
+            boolean fileUploadEnabled = false;
+            Set<String> mimeTypes = Collections.emptySet();
+            if (h.isAnnotationPresent(EnableFileUpload.class)) {
+                fileUploadEnabled = true;
+                EnableFileUpload fileUploadMetaData = h.getAnnotation(EnableFileUpload.class);
+                mimeTypes = new HashSet<>(Arrays.asList(fileUploadMetaData.mimeTypes()));
+            }
+
             if (eType == rootType) {
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
-                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled));
+                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled, mimeTypes));
             } else {
                 desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
-                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled));
+                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled, mimeTypes));
             }
         });
 

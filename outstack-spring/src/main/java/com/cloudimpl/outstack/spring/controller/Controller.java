@@ -16,7 +16,7 @@ import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.cloudimpl.outstack.spring.util.FileUtil;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -40,21 +40,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.MULTIPART_FORM_DATA;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 /**
@@ -66,8 +62,11 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RequestMapping("/")
 public class Controller {
 
-    @Autowired
-    Cluster cluster;
+    final Cluster cluster;
+
+    public Controller(Cluster cluster) {
+        this.cluster = cluster;
+    }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
@@ -117,20 +116,17 @@ public class Controller {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
-
-        Optional<String> optionalCommand = DomainModelDecoder.decode(contentType);
-        if (optionalCommand.isEmpty()) {
-            return Mono.just(this.onError(new ValidationErrorException("domain model is not defined")));
-        }
+        String cmd = DomainModelDecoder.decode(contentType).orElseThrow(() -> new BadRequestException("domain model is not defined"));
 
         if (CollectionUtils.isEmpty(files)) {
-            return Mono.just(this.onError(new ValidationErrorException("no files were attached to the request")));
+            throw new BadRequestException("no files were attached to the request");
         }
 
-        String cmd = optionalCommand.get();
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd)
                 .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
-                .orElseThrow(() -> new NotImplementedException("resource  {0} file upload not implemented", rootType));
+                .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", rootType));
+
+        FileUtil.validateMimeType(files, action.getMimeTypes());
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
@@ -187,19 +183,30 @@ public class Controller {
                                                                 @PathVariable String childId,
                                                                 @RequestHeader("Content-Type") String contentType,
                                                                 @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                                @RequestParam("files") MultipartFile[] files) {
+                                                                @RequestParam("files") List<FilePart> files) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + child.getName());
-        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("file {0} upload not implemented", child.getName()));
+        String cmd = DomainModelDecoder.decode(contentType).orElseThrow(() -> new BadRequestException("domain model is not defined"));
+
+        if (CollectionUtils.isEmpty(files)) {
+            throw new BadRequestException("no files were attached to the request");
+        }
+
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
+                .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
+                .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", child.getName()));
+
+        FileUtil.validateMimeType(files, action.getMimeTypes());
+
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
                 .withVersion(version)
-                .withPayload("body")
+                .withFiles(files.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withRootId(rootId)
                 .withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError).map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError)
+                .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
