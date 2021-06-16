@@ -122,6 +122,6 @@ public abstract class EntityContext<T extends Entity> implements Context {
         {
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowd");
         }
-        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, getTenantId());
+        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);
     }
 }
