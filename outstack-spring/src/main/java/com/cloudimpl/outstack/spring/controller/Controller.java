@@ -172,7 +172,8 @@ public class Controller {
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}/files", consumes = {APPLICATION_JSON_VALUE})
+    @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}/files",
+            consumes = {MULTIPART_FORM_DATA_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.OK)
     private Mono<ResponseEntity<Object>> uploadChildEntityFiles(@PathVariable String context,
@@ -183,7 +184,8 @@ public class Controller {
                                                                 @PathVariable String childId,
                                                                 @RequestHeader("Content-Type") String contentType,
                                                                 @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                                @RequestParam("files") List<FilePart> files) {
+                                                                @RequestPart("files") List<FilePart> files) {
+
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseThrow(() -> new BadRequestException("domain model is not defined"));
@@ -203,8 +205,11 @@ public class Controller {
                 .withCommand(action.getName())
                 .withVersion(version)
                 .withFiles(files.stream().map(e -> (Object) e).collect(Collectors.toList()))
+                .withId(childId)
                 .withRootId(rootId)
-                .withTenantId(tenantId).build();
+                .withTenantId(tenantId)
+                .build();
+
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError)
                 .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
