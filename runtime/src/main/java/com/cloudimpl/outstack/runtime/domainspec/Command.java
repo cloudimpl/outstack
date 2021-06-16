@@ -57,7 +57,7 @@ public abstract class Command implements Input, ICommand {
         return _files;
     }
 
-    public void set_files(List<Object> _files) {
+    public void setFiles(List<Object> _files) {
         this._files = _files;
     }
 

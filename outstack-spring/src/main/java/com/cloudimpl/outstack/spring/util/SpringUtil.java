@@ -73,7 +73,7 @@ public class SpringUtil {
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(), eMeta.plural());
 
-            boolean fileUploadEnabled = eType.isAnnotationPresent(EnableFileUpload.class);
+            boolean fileUploadEnabled = h.isAnnotationPresent(EnableFileUpload.class);
             if (eType == rootType) {
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
                         SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled));

@@ -40,7 +40,7 @@ public abstract class AsyncEntityCommandHandler<T extends RootEntity,C extends  
         C cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
         EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), getTenantRequirement() == TenantRequirement.NONE? null:cmd.tenantId(),true);
-        EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
+        EntityContext<T> context = (EntityContext<T>) tx.getContext(entityType);
         context.setTx(tx);
        return apply(context, (C)cmd).doOnNext(r->tx.setReply(r)).map(r->context);
     }

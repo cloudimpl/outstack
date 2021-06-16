@@ -5,32 +5,34 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import java.util.List;
+
 /**
- *
  * @author nuwan
  */
 public class CommandHelper {
-    public static Command withRootId(Command cmd,String rootId)
-    {
+    public static Command withRootId(Command cmd, String rootId) {
         cmd.setRootId(rootId);
         return cmd;
     }
-    
-    public static Command withTenantId(Command cmd,String tenantId)
-    {
+
+    public static Command withTenantId(Command cmd, String tenantId) {
         cmd.setTenantId(tenantId);
         return cmd;
     }
-    
-    public static Command withId(Command cmd,String id)
-    {
+
+    public static Command withId(Command cmd, String id) {
         cmd.setId(id);
         return cmd;
     }
-    
-     public static Command withVersion(Command cmd,String version)
-    {
+
+    public static Command withVersion(Command cmd, String version) {
         cmd.setVersion(version);
+        return cmd;
+    }
+
+    public static Command withFiles(Command cmd, List<Object> files) {
+        cmd.setFiles(files);
         return cmd;
     }
 }

@@ -141,6 +141,10 @@ public class SpringServiceDescriptor {
         public String getName() {
             return name;
         }
+
+        public boolean isFileUploadEnabled() {
+            return fileUploadEnabled;
+        }
     }
 
     public static final class EntityDescriptor {
