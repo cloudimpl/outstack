@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
@@ -14,7 +15,10 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,135 +47,190 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         //this.eventStream.flux().publishOn(Schedulers.parallel()).doOnNext(this::onEvent).subscribe();
     }
 
-    public void saveTx(List<Event> events) {
+    public void saveTx(ITransaction<T> tx) {
         startTransaction();
-        for (Event event : events) {
-            System.out.println("tx: " + event);
-            Entity e = _applyEvent(event);
-            System.out.println("entity: " + e + " event : " + event);
-        }
+        List<Event> eventList = tx.getEventList();
+       
+        eventList.stream().peek(e -> e.setSeqNum(getCheckpoint(e.getRootEntityTRN()).nextSeq()))
+                .forEach(e -> addEvent(e));
+        long latestSeq = eventList.get(eventList.size() - 1).getSeqNum();
+        tx.getEntityList().stream().forEach(e -> {
+            if (e.isRoot()) {
+                if (e.getMeta().getLastSeq() == 0) {
+                    EntityHelper.setLastEq(e, latestSeq);
+                    saveRootEntityTrnIfNotExist((RootEntity) e);
+                    saveRootEntityBrnIfNotExist((RootEntity) e);
+                } else {
+                    long seq = e.getMeta().getLastSeq();
+                    EntityHelper.setLastEq(e, latestSeq);
+                    if (tx.isEntityRenamed(e.getTRN())) {
+                        deleteRootEntityBrnById((Class<T>) e.getClass(), e.entityId(), e.getTenantId());
+                        saveRootEntityTrnIfExist(seq, (RootEntity) e);
+                        saveRootEntityBrnIfNotExist((RootEntity) e);
+                    } else {
+                        saveRootEntityTrnIfExist(seq, (RootEntity) e);
+                        saveRootEntityBrnIfExist(seq, (RootEntity) e);
+                    }
+
+                }
+            } else {
+                ChildEntity child = (ChildEntity) e;
+                if (child.getMeta().getLastSeq() == 0) {
+                    EntityHelper.setLastEq(child, latestSeq);
+                    saveChildEntityTrnIfNotExist(child);
+                    saveChildEntityBrnIfNotExist(child);
+                } else {
+                    long seq = e.getMeta().getLastSeq();
+                    EntityHelper.setLastEq(child, latestSeq);
+                    if (tx.isEntityRenamed(e.getTRN())) {
+                        deleteChildEntityBrnById(child.rootType(), child.rootId(), child.getClass(), child.entityId(), child.getTenantId());
+                        saveChildEntityTrnIfExist(seq, child);
+                        saveChildEntityBrnIfNotExist(child);
+                    } else {
+                        saveRootEntityTrnIfExist(seq, (RootEntity) e);
+                        saveRootEntityBrnIfExist(seq, (RootEntity) e);
+                    }
+
+                }
+            }
+        });
+        tx.getDeletedEntities().values().forEach(e->{
+            if(e.isRoot())
+            {
+                deleteRootEntityBrnById((Class<T>)e.getClass(),e.entityId(),e.getTenantId());
+            }
+            else
+            {
+                ChildEntity child = (ChildEntity)e;
+                deleteChildEntityBrnById(child.rootType(), child.rootId(), child.getClass(), child.entityId(), child.getTenantId());
+            }
+        });
         endTransaction();
     }
 
     public <T extends Entity> T applyEvent(Event event) {
         startTransaction();
-        T e = _applyEvent(event);
+     //   T e = _applyEvent(event);
         endTransaction();
-        return e;
+        return null;
     }
 
-    private <T extends Entity> T _applyEvent(Event event) {
-        EntityCheckpoint checkpoint = getCheckpoint(event.getRootEntityTRN());
-        long nextSeq = checkpoint.getSeq() + 1;
-        event.setSeqNum(nextSeq);
-        Entity e = null;
-        switch (event.getAction()) {
-            case CREATE: {
-                e = createEntity(event);
-                break;
-            }
-            case UPDATE: {
-                e = updateEntity(event);
-                break;
-            }
-            case DELETE: {
-                deleteEntity(event);
-                break;
-            }
-            case RENAME: {
-                EntityRenamed renamedEvent = (EntityRenamed) event;
-                renameEntity(renamedEvent);
-                break;
-            }
-        }
-        System.out.println("entity: " + e);
-        System.out.println("event: " + event);
-        event.setSeqNum(nextSeq);
-        checkpoint.setSeq(nextSeq);
-        addEvent(event);
-        updateCheckpoint(nextSeq - 1, checkpoint);
-        return (T) e;
+    protected EntityCheckpoint getCheckpoint(String rootTrn) {
+        return mapTxCheckpoints.get(rootTrn).or(()->_getCheckpoint(rootTrn));
     }
 
-    private Entity createEntity(Event event) {
-        Entity e;
-        if (event.isRootEvent()) {
-            RootEntity root = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
-            root.applyEvent(event);
-            EntityHelper.setCreatedDate(root, event.getMeta().createdDate());
-            EntityHelper.setLastEq(root, event.getSeqNum());
-            EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
-            saveRootEntityBrnIfNotExist(root);
-            saveRootEntityTrnIfNotExist(root);
-            e = root;
-        } else {
-            RootEntity root = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
-            ChildEntity child = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
-            child.applyEvent(event);
-            EntityHelper.setCreatedDate(child, event.getMeta().createdDate());
-            EntityHelper.setLastEq(child, event.getSeqNum());
-            EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
-            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), child);
-            saveChildEntityTrnIfNotExist(event.getRootEntityTRN(), child);
-            e = child;
-        }
-        //      mapEntites.put(resourceHelper.getFQTrn(e), e);
-        //      mapEntites.put(resourceHelper.getFQBrn(e), e);
-        return e;
-    }
+//    private <T extends Entity> T _applyEvent(Event event) {
+//        EntityCheckpoint checkpoint = _getCheckpoint(event.getRootEntityTRN());
+//        long nextSeq = checkpoint.getSeq() + 1;
+//        event.setSeqNum(nextSeq);
+//        Entity e = null;
+//        switch (event.getAction()) {
+//            case CREATE: {
+//                e = createEntity(event);
+//                break;
+//            }
+//            case UPDATE: {
+//                e = updateEntity(event);
+//                break;
+//            }
+//            case DELETE: {
+//                deleteEntity(event);
+//                break;
+//            }
+//            case RENAME: {
+//                EntityRenamed renamedEvent = (EntityRenamed) event;
+//                renameEntity(renamedEvent);
+//                break;
+//            }
+//        }
+//        System.out.println("entity: " + e);
+//        System.out.println("event: " + event);
+//        event.setSeqNum(nextSeq);
+//        checkpoint.setSeq(nextSeq);
+//        addEvent(event);
+//        updateCheckpoint(nextSeq - 1, checkpoint);
+//        return (T) e;
+//    }
 
-    private Entity updateEntity(Event event) {
+//    private Entity createEntity(Event event) {
+//        Entity e;
+//        if (event.isRootEvent()) {
+//            RootEntity root = RootEntity.create(event.getOwner(), event.entityId(), event.tenantId(), event.id());
+//            root.applyEvent(event);
+//            EntityHelper.setCreatedDate(root, event.getMeta().createdDate());
+//            EntityHelper.setLastEq(root, event.getSeqNum());
+//            EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+//            saveRootEntityBrnIfNotExist(root);
+//            saveRootEntityTrnIfNotExist(root);
+//            e = root;
+//        } else {
+//            RootEntity root = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
+//            ChildEntity child = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
+//            child.applyEvent(event);
+//            EntityHelper.setCreatedDate(child, event.getMeta().createdDate());
+//            EntityHelper.setLastEq(child, event.getSeqNum());
+//            EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
+//            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), child);
+//            saveChildEntityTrnIfNotExist(event.getRootEntityTRN(), child);
+//            e = child;
+//        }
+//        //      mapEntites.put(resourceHelper.getFQTrn(e), e);
+//        //      mapEntites.put(resourceHelper.getFQBrn(e), e);
+//        return e;
+//    }
 
-        Entity e;
-        if (event.isRootEvent()) {
-            RootEntity root = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
-            EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
-            long lastSeq = root.getMeta().getLastSeq();
-            EntityHelper.setLastEq(root, event.getSeqNum());
-            root.applyEvent(event);
-            saveRootEntityBrnIfExist(lastSeq, root);
-            saveRootEntityTrnIfExist(lastSeq, root);
-            e = root;
-        } else {
-            ChildEntity child = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
-            EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
-            long lastSeq = child.getMeta().getLastSeq();
-            EntityHelper.setLastEq(child, event.getSeqNum());
-            child.applyEvent(event);
-            saveChildEntityBrnIfExist(lastSeq, event.getRootEntityTRN(), child);
-            saveChildEntityTrnIfExist(lastSeq, event.getRootEntityTRN(), child);
-            e = child;
-        }
-        return e;
-    }
+//    private Entity updateEntity(Event event) {
+//
+//        Entity e;
+//        if (event.isRootEvent()) {
+//            RootEntity root = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
+//            EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+//            long lastSeq = root.getMeta().getLastSeq();
+//            EntityHelper.setLastEq(root, event.getSeqNum());
+//            root.applyEvent(event);
+//            saveRootEntityBrnIfExist(lastSeq, root);
+//            saveRootEntityTrnIfExist(lastSeq, root);
+//            e = root;
+//        } else {
+//            ChildEntity child = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
+//            EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
+//            long lastSeq = child.getMeta().getLastSeq();
+//            EntityHelper.setLastEq(child, event.getSeqNum());
+//            child.applyEvent(event);
+//            saveChildEntityBrnIfExist(lastSeq, event.getRootEntityTRN(), child);
+//            saveChildEntityTrnIfExist(lastSeq, event.getRootEntityTRN(), child);
+//            e = child;
+//        }
+//        return e;
+//    }
 
-    private void deleteEntity(Event event) {
-        if (event.isRootEvent()) {
-            deleteRootEntityBrnById(event.getRootOwner(), event.entityId(), event.tenantId());
-        } else {
-            deleteChildEntityBrnById(event.getRootOwner(), event.rootId(), event.getOwner(), event.entityId(), event.tenantId());
-        }
-    }
+//    private void deleteEntity(Event event) {
+//        if (event.isRootEvent()) {
+//            deleteRootEntityBrnById(event.getRootOwner(), event.entityId(), event.tenantId());
+//        } else {
+//            deleteChildEntityBrnById(event.getRootOwner(), event.rootId(), event.getOwner(), event.entityId(), event.tenantId());
+//        }
+//    }
 
-    private void renameEntity(EntityRenamed event) {
-        if (event.isRootEvent()) {
-            deleteRootEntityBrnById(event.getOwner(), event.getOldEntityId(), event.tenantId());
-            RootEntity e = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
-            long lastSeq = e.getMeta().getLastSeq();
-            e = e.rename(event.entityId());
-            EntityHelper.setLastEq(e, event.getSeqNum());
-            saveRootEntityTrnIfExist(lastSeq, e);
-            saveRootEntityBrnIfNotExist(e);
-        } else {
-            deleteChildEntityBrnById(event.getRootOwner(), event.rootId(), event.getOwner(), event.getOldEntityId(), event.tenantId());
-            ChildEntity e = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
-            long lastSeq = e.getMeta().getLastSeq();
-            e = e.rename(event.entityId());
-            EntityHelper.setLastEq(e, event.getSeqNum());
-            saveChildEntityTrnIfExist(lastSeq, event.getRootEntityTRN(), e);
-            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), e);
-        }
-    }
+//    private void renameEntity(EntityRenamed event) {
+//        if (event.isRootEvent()) {
+//            deleteRootEntityBrnById(event.getOwner(), event.getOldEntityId(), event.tenantId());
+//            RootEntity e = (RootEntity) getRootById(event.getRootOwner(), event.id(), event.tenantId()).get();
+//            long lastSeq = e.getMeta().getLastSeq();
+//            e = e.rename(event.entityId());
+//            EntityHelper.setLastEq(e, event.getSeqNum());
+//            saveRootEntityTrnIfExist(lastSeq, e);
+//            saveRootEntityBrnIfNotExist(e);
+//        } else {
+//            deleteChildEntityBrnById(event.getRootOwner(), event.rootId(), event.getOwner(), event.getOldEntityId(), event.tenantId());
+//            ChildEntity e = (ChildEntity) getChildById(event.getRootOwner(), event.rootId(), event.getOwner(), event.id(), event.tenantId()).get();
+//            long lastSeq = e.getMeta().getLastSeq();
+//            e = e.rename(event.entityId());
+//            EntityHelper.setLastEq(e, event.getSeqNum());
+//            saveChildEntityTrnIfExist(lastSeq, event.getRootEntityTRN(), e);
+//            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), e);
+//        }
+//    }
 
     protected abstract void startTransaction();
 
@@ -185,13 +244,13 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     protected abstract void saveRootEntityTrnIfExist(long lastSeq, RootEntity e);
 
-    protected abstract void saveChildEntityBrnIfNotExist(String rootTrn, ChildEntity e);
+    protected abstract void saveChildEntityBrnIfNotExist(ChildEntity e);
 
-    protected abstract void saveChildEntityTrnIfNotExist(String rootTrn, ChildEntity e);
+    protected abstract void saveChildEntityTrnIfNotExist(ChildEntity e);
 
-    protected abstract void saveChildEntityBrnIfExist(long lastSeq, String rootTrn, ChildEntity e);
+    protected abstract void saveChildEntityBrnIfExist(long lastSeq, ChildEntity e);
 
-    protected abstract void saveChildEntityTrnIfExist(long lastSeq, String rootTrn, ChildEntity e);
+    protected abstract void saveChildEntityTrnIfExist(long lastSeq, ChildEntity e);
 
     protected abstract void deleteRootEntityBrnById(Class<T> rootType, String id, String tenantId);
 
@@ -201,7 +260,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     protected abstract <C extends ChildEntity<T>> void deleteChildEntityTrnById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId);
 
-    protected abstract EntityCheckpoint getCheckpoint(String rootTrn);
+    protected abstract EntityCheckpoint _getCheckpoint(String rootTrn);
 
     protected abstract void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint);
 
@@ -225,4 +284,5 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     protected String resourcePrefix(String prefix) {
         return MessageFormat.format("{0}:{1}", prefix, resourceHelper);
     }
+
 }

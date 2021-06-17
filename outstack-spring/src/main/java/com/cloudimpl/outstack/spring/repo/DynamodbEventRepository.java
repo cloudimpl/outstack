@@ -191,8 +191,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void saveChildEntityBrnIfNotExist(String rootTrn, ChildEntity e) {
-        String partitionKey = resourceHelper.getFQTrn(rootTrn);
+    protected void saveChildEntityBrnIfNotExist(ChildEntity e) {
+        String partitionKey = resourceHelper.getFQTrn(e.getRootTRN());
         String rangeKey = e.getBRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
         item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
@@ -209,8 +209,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void saveChildEntityTrnIfNotExist(String rootTrn, ChildEntity e) {
-        String partitionKey = resourceHelper.getFQTrn(rootTrn);
+    protected void saveChildEntityTrnIfNotExist(ChildEntity e) {
+        String partitionKey = resourceHelper.getFQTrn(e.getRootTRN());
         String rangeKey = e.getTRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
         item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
@@ -227,8 +227,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void saveChildEntityBrnIfExist(long lastSeq, String rootTrn, ChildEntity e) {
-        String partitionKey = resourceHelper.getFQTrn(rootTrn);
+    protected void saveChildEntityBrnIfExist(long lastSeq,ChildEntity e) {
+        String partitionKey = resourceHelper.getFQTrn(e.getRootTRN());
         String rangeKey = e.getBRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
         item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
@@ -250,8 +250,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void saveChildEntityTrnIfExist(long lastSeq, String rootTrn, ChildEntity e) {
-        String partitionKey = resourceHelper.getFQTrn(rootTrn);
+    protected void saveChildEntityTrnIfExist(long lastSeq,ChildEntity e) {
+        String partitionKey = resourceHelper.getFQTrn(e.getRootTRN());
         String rangeKey = e.getTRN();
         HashMap<String, AttributeValue> item = new HashMap<>();
         item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
@@ -309,7 +309,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected EntityCheckpoint getCheckpoint(String rootTrn) {
+    protected EntityCheckpoint _getCheckpoint(String rootTrn) {
 
         String partitionKey = resourceHelper.getFQTrn(rootTrn);
         Map<String, String> expressionAttributesNames = new HashMap<>();
@@ -515,9 +515,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     @Override
     public ResultSet<Event<T>> getEventsByRootId(Class<T> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
         String trn = resourceHelper.getFQBrn(RootEntity.makeTRN(rootType, version, rootId, tenantId) + "/events");
-        Map<String, String> expressionAttributesNames = new HashMap<>();
-        expressionAttributesNames.put("#partitionKey", "partitionKey");
-        expressionAttributesNames.put("#eventOwner", "eventOwner");
+   //     Map<String, String> expressionAttributesNames = new HashMap<>();
+   //     expressionAttributesNames.put("#partitionKey", "partitionKey");
+   //     expressionAttributesNames.put("#eventOwner", "eventOwner");
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(trn));
@@ -527,8 +527,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
                 .withTableName(this.tableName)
                 //     .withAttributesToGet("json")
                 .withScanIndexForward(Boolean.FALSE)
-                .withKeyConditionExpression("#partitionKey = :partitionKey AND #eventOwner = :eventOwner")
-                .withExpressionAttributeNames(expressionAttributesNames)
+                .withKeyConditionExpression("partitionKey = :partitionKey AND eventOwner = :eventOwner")
+         //       .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
         QueryResult queryResult = client.query(queryRequest);
         List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(rootType, attr.get("json").getS())).collect(Collectors.toList());
@@ -538,9 +538,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     @Override
     public <C extends ChildEntity<T>> ResultSet<Event<C>> getEventsByChildId(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId, Query.PagingRequest paging) {
         String trn = resourceHelper.getFQBrn(RootEntity.makeTRN(rootType, version, id, tenantId) + "/events");
-        Map<String, String> expressionAttributesNames = new HashMap<>();
-        expressionAttributesNames.put("#partitionKey", "partitionKey");
-        expressionAttributesNames.put("#eventOwner", "eventOwner");
+    //    Map<String, String> expressionAttributesNames = new HashMap<>();
+    //    expressionAttributesNames.put("#partitionKey", "partitionKey");
+    //    expressionAttributesNames.put("#eventOwner", "eventOwner");
 
         Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
         expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(trn));
@@ -548,10 +548,10 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
 
         QueryRequest queryRequest = new QueryRequest()
                 .withTableName(this.tableName)
-                .withAttributesToGet("json")
+    //            .withAttributesToGet("json")
                 .withScanIndexForward(Boolean.FALSE)
-                .withKeyConditionExpression("#partitionKey = :partitionKey AND #eventOwner = :eventOwner")
-                .withExpressionAttributeNames(expressionAttributesNames)
+                .withKeyConditionExpression("partitionKey = :partitionKey AND eventOwner = :eventOwner")
+        //        .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
         QueryResult queryResult = client.query(queryRequest);
         List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(childType, attr.get("json").getS())).collect(Collectors.toList());
@@ -572,29 +572,4 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
     }
 
-    public static final class TransactionContext {
-
-        private final List<TransactWriteItem> list;
-        private final Map<String, Entity> txEntites;
-
-        public TransactionContext() {
-            list = new LinkedList<>();
-            txEntites = new HashMap<>();
-        }
-
-        public List<TransactWriteItem> getList() {
-            return list;
-        }
-
-        public Map<String, Entity> getTxEntites() {
-            return txEntites;
-        }
-
-        
-        public void reset()
-        {
-            list.clear();
-            txEntites.clear();
-        }
-    }
 }

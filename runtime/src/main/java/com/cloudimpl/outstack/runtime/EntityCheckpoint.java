@@ -23,6 +23,11 @@ public class EntityCheckpoint {
         this.seq = seq;
         return this;
     }
+    
+    public long nextSeq()
+    {
+        return ++this.seq;
+    }
 
     public long getSeq() {
         return seq;

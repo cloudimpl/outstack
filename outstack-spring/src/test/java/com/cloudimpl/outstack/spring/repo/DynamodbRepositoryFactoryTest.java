@@ -24,6 +24,7 @@ import com.cloudimpl.outstack.runtime.domain.PolicyRefCreated;
 import com.cloudimpl.outstack.runtime.domain.Role;
 import com.cloudimpl.outstack.runtime.domain.RoleCreated;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.repo.SimpleTransaction;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -106,20 +107,21 @@ public class DynamodbRepositoryFactoryTest {
     public void testCreateOrGetRepository() {
         EventRepositoy<Role> repo = getFac().createOrGetRepository(Role.class);
         
-        List<Event> events = new LinkedList<>();
-        
+        SimpleTransaction<Role> tx = new SimpleTransaction<>(Role.class,repo);
         RoleCreated created = new RoleCreated("test");
         created.setAction(Event.Action.CREATE);
-        created.setId(UUID.randomUUID().toString());
+        created.setId("id-"+UUID.randomUUID().toString());
         created.setRootId(created.id());
-        events.add(created);
+        tx.apply(created);
+        repo.saveTx(tx);
         
+        tx = new SimpleTransaction<>(Role.class,repo);
         PolicyRefCreated refCreated = new PolicyRefCreated("test", "example", "v1", "test", UUID.randomUUID().toString());
         refCreated.setAction(Event.Action.CREATE);
-        refCreated.setId(UUID.randomUUID().toString());
+        refCreated.setId("id-"+UUID.randomUUID().toString());
         refCreated.setRootId(created.id());
-        events.add(refCreated);
-        repo.saveTx(events);
+        tx.apply(refCreated);
+        repo.saveTx(tx);
     }
 
 }

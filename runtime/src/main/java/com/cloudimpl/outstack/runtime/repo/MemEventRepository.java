@@ -78,7 +78,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected EntityCheckpoint getCheckpoint(String rootTrn) {
+    protected EntityCheckpoint _getCheckpoint(String rootTrn) {
         return checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn));
     }
 
@@ -241,7 +241,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveChildEntityBrnIfNotExist(String rootTrn,ChildEntity e) {
+    protected void saveChildEntityBrnIfNotExist(ChildEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQBrn(e), e);
         if (old != null) {
             throw new RepositoryException("{0} exist.", e.getBRN());
@@ -249,7 +249,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveChildEntityTrnIfNotExist(String rootTrn,ChildEntity e) {
+    protected void saveChildEntityTrnIfNotExist(ChildEntity e) {
         Entity old = mapEntites.putIfAbsent(resourceHelper.getFQTrn(e), e);
         if (old != null) {
             throw new RepositoryException("{0} exist.", e.getTRN());
@@ -257,12 +257,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveChildEntityBrnIfExist(long lastSeq,String rootTrn,ChildEntity e) {
+    protected void saveChildEntityBrnIfExist(long lastSeq,ChildEntity e) {
         mapEntites.put(resourceHelper.getFQBrn(e), e);
     }
 
     @Override
-    protected void saveChildEntityTrnIfExist(long lastSeq,String rootTrn,ChildEntity e) {
+    protected void saveChildEntityTrnIfExist(long lastSeq,ChildEntity e) {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
     }
 

@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
 import com.cloudimpl.outstack.runtime.EntityMetaDetail;
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
@@ -77,10 +78,12 @@ public abstract class Event<T extends Entity> implements IResource, Input {
     }
 
     public void setRootId(String rootId) {
+        EntityIdHelper.validateTechnicalId(rootId);
         this._rootId = rootId;
     }
 
     public void setId(String id) {
+        EntityIdHelper.validateTechnicalId(id);
         this._id = id;
     }
 

@@ -108,13 +108,13 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
             if (AsyncEntityCommandHandler.class.isInstance(handler)) {
                 Mono<EntityContext> mono = AsyncEntityCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd);
                 return mono.doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx()).getEventList()))
+                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx())))
                         .flatMap(ct -> resolveReply(ct.getTx().getReply()))
                         .map(r -> encode(cmd, r));
             } else {
                 return Mono.just(handler.emit(contextProvider, cmd))
                         .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx()).getEventList()))
+                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx())))
                         .flatMap(ct -> resolveReply(ct.getTx().getReply()))
                         .map(r -> encode(cmd, r));
             }
@@ -151,7 +151,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     public void applyEvent(Event event) {
         EntityContextProvider.Transaction<T> tx = contextProvider.createWritableTransaction(event.rootId(), event.tenantId(), false);
         this.evtHandlerManager.emit(tx, Collections.singletonList(event));
-        eventRepository.saveTx(tx.getEventList());
+        eventRepository.saveTx(tx);
     }
 
     public void validate(Predicate<String> pred, String name, String error) {

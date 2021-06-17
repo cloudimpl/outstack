@@ -48,6 +48,20 @@ public abstract class ChildEntity<T extends RootEntity> extends Entity {
             }
         }
     }
+    
+    public String getRootTRN() {
+        switch (getTenantRequirement()) {
+            case REQUIRED: {
+                Objects.requireNonNull(ITenant.class.cast(this).getTenantId());
+            }
+            case OPTIONAL: {
+                return RootEntity.makeTRN(rootType(), getMeta().getVersion(), rootId(),getTenantId());
+            }
+            default: {
+                return RootEntity.makeTRN(rootType(), getMeta().getVersion(), rootId(), null);
+            }
+        }
+    }
 
     @Override
     public String getBRN() {
