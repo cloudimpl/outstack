@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.spring.controller;
 
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
+import com.cloudimpl.outstack.runtime.domainspec.FileData;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
@@ -126,13 +127,16 @@ public class Controller {
                 .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
                 .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", rootType));
 
-        FileUtil.validateMimeType(files, action.getMimeTypes());
+        List<FileData> fileDataList = files.stream()
+                .map(FileUtil::getFileData)
+                .collect(Collectors.toList());
+        FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
                 .withVersion(version)
-                .withFiles(files.stream().map(e -> (Object) e).collect(Collectors.toList()))
+                .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(rootId)
                 .withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
@@ -198,13 +202,16 @@ public class Controller {
                 .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
                 .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", child.getName()));
 
-        FileUtil.validateMimeType(files, action.getMimeTypes());
+        List<FileData> fileDataList = files.stream()
+                .map(FileUtil::getFileData)
+                .collect(Collectors.toList());
+        FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
                 .withVersion(version)
-                .withFiles(files.stream().map(e -> (Object) e).collect(Collectors.toList()))
+                .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(childId)
                 .withRootId(rootId)
                 .withTenantId(tenantId)
