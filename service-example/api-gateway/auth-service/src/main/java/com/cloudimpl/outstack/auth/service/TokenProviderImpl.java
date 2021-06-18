@@ -71,6 +71,6 @@ public class TokenProviderImpl implements TokenProvider {
         if (accessType != null && accessType.toLowerCase().equals("offline")) {
             offline = true;
         }
-        return tokenGen.createTokenResponse(tokenGen.createAccessToken(new JwtTokenBuilder(token)), offline ? tokenGen.createRefreshToken(new JwtTokenBuilder(token)) : null);
+        return tokenGen.createTokenResponse(tokenGen.createAccessToken(new JwtTokenBuilder()), offline ? tokenGen.createRefreshToken(new JwtTokenBuilder()) : null);
     }
 }
