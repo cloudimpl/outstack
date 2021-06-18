@@ -26,11 +26,9 @@ import java.util.UUID;
  * @author nuwan
  */
 public class JwtTokenBuilder {
-    private final PlatformAuthenticationToken token;
     private final JWTClaimsSet.Builder builder;
     private long expireTimeInSeconds;
-    public JwtTokenBuilder(PlatformAuthenticationToken token) {
-        this.token = token;
+    public JwtTokenBuilder() {
         this.builder = new JWTClaimsSet.Builder();
         this.builder.issueTime(new Date(Instant.now().toEpochMilli()));
         this.builder.jwtID(UUID.randomUUID().toString());
@@ -72,6 +70,7 @@ public class JwtTokenBuilder {
         this.builder.issuer(issuer);
         return this;
     }
+    
     public JwtToken build()
     {
         return new JwtToken(expireTimeInSeconds,this.builder.build());

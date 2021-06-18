@@ -43,6 +43,9 @@ public class JwtTokenGenerator {
     @Value("${outstack.oauth.token.refresh_token_lifetime:180}")
     private long refresh_token_lifetime;
 
+    @Value("${outstack.apiContext}")
+    private String apiContext;
+    
     private final JWSSigner signer;
 
     public static JwtTokenGenerator instance;
@@ -67,12 +70,19 @@ public class JwtTokenGenerator {
         return builder.build();
     }
 
+    public JwtToken createOneTimeToken(JwtOneTimeTokenBuilder builder,long expireTime){
+        builder.withClaim("@apiContext",apiContext);
+        builder.withIssuer(tokenIssuer);
+        builder.withExpireTime(expireTime);
+        return builder.build();
+    }
+    
     public static JwtTokenGenerator instance()
     {
         return JwtTokenGenerator.instance;
     }
     
-    private String createToken(JwtToken token) {
+    public String serializeToken(JwtToken token) {
         try {
             SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).build(), token.getJwt());
             jwt.sign(signer);
@@ -84,17 +94,7 @@ public class JwtTokenGenerator {
 
     public TokenResponse createTokenResponse(JwtToken accessToken, JwtToken refreshToken) {
 
-        return new TokenResponse(createToken(accessToken), refreshToken == null ? null : createToken(refreshToken), "bearer", accessToken.getExpireTimeInSeconds());
+        return new TokenResponse(serializeToken(accessToken), refreshToken == null ? null : serializeToken(refreshToken), "bearer", accessToken.getExpireTimeInSeconds());
     }
 
-    public String createOneTimeToken(JWTClaimsSet jwtClaimsSet) {
-        try {
-            //  new JWTClaimsSet.Builder(jwtClaimsSet).claim(name, signer)
-            SignedJWT jwt = new SignedJWT(new JWSHeader.Builder(JWSAlgorithm.RS256).build(), jwtClaimsSet);
-            jwt.sign(signer);
-            return jwt.serialize();
-        } catch (JOSEException ex) {
-            throw new PlatformAuthenticationException(ex.getMessage(), ex);
-        }
-    }
 }
