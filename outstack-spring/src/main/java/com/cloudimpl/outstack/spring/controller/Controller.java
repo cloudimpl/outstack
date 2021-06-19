@@ -7,10 +7,8 @@ package com.cloudimpl.outstack.spring.controller;
 
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
-import com.cloudimpl.outstack.runtime.domainspec.FileData;
 import com.cloudimpl.outstack.runtime.QueryWrapper;
-import com.cloudimpl.outstack.runtime.ValidationErrorException;
-import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.FileData;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.spring.component.Cluster;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
@@ -20,12 +18,10 @@ import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundExcept
 import com.cloudimpl.outstack.spring.util.FileUtil;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -41,12 +37,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,12 +55,10 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 @CrossOrigin(origins = "*", allowedHeaders = "*",methods = {RequestMethod.DELETE,RequestMethod.GET,RequestMethod.POST})
 @RequestMapping("/")
-public class Controller {
-
-    final Cluster cluster;
+public class Controller extends AbstractController {
 
     public Controller(Cluster cluster) {
-        this.cluster = cluster;
+        super(cluster);
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
@@ -241,7 +233,7 @@ public class Controller {
     private Mono<Object> getRootEntityEvents(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity,
             @PathVariable String rootId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePagingParam(reqParam));
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType + "Events");
@@ -277,7 +269,7 @@ public class Controller {
     private Mono<Object> getChildEntityEvents(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity,
             @PathVariable String childId, @RequestHeader("Content-Type") String contentType, @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePagingParam(reqParam));
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
@@ -301,7 +293,7 @@ public class Controller {
             @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return doAuth().flatMap(token -> {
             Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                    pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+                    pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePagingParam(reqParam));
 
             SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
             SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
@@ -322,7 +314,7 @@ public class Controller {
     private Mono<Object> listRootEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @RequestHeader("Content-Type") String contentType,
             @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePagingParam(reqParam));
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -385,89 +377,6 @@ public class Controller {
                 .withQuery(action.getName())
                 .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestStream(serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s)).onErrorMap(this::onError);
-    }
-
-    private SpringServiceDescriptor getServiceCmdDescriptor(String context, String version, String rootTypePlural) {
-        return cluster.getServiceDescriptorContextManager()
-                .getCmdServiceDescriptorManager(context, version)
-                .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
-                .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
-    }
-
-    private SpringServiceDescriptor getServiceQueryDescriptor(String context, String version, String rootTypePlural) {
-        return cluster.getServiceDescriptorContextManager()
-                .getQueryServiceDescriptorManager(context, version)
-                .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
-                .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
-    }
-
-    private void validateAction(SpringServiceDescriptor.ActionDescriptor action, SpringServiceDescriptor.ActionDescriptor.ActionType type) {
-        if (action.getActionType() != type) {
-            throw new BadRequestException("bad request {0}. expect {1} , found {2}", action.getName(), type, action.getActionType());
-        }
-    }
-
-    private ResponseEntity<Object> onRootEntityCreation(String context, String version, String rootEntity, Object resource) {
-        if (resource instanceof LinkedHashMap) {
-            LinkedHashMap<?, ?> response = (LinkedHashMap<?, ?>) resource;
-            if (response.containsKey("_id")) {
-                return ResponseEntity
-                        .created(WebMvcLinkBuilder.linkTo(Controller.class)
-                                .slash(context)
-                                .slash(version)
-                                .slash(rootEntity)
-                                .slash(response.get("_id")).toUri())
-                        .body(resource);
-            }
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(resource);
-    }
-
-    private ResponseEntity<Object> onChildEntityCreation(String context, String version, String rootEntity, String rootId, String childType, Object resource) {
-        if (resource instanceof LinkedHashMap) {
-            LinkedHashMap<?, ?> response = (LinkedHashMap<?, ?>) resource;
-            if (response.containsKey("_id")) {
-                return ResponseEntity.created(WebMvcLinkBuilder.linkTo(Controller.class)
-                        .slash(context)
-                        .slash(version)
-                        .slash(rootEntity)
-                        .slash(rootId)
-                        .slash(childType)
-                        .slash(response.get("_id")).toUri())
-                        .body(resource);
-            }
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(resource);
-    }
-
-    private Throwable onError(Throwable thr) {
-        if (ValidationErrorException.class.isInstance(thr)) {
-            return new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, thr.getMessage());
-        } else if (DomainEventException.class.isInstance(thr)) {
-            DomainEventException de = (DomainEventException) thr;
-            switch (de.getErrCode()) {
-                case ENTITY_NOT_FOUND: {
-                    return new ResponseStatusException(HttpStatus.NOT_FOUND, thr.getMessage());
-                }
-                case ENTITY_EXIST: {
-                    return new ResponseStatusException(HttpStatus.CONFLICT, thr.getMessage());
-                }
-                default: {
-                    return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
-                }
-            }
-        }else if(AuthenticationException.class.isInstance(thr))
-        {
-            return new ResponseStatusException(HttpStatus.UNAUTHORIZED,thr.getMessage());
-        }
-        return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
-    }
-
-    private Map<String, String> removePaginParam(Map<String, String> params) {
-        params.remove("page");
-        params.remove("size");
-        params.remove("sort");
-        return params;
     }
 
     @GetMapping("/doAuth")
