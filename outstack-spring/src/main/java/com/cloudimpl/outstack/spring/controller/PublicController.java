@@ -1,11 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.cloudimpl.outstack.spring.controller;
 
 import com.cloudimpl.outstack.spring.component.Cluster;
+import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
+import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,15 +33,16 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 
 /**
+ * Provides public accessible endpoints
  *
- * @author nuwan
- */
+ * @author roshanmadhushanka
+ **/
 @RestController
 @CrossOrigin(origins = "*", allowedHeaders = "*",methods = {RequestMethod.DELETE,RequestMethod.GET,RequestMethod.POST})
-@RequestMapping("/")
-public class Controller extends AbstractController {
+@RequestMapping("/public")
+public class PublicController extends AbstractController {
 
-    public Controller(Cluster cluster) {
+    public PublicController(Cluster cluster) {
         super(cluster);
     }
 
@@ -112,14 +110,14 @@ public class Controller extends AbstractController {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.OK)
     protected Mono<ResponseEntity<Object>> uploadChildEntityFiles(@PathVariable String context,
-                                                                @PathVariable String version,
-                                                                @PathVariable String rootEntity,
-                                                                @PathVariable String rootId,
-                                                                @PathVariable String childEntity,
-                                                                @PathVariable String childId,
-                                                                @RequestHeader("Content-Type") String contentType,
-                                                                @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                                @RequestPart("files") List<FilePart> files) {
+                                                                  @PathVariable String version,
+                                                                  @PathVariable String rootEntity,
+                                                                  @PathVariable String rootId,
+                                                                  @PathVariable String childEntity,
+                                                                  @PathVariable String childId,
+                                                                  @RequestHeader("Content-Type") String contentType,
+                                                                  @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+                                                                  @RequestPart("files") List<FilePart> files) {
         return super.uploadChildEntityFiles(context, version, rootEntity, rootId, childEntity, childId, contentType,
                 tenantId, files);
     }
@@ -139,7 +137,7 @@ public class Controller extends AbstractController {
                                                @PathVariable String rootEntity, @PathVariable String rootId,
                                                @RequestHeader("Content-Type") String contentType,
                                                @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                              Pageable pageable, @RequestParam Map<String, String> reqParam) {
+                                               Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.getRootEntityEvents(context, version, rootEntity, rootId, contentType, tenantId, pageable,
                 reqParam);
     }
@@ -210,34 +208,21 @@ public class Controller extends AbstractController {
         return super.deleteRootEntity(context, version, rootEntity, rootId, contentType, tenantId);
     }
 
-    @GetMapping("/stream")
-    @SuppressWarnings("unused")
-    private Flux<String> stream() {
-        return Flux.interval(Duration.ofSeconds(1)).map(i -> "tick" + i + "\n");
-    }
-
     @GetMapping(value = "/streams/{context}/{version}/{rootEntity}/{rootId}")
     @SuppressWarnings("unused")
     protected Flux<String> getRootEntityStream(@PathVariable String context, @PathVariable String version,
-                                             @PathVariable String rootEntity, @PathVariable String rootId,
-                                             @RequestHeader("Content-Type") String contentType,
-                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
+                                               @PathVariable String rootEntity, @PathVariable String rootId,
+                                               @RequestHeader("Content-Type") String contentType,
+                                               @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
         return super.getRootEntityStream(context, version, rootEntity, rootId, contentType, tenantId);
     }
 
-    @GetMapping("/doAuth")
-    private Mono<AbstractAuthenticationToken> doAuth() {
-        return ReactiveSecurityContextHolder
-                .getContext() 
-                .map(c -> (AbstractAuthenticationToken) c.getAuthentication())
-                .doOnError(Throwable::printStackTrace);
-    }
-    
-    @GetMapping("/hello")
-    private Mono<String> hello() {
-        return ReactiveSecurityContextHolder
-                .getContext()
-                .map(c -> (AbstractAuthenticationToken) c.getAuthentication())
-                .doOnError(Throwable::printStackTrace).map(t->"hello "+t.getName());
+    @Override
+    protected void validateAction(SpringServiceDescriptor.ActionDescriptor action, SpringServiceDescriptor.ActionDescriptor.ActionType type) {
+        super.validateAction(action, type);
+
+        if(!action.isPubliclyAccessible()) {
+            throw new BadRequestException("action {0} is restricted to access through public", action.getName());
+        }
     }
 }

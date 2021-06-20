@@ -10,12 +10,14 @@ import com.cloudimpl.outstack.domain.example.OrganizationCreated;
 import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.domainspec.EnablePublicAccess;
 
 
 /**
  *
  * @author nuwan
  */
+@EnablePublicAccess
 public class UpdateOrganization extends EntityCommandHandler<Organization, OrganizationCreateRequest,Organization>{
 
     @Override

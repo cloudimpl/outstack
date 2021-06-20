@@ -17,6 +17,7 @@ import com.cloudimpl.outstack.runtime.EntityEventHandler;
 import com.cloudimpl.outstack.runtime.EntityQueryHandler;
 import com.cloudimpl.outstack.runtime.Handler;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
+import com.cloudimpl.outstack.runtime.domainspec.EnablePublicAccess;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -85,12 +86,17 @@ public class SpringUtil {
                 mimeTypes = new HashSet<>(Arrays.asList(fileUploadMetaData.mimeTypes()));
             }
 
+            // Verify public accessibility
+            boolean isPubliclyAccessible = h.isAnnotationPresent(EnablePublicAccess.class);
+
             if (eType == rootType) {
                 desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
-                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled, mimeTypes));
+                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, isPubliclyAccessible,
+                        fileUploadEnabled, mimeTypes));
             } else {
                 desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
-                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, fileUploadEnabled, mimeTypes));
+                        SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, isPubliclyAccessible,
+                        fileUploadEnabled, mimeTypes));
             }
         });
 
