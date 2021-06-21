@@ -71,7 +71,9 @@ public class AuthenticationMeta {
         private final String accessType;
         private final String userAgent;
         private final String remoteIp;
-        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier, String tenantId, String accessType,String userAgent,String remoteIp) {
+        private final String userData;
+
+        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier, String tenantId, String accessType,String userAgent,String remoteIp,String userData) {
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.code = code;
@@ -81,6 +83,7 @@ public class AuthenticationMeta {
             this.accessType = accessType;
             this.userAgent= userAgent;
             this.remoteIp = remoteIp;
+            this.userData = userData;
         }
 
         public String getClientId() {
@@ -119,9 +122,12 @@ public class AuthenticationMeta {
             return userAgent;
         }
 
+        public String getUserData() { return userData;
+        }
+
         @Override
         public String toString() {
-            return "ClientMeta{" + "clientId=" + clientId + ", clientSecret=" + clientSecret + ", code=" + code + ", redirectUri=" + redirectUri + ", codeVerifier=" + codeVerifier + ", tenantId=" + tenantId + ", accessType=" + accessType + '}';
+            return "ClientMeta{" + "clientId=" + clientId + ", clientSecret=" + clientSecret + ", code=" + code + ", redirectUri=" + redirectUri + ", codeVerifier=" + codeVerifier + ", tenantId=" + tenantId + ", accessType=" + accessType + ", userData=" + userData+ '}';
         }
 
     }
