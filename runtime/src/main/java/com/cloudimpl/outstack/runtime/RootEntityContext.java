@@ -82,6 +82,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return (C) childContext.create(id, event);
     }
 
+    public <C extends ChildEntity<T>> C update(Class<C> type, String id, Event<C> event) {
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+       
+        return (C) childContext.update(id, event);
+    }
+    
     @Override
     public T update(String id, Event<T> event) {
         Objects.requireNonNull(id);
