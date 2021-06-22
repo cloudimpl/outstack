@@ -53,7 +53,7 @@ public class UserLoginRequest extends Command{
         return new Builder();
     }
     
-    public static final class Builder extends Command.Builder
+    public static  class Builder extends Command.Builder
     {
         private String userId;
         private String password;
