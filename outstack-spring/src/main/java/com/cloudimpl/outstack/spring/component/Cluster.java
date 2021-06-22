@@ -107,11 +107,12 @@ public class Cluster {
             CommandWrapper wrapper = CommandWrapper.class.cast(msg);
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
-                    .switchIfEmpty(this.node.requestReply(serviceName, msg))
                     .cast(PlatformAuthenticationToken.class)
                     .map(t->PolicyStatementValidator.processPolicyStatements(wrapper.commandName(),wrapper.getRootType(), t))
                     .doOnNext(g->wrapper.setGrant(g))
-                    .flatMap(g->this.node.requestReply(serviceName,msg));
+                    .flatMap(g->this.node.requestReply(serviceName,msg))
+                    .switchIfEmpty(this.node.requestReply(serviceName, msg))
+                    .map(o->(T)o);
         }
 
         return this.node.requestReply(serviceName, msg);
