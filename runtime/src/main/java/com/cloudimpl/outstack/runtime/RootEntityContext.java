@@ -263,4 +263,13 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return new RootEntityContext<>(entityType, null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(id);
     }
 
+    protected void setId(String id) {
+        if(!EntityIdHelper.isTechnicalId(id)) {
+            id = getEntityById(id).orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity not available for entity {0}", entityType.getSimpleName())).id();
+        }
+        if(_id != null && !_id.equals(id)) {
+            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION, "Root id violation");
+        }
+        this._id = id;
+    }
 }
