@@ -22,6 +22,11 @@ public class ServiceDescriptorManager {
         this.map.put(serviceDescriptor.getPlural().toLowerCase(), serviceDescriptor);
     }
     
+    public Optional<SpringServiceDescriptor> getServiceDescriptorByRootType(String rootType)
+    {
+        return map.values().stream().filter(s->s.getRootType().equalsIgnoreCase(rootType)).findFirst();
+    }
+    
     public Optional<SpringServiceDescriptor> getServiceDescriptorByPlural(String rootTypePlural)
     {
         return Optional.ofNullable(map.get(rootTypePlural.toLowerCase()));

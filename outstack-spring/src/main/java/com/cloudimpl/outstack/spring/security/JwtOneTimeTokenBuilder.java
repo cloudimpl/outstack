@@ -16,6 +16,8 @@
 package com.cloudimpl.outstack.spring.security;
 
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.EntityMetaDetail;
+import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -46,19 +48,16 @@ public class JwtOneTimeTokenBuilder extends JwtTokenBuilder {
         return this;
     }
 
-    public JwtOneTimeTokenBuilder withVersion(String version) {
-        this.withClaim("@version", version);
+    public JwtOneTimeTokenBuilder withRootEntityType(Class<? extends RootEntity> rootType) {
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(rootType);
+        this.withClaim("@rootType", meta.getPlural());
+        this.withClaim("@version", meta.getVersion());
         return this;
     }
 
-    
-    public JwtOneTimeTokenBuilder withRootEntityType(Class<? extends RootEntity> rootType) {
-        this.withClaim("@rootType", rootType.getSimpleName());
-        return this;
-    }
-    
-     public JwtOneTimeTokenBuilder withChildEntityType(Class<? extends ChildEntity> childType) {
-        this.withClaim("@childType", childType.getSimpleName());
+    public JwtOneTimeTokenBuilder withChildEntityType(Class<? extends ChildEntity> childType) {
+        EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(childType);
+        this.withClaim("@childType", meta.getPlural());
         return this;
     }
 }

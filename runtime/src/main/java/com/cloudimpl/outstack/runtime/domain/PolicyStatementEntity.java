@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.domain;
 
+import com.cloudimpl.outstack.runtime.IPolicyStatement;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
@@ -31,7 +32,7 @@ import java.util.Collections;
  * @author nuwan
  */
 @EntityMeta(plural = "PolicyStatements" , version = "v1")
-public class PolicyStatement extends RootEntity implements ITenantOptional{
+public class PolicyStatementEntity extends RootEntity implements IPolicyStatement,ITenantOptional{
 
     public enum EffectType {
         ALLOW, DENY
@@ -42,25 +43,29 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     private  Collection<ActionDescriptor> actions;
     private  Collection<ResourceDescriptor> resources;
     private final String tenantId;
-    public PolicyStatement(String sid,String tenantId) {
+    public PolicyStatementEntity(String sid,String tenantId) {
         this.sid = sid;
         this.tenantId = tenantId;
         this.actions = Collections.EMPTY_LIST;
         this.resources = Collections.EMPTY_LIST;
     }
 
+    @Override
     public Collection<ActionDescriptor> getActions() {
         return actions;
     }
 
+    @Override
     public EffectType getEffect() {
         return effect;
     }
 
+    @Override
     public Collection<ResourceDescriptor> getResources() {
         return resources;
     }
 
+    @Override
     public String getSid() {
         return sid;
     }
@@ -71,6 +76,7 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
         return this.tenantId;
     }
     
+    @Override
     public boolean isActionMatched(String action) {
         return actions.stream().filter(ad -> ad.isActionMatched(action)).findFirst().isPresent();
     }

@@ -17,7 +17,9 @@ import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
+import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
 import com.cloudimpl.outstack.spring.util.FileUtil;
+import java.text.MessageFormat;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -49,17 +51,19 @@ import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 /**
  *
  * @author nuwan
  */
 @RestController
-@CrossOrigin(origins = "*", allowedHeaders = "*",methods = {RequestMethod.DELETE,RequestMethod.GET,RequestMethod.POST})
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.DELETE, RequestMethod.GET, RequestMethod.POST})
 @RequestMapping("/")
 public class Controller {
 
@@ -108,12 +112,12 @@ public class Controller {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.OK)
     private Mono<Object> uploadRootEntityFiles(@PathVariable String context,
-                                             @PathVariable String version,
-                                             @PathVariable String rootEntity,
-                                             @PathVariable String rootId,
-                                             @RequestHeader("Content-Type") String contentType,
-                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                             @RequestPart("files") List<FilePart> files) {
+            @PathVariable String version,
+            @PathVariable String rootEntity,
+            @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestPart("files") List<FilePart> files) {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -181,14 +185,14 @@ public class Controller {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.OK)
     private Mono<ResponseEntity<Object>> uploadChildEntityFiles(@PathVariable String context,
-                                                                @PathVariable String version,
-                                                                @PathVariable String rootEntity,
-                                                                @PathVariable String rootId,
-                                                                @PathVariable String childEntity,
-                                                                @PathVariable String childId,
-                                                                @RequestHeader("Content-Type") String contentType,
-                                                                @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                                @RequestPart("files") List<FilePart> files) {
+            @PathVariable String version,
+            @PathVariable String rootEntity,
+            @PathVariable String rootId,
+            @PathVariable String childEntity,
+            @PathVariable String childId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestPart("files") List<FilePart> files) {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
@@ -299,22 +303,20 @@ public class Controller {
     @SuppressWarnings("unused")
     private Mono<Object> listChildEntity(@PathVariable String context, @PathVariable String version, @PathVariable String rootEntity, @PathVariable String rootId, @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType,
             @RequestHeader(name = "X-TenantId", required = false) String tenantId, Pageable pageable, @RequestParam Map<String, String> reqParam) {
-        return doAuth().flatMap(token -> {
-            Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
-                    pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().get().map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()), removePaginParam(reqParam));
 
-            SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
-            SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
-            String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + child.getName());
-            SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} list not implemented", child.getName()));
-            validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
-            QueryWrapper request = QueryWrapper.builder()
-                    .withQuery(action.getName())
-                    .withVersion(version)
-                    .withRootId(rootId)
-                    .withTenantId(tenantId).withPageRequest(pagingReq).build();
-            return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
-        });
+        SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
+        SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootEntity, rootId, childEntity));
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + child.getName());
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd).orElseThrow(() -> new NotImplementedException("resource  {0} list not implemented", child.getName()));
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
+        QueryWrapper request = QueryWrapper.builder()
+                .withQuery(action.getName())
+                .withVersion(version)
+                .withRootId(rootId)
+                .withTenantId(tenantId).withPageRequest(pagingReq).build();
+        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
@@ -387,11 +389,68 @@ public class Controller {
         return cluster.requestStream(serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s)).onErrorMap(this::onError);
     }
 
+    @GetMapping(value = "generated-link")
+    @SuppressWarnings("unused")
+    private Mono<Object> onLinkRequest() {
+        return ReactiveSecurityContextHolder
+                .getContext()
+                .map(c -> PlatformAuthenticationToken.class.cast(c.getAuthentication()))
+                .flatMap(pt -> {
+                    Jwt jwt = pt.getJwtToken();
+                    String rootType = jwt.getClaimAsString("@rootType");
+                    String version = jwt.getClaimAsString("@version");
+                    String rootId = jwt.getClaimAsString("@rootId");
+                    String action = jwt.getClaimAsString("@action");
+                    String tenantId = jwt.getClaimAsString("@tenantId");
+                    String apiContext = jwt.getClaimAsString("@apiContext");
+                    if (rootType == null || version == null || action == null || apiContext == null) {
+                        throw new ValidationErrorException(MessageFormat.format("invalid token content: rootType = {0} , version = {1} ,action = {2} apiContext = {3}", rootType, version, action, apiContext));
+                    }
+                    String childTypePlural = jwt.getClaimAsString("@childType");
+
+                    String childId = jwt.getClaimAsString("@childId");
+
+                    String input = jwt.getClaimAsString("@input");
+                    SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(apiContext, version, rootType);
+                    SpringServiceDescriptor.ActionDescriptor actionDesc;
+                    if (childTypePlural != null) {
+                        SpringServiceDescriptor.EntityDescriptor desc = serviceDesc.getEntityDescriptorByPlural(childTypePlural).orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found", rootType, rootId, childTypePlural));
+                        actionDesc = serviceDesc.getChildAction(desc.getName(), action).orElseThrow(() -> new NotImplementedException("resource  {0} action {1} not implemented", rootType, action));
+                    } else {
+                        actionDesc = serviceDesc.getRootAction(action).orElseThrow(() -> new NotImplementedException("resource  {0} action {1} not implemented", rootType, action));
+                    }
+                    if (actionDesc.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER) {
+                        CommandWrapper request = CommandWrapper.builder().withCommand(action)
+                                .withPayload(input)
+                                .withVersion(version)
+                                .withTenantId(tenantId)
+                                .withId(childId)
+                                .withRootId(rootId)
+                                .build();
+                        return cluster.requestReply(serviceDesc.getServiceName(), request)
+                                .onErrorMap(this::onError);
+                    }
+                    else
+                    {
+                        QueryWrapper query = QueryWrapper.builder().withQuery(action).withPayload(input).withRootId(rootId).withId(childId).withVersion(version).build();
+                        return cluster.requestReply(serviceDesc.getServiceName(), query)
+                                .onErrorMap(this::onError);
+                    }
+                });
+    }
+
     private SpringServiceDescriptor getServiceCmdDescriptor(String context, String version, String rootTypePlural) {
         return cluster.getServiceDescriptorContextManager()
                 .getCmdServiceDescriptorManager(context, version)
                 .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+    }
+
+    private SpringServiceDescriptor getServiceCmdDescriptorByRootType(String context, String version, String rootType) {
+        return cluster.getServiceDescriptorContextManager()
+                .getCmdServiceDescriptorManager(context, version)
+                .flatMap(desc -> desc.getServiceDescriptorByRootType(rootType))
+                .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootType));
     }
 
     private SpringServiceDescriptor getServiceQueryDescriptor(String context, String version, String rootTypePlural) {
@@ -456,9 +515,8 @@ public class Controller {
                     return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
                 }
             }
-        }else if(AuthenticationException.class.isInstance(thr))
-        {
-            return new ResponseStatusException(HttpStatus.UNAUTHORIZED,thr.getMessage());
+        } else if (AuthenticationException.class.isInstance(thr)) {
+            return new ResponseStatusException(HttpStatus.UNAUTHORIZED, thr.getMessage());
         }
         return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
     }
@@ -473,14 +531,14 @@ public class Controller {
     @GetMapping("/doAuth")
     private Mono<AbstractAuthenticationToken> doAuth() {
         return ReactiveSecurityContextHolder
-                .getContext() 
+                .getContext()
                 .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err -> err.printStackTrace());
     }
-    
+
     @GetMapping("/hello")
     private Mono<String> hello() {
         return ReactiveSecurityContextHolder
                 .getContext()
-                .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err -> err.printStackTrace()).map(t->"hello "+t.getName());
+                .map(c -> AbstractAuthenticationToken.class.cast(c.getAuthentication())).doOnError(err -> err.printStackTrace()).map(t -> "hello " + t.getName());
     }
 }

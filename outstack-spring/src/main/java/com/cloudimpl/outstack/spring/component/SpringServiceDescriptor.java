@@ -78,6 +78,10 @@ public class SpringServiceDescriptor {
         return tenancy;
     }
 
+    public Optional<EntityDescriptor> getEntityDescriptorByChildType(String childType) {
+        return mapDescriptors.values().stream().filter(m -> m.getName().equalsIgnoreCase(childType)).findAny();
+    }
+
     public Optional<EntityDescriptor> getEntityDescriptorByPlural(String plural) {
         return Optional.ofNullable(mapDescriptors.get(plural.toLowerCase()));
     }
@@ -97,7 +101,7 @@ public class SpringServiceDescriptor {
     public String getServiceName() {
         return serviceName;
     }
-    
+
     public String getDomainOwner() {
         return domainOwner;
     }

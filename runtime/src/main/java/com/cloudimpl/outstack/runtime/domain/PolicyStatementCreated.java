@@ -26,14 +26,14 @@ import java.util.Collection;
  *
  * @author nuwan
  */
-public class PolicyStatementCreated extends Event<PolicyStatement> {
+public class PolicyStatementCreated extends Event<PolicyStatementEntity> {
 
     private final String sid;
-    private final PolicyStatement.EffectType effect;
+    private final PolicyStatementEntity.EffectType effect;
     private final Collection<ActionDescriptor> actions;
     private final Collection<ResourceDescriptor> resources;
 
-    public PolicyStatementCreated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
+    public PolicyStatementCreated(String sid,PolicyStatementEntity.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
         this.sid = sid;
         this.effect = effect;
         this.actions = actions;
@@ -44,7 +44,7 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
         return sid;
     }
     
-    public PolicyStatement.EffectType getEffect() {
+    public PolicyStatementEntity.EffectType getEffect() {
         return effect;
     }
 
@@ -63,12 +63,12 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
     
     @Override
     public Class<? extends Entity> getOwner() {
-        return PolicyStatement.class;
+        return PolicyStatementEntity.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-        return PolicyStatement.class;
+        return PolicyStatementEntity.class;
     }
 
     @Override

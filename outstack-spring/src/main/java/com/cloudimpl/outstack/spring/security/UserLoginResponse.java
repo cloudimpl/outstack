@@ -15,7 +15,7 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
 import java.util.List;
 
 /**
@@ -31,9 +31,9 @@ public class UserLoginResponse {
     private final String email;
     private final boolean locked;
     private final boolean active;
-    private final List<PolicyStatement> stmts;
+    private final List<PolicyStatementEntity> stmts;
     private Object userdata;
-    public UserLoginResponse(String userId,String firstname,String lastName, String username, String email,boolean locked, boolean active, List<PolicyStatement> stmts) {
+    public UserLoginResponse(String userId,String firstname,String lastName, String username, String email,boolean locked, boolean active, List<PolicyStatementEntity> stmts) {
         this.userId = userId;
         this.username = username;
         this.firstName = firstname;
@@ -73,7 +73,7 @@ public class UserLoginResponse {
     }
 
     
-    public List<PolicyStatement> getStmts() {
+    public List<PolicyStatementEntity> getStmts() {
         return stmts;
     }
 

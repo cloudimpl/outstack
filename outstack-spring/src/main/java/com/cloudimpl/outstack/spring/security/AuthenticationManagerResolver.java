@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.ReactiveAuthenticationManagerResolver;
@@ -50,8 +51,8 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
         System.out.println("path:" + path);
         c.getRequest().getHeaders().forEach((k, l) -> System.out.println(k + ":" + l));
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        String authorization = c.getRequest().getHeaders().getOrEmpty("Authorization").stream().findFirst().orElseThrow(() -> new PlatformAuthenticationException("Authorization not found", null));
-        if (authorization.toLowerCase().startsWith("bearer")) {
+        String authorization = c.getRequest().getHeaders().getOrEmpty("Authorization").stream().findFirst().or(()->Optional.ofNullable(c.getRequest().getQueryParams().getFirst("access_token") != null ?"access_token":null)).orElseThrow(() -> new PlatformAuthenticationException("Authorization not found", null));
+        if (authorization.equals("access_token") || authorization.toLowerCase().startsWith("bearer")) {
             return Mono.just(bearerTokenAuthentication);
         } else if (authorization.toLowerCase().startsWith("basic")) {
             return Mono.just(basicTokenAuthentication);

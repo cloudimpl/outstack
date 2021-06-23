@@ -29,8 +29,9 @@ public class ServerBearerTokenAuthenticationConverterEx extends ServerBearerToke
 
   private final boolean tokenEndpoint;
 
-  public ServerBearerTokenAuthenticationConverterEx(boolean tokenEndpoint) {
+  public ServerBearerTokenAuthenticationConverterEx(boolean tokenEndpoint,boolean allowUrlToken) {
     this.tokenEndpoint = tokenEndpoint;
+      setAllowUriQueryParameter(true);
   }
 
   @Override

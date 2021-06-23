@@ -13,29 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.spring.service.iam;
+package com.cloudimpl.outstack.runtime;
 
-import com.cloudimpl.outstack.common.RouterType;
-import com.cloudimpl.outstack.core.annon.CloudFunction;
-import com.cloudimpl.outstack.core.annon.Router;
-import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
-import com.cloudimpl.outstack.spring.component.SpringQueryService;
+import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
+import java.util.Collection;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "PolicyStatementQueryService")
-@Router(routerType = RouterType.ROUND_ROBIN)
-public class PolicyStatementQueryService extends SpringQueryService<PolicyStatementEntity> {
+public interface IPolicyStatement {
 
-    static {
-        $$(PolicyStatementEntity.class);
-    }
+    Collection<ActionDescriptor> getActions();
 
-    public PolicyStatementQueryService(EventRepositoryFactory factory) {
-        super(factory);
-    }
+    PolicyStatementEntity.EffectType getEffect();
 
+    Collection<ResourceDescriptor> getResources();
+
+    String getSid();
+
+    boolean isActionMatched(String action);
 }

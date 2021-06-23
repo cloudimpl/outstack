@@ -19,7 +19,7 @@ import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.domain.Policy;
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRef;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRefCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRefRequest;
@@ -33,7 +33,7 @@ public class CreatePolicyStatementRef extends EntityCommandHandler<PolicyStateme
 
     @Override
     protected PolicyStatementRef execute(EntityContext<PolicyStatementRef> context, PolicyStatementRefRequest command) {
-        PolicyStatement stmt = context.getEntityQueryProvider(PolicyStatement.class).getRoot(command.getPolicyStmtName()).orElseThrow(()->new PolicyValidationError("policy statement "+command.getPolicyStmtName()+" not found"));
+        PolicyStatementEntity stmt = context.getEntityQueryProvider(PolicyStatementEntity.class).getRoot(command.getPolicyStmtName()).orElseThrow(()->new PolicyValidationError("policy statement "+command.getPolicyStmtName()+" not found"));
         return context.<Policy,PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()),new PolicyStatementRefCreated(command.getPolicyName(),EntityIdHelper.idToRefId(stmt.id())));
     }
 

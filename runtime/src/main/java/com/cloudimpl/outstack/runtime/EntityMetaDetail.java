@@ -29,12 +29,13 @@ public class EntityMetaDetail{
     private final boolean isIdIgnoreCase;
     private final Field idField;
     private final String version;
-
-    public EntityMetaDetail(Class<? extends Entity> type, boolean isIdIgnoreCase, Field idField,String version) {
+    private final String plural;
+    public EntityMetaDetail(Class<? extends Entity> type, boolean isIdIgnoreCase, Field idField,String version,String plural) {
         this.type = type;
         this.isIdIgnoreCase = isIdIgnoreCase;
         this.idField = idField;
         this.version = version;
+        this.plural = plural;
     }
 
     public Class<? extends Entity> getType() {
@@ -52,9 +53,15 @@ public class EntityMetaDetail{
     public String getVersion() {
         return version;
     }
+
+    public String getPlural() {
+        return plural;
+    }
    
+    
     public static EntityMetaDetail createMeta(Class<? extends Entity> cls)
     {
-        return new EntityMetaDetail(cls,Util.isIdFieldIgnoreCase(cls),Util.getIdField(cls),cls.getAnnotation(EntityMeta.class).version());
+        EntityMeta meta = cls.getAnnotation(EntityMeta.class);
+        return new EntityMetaDetail(cls,Util.isIdFieldIgnoreCase(cls),Util.getIdField(cls),meta.version(),meta.plural());
     }
 }

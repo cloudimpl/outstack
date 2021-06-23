@@ -15,7 +15,7 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
 import java.util.Optional;
 
 /**
@@ -26,7 +26,7 @@ public class PolicyStatementValidator {
     public static PlatformGrantedAuthority processPolicyStatements(String action,String rootType,PlatformAuthenticationToken token)
     {
         PlatformGrantedAuthority grant =  token.getAuthorities().stream().map(g->PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(()->new PlatformAuthenticationException("no grant found to authenticate", null));
-        Optional<PolicyStatement> denyStmt = grant.getDenyStatmentByResourceName(rootType);
+        Optional<PolicyStatementEntity> denyStmt = grant.getDenyStatmentByResourceName(rootType);
         if(denyStmt.isPresent())
         {
             denyStmt.get().getActions().stream().filter(a->a.isActionMatched(action))
@@ -37,7 +37,7 @@ public class PolicyStatementValidator {
                         throw new PlatformAuthenticationException(null,"resource {0} is denied from policy statement {1}",action,a);
                     });
         }
-        Optional<PolicyStatement> allowStmt  = grant.getAllowStatmentByResourceName(rootType);
+        Optional<PolicyStatementEntity> allowStmt  = grant.getAllowStatmentByResourceName(rootType);
         if(allowStmt.isPresent())
         {
             allowStmt.get().getActions().stream().filter(a->a.isActionMatched(action))

@@ -15,7 +15,7 @@
  */
 package com.cloudimpl.outstack.auth.service;
 
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
 import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
@@ -37,8 +37,8 @@ public class AuthorizationProviderImpl implements AuthorizationProvider {
     private PlatformAuthenticationToken token;
 
     public AuthorizationProviderImpl() {
-        PolicyStatement adminPolicy = new PolicyStatement("fullAdminAccess", null);
-        adminPolicy.applyEvent(new PolicyStatementCreated("fullAdminAccess", PolicyStatement.EffectType.DENY,
+        PolicyStatementEntity adminPolicy = new PolicyStatementEntity("fullAdminAccess", null);
+        adminPolicy.applyEvent(new PolicyStatementCreated("fullAdminAccess", PolicyStatementEntity.EffectType.DENY,
                 Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)), Collections.singleton(ResourceDescriptor.builder().withResourceScope(ResourceDescriptor.ResourceScope.GLOBAL).build())));
         adminAuth = new PlatformGrantedAuthority(Collections.EMPTY_MAP, Collections.singletonMap("*", adminPolicy));
     }

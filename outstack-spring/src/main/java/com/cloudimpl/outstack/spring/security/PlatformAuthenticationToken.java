@@ -50,6 +50,7 @@ public class PlatformAuthenticationToken extends AbstractAuthenticationToken {
     public PlatformAuthenticationToken copy(Collection<PlatformGrantedAuthority> authorities)
     {
         PlatformAuthenticationToken token = new PlatformAuthenticationToken(authMeta,principal,authorities,userDetail);
+        token.jwtToken = jwtToken;
         return token;
     }
     

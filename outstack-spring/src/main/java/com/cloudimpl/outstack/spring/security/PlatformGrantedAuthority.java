@@ -15,7 +15,10 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.IPolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,23 +29,24 @@ import org.springframework.security.core.GrantedAuthority;
  */
 public class PlatformGrantedAuthority implements GrantedAuthority{
 
-    private final Map<String,PolicyStatement> denyPolicyStmts;
-    private final Map<String,PolicyStatement> allowPolicyStmts;
+    private final Map<String,IPolicyStatement> denyPolicyStmts;
+    private final Map<String,IPolicyStatement> allowPolicyStmts = new HashMap<>();
 
-    public PlatformGrantedAuthority(Map<String, PolicyStatement> denyPolicyStmts, Map<String, PolicyStatement> allowPolicyStmts) {
+    public PlatformGrantedAuthority(Collection<IPolicyStatement> policyStatements) {
+        
         this.denyPolicyStmts = denyPolicyStmts;
         this.allowPolicyStmts = allowPolicyStmts;
     }
 
    
     
-    public Optional<PolicyStatement> getDenyStatmentByResourceName(String resourceName)
+    public Optional<PolicyStatementEntity> getDenyStatmentByResourceName(String resourceName)
     {
         
         return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName)));
     }
     
-    public Optional<PolicyStatement> getAllowStatmentByResourceName(String resourceName)
+    public Optional<PolicyStatementEntity> getAllowStatmentByResourceName(String resourceName)
     {
         return Optional.ofNullable(allowPolicyStmts.get("*")).or(()->Optional.ofNullable(allowPolicyStmts.get(resourceName)));
     }

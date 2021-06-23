@@ -16,7 +16,7 @@
 package com.cloudimpl.outstack.runtime.iam;
 
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
 import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.domain.CommandHandlerEntity;
@@ -56,7 +56,7 @@ public class PolicyStatemetParser {
         return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), actions, resources);
     }
 
-    public static void validate(RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
+    public static void validate(RootEntityContext<PolicyStatementEntity> context, PolicyStatementCreated event) {
         String rootType = validateCrossResourceUsage(context, event.getResources());
         if (rootType == null) {
             rootType = "*";
@@ -64,7 +64,7 @@ public class PolicyStatemetParser {
         validateActions(context, rootType, event.getActions());
     }
 
-    private static String validateCrossResourceUsage(RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
+    private static String validateCrossResourceUsage(RootEntityContext<PolicyStatementEntity> context, Collection<ResourceDescriptor> resources) {
 
         String rootType = null;
         for (ResourceDescriptor desc : resources) {
@@ -102,7 +102,7 @@ public class PolicyStatemetParser {
         return rootType;
     }
 
-    private static void validateActions(RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> actions) {
+    private static void validateActions(RootEntityContext<PolicyStatementEntity> context, String rootType, Collection<ActionDescriptor> actions) {
        
         List<String> actionsList = new LinkedList<>();
         if (!rootType.equals("*")) {

@@ -17,7 +17,7 @@ package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement.EffectType;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity.EffectType;
 import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
 import java.util.Collection;
 import java.util.Collections;

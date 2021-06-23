@@ -22,6 +22,9 @@ import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.spring.security.JwtOneTimeTokenBuilder;
+import com.cloudimpl.outstack.spring.security.JwtToken;
+import com.cloudimpl.outstack.spring.security.JwtTokenGenerator;
 
 /**
  *
@@ -31,6 +34,14 @@ public class CreateUser extends EntityCommandHandler<User, UserCreateReq, User>{
 
     @Override
     protected User execute(EntityContext<User> context, UserCreateReq command) {
+        
+        JwtOneTimeTokenBuilder builder = new JwtOneTimeTokenBuilder();
+        builder.withAction("CreateUser")
+                .withActionInput(new UserCreateReq.Builder().withUsername("auto").withPassword("1234").build())
+                .withRootEntityType(User.class);
+        JwtToken token = JwtTokenGenerator.instance().createOneTimeToken(builder, 10000);
+        String str = JwtTokenGenerator.instance().serializeToken(token);
+        System.out.println("token : "+str);
         String tenantId = context.getTenantId();
         if(tenantId != null)
         {

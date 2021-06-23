@@ -51,7 +51,7 @@ public class SecurityConfig {
         authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
         // authenticationFilter.setAuthenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login"));
         authenticationFilter.setAuthenticationFailureHandler(new ServerAuthenticationEntryPointFailureHandler(new BearerTokenServerAuthenticationEntryPoint()));
-        authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
+        authenticationFilter.setServerAuthenticationConverter(convertor);
         authenticationFilter.setAuthenticationSuccessHandler(new PlatformAuthenticationSuccessHandler());
         return authenticationFilter;
     }
@@ -78,9 +78,10 @@ public class SecurityConfig {
                 //   .and()
                 .addFilterAt(authenticationFilter(new ServerFormLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.FORM_LOGIN)
                 .addFilterAt(authenticationFilter(new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
+                .addFilterBefore(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(false,true), "/generated-link"), SecurityWebFiltersOrder.AUTHENTICATION)
                 .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver)
-                .bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false)))
-                .addFilterBefore(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(true), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
+                .bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false,false)))
+                .addFilterBefore(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(true,false), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());
         return http.build();

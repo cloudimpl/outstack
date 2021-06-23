@@ -19,7 +19,7 @@ import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
 import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
-import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementEntity;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
 import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
@@ -30,13 +30,13 @@ import java.util.stream.Collectors;
  *
  * @author nuwan
  */
-public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatement,PolicyStatementRequest,PolicyStatement>{
+public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatementEntity,PolicyStatementRequest,PolicyStatementEntity>{
 
     @Override
-    protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
+    protected PolicyStatementEntity execute(EntityContext<PolicyStatementEntity> context, PolicyStatementRequest command) {
         
         PolicyStatementCreated stmt = parseStatement(command);
-        PolicyStatemetParser.validate((RootEntityContext<PolicyStatement>) context, stmt);
+        PolicyStatemetParser.validate((RootEntityContext<PolicyStatementEntity>) context, stmt);
         return context.create(stmt.getSid(), stmt);
     }
     
