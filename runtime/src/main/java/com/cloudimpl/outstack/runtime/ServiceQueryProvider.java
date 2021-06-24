@@ -22,6 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -42,16 +43,19 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
     private final static ObjectMapper objectMapper = new ObjectMapper();
-    
-    public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler) {
+    private Supplier<Consumer> injector;
+    public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler,Supplier<Consumer> injector) {
         this.rootType = rootType;
+        this.injector = injector;
         this.eventRepository = eventRepository;
         contextProvider = new EntityContextProvider<>(rootType, this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector,requestHandler);
     }
 
     public void registerQueryHandler(Class<? extends EntityQueryHandler> handlerType) {
         validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityQueryHandler.class, 0));
-        EntityQueryHandler exist = mapQueryHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        EntityQueryHandler handler = Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>());
+        injector.get().accept(handler);
+        EntityQueryHandler exist = mapQueryHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), handler);
         if (exist != null) {
             throw new ServiceProviderException("query handler {0} already exist ", handlerType.getSimpleName());
         }
@@ -59,9 +63,16 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
 
     public void registerDefaultQueryHandlersForEntity(Class<? extends Entity> entityType) {
         validateHandler("defaultQueryHandlers", rootType, entityType);
-        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultGetQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
-        mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
-        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName() + "Events").toLowerCase(), s -> Util.createObject(DefaultGetEventsQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        
+        EntityQueryHandler get = Util.createObject(DefaultGetQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType));
+        injector.get().accept(get);
+        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName()).toLowerCase(), s -> get);
+        EntityQueryHandler list =  Util.createObject(DefaultListQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType));
+        injector.get().accept(list);
+        mapQueryHandlers.computeIfAbsent(("List" + entityType.getSimpleName()).toLowerCase(), s -> list);
+        EntityQueryHandler events = Util.createObject(DefaultGetEventsQueryHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType));
+        injector.get().accept(events);
+        mapQueryHandlers.computeIfAbsent(("Get" + entityType.getSimpleName() + "Events").toLowerCase(), s -> events);
     }
 
     public Optional<EntityQueryHandler> getQueryHandler(String name) {

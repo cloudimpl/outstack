@@ -44,7 +44,7 @@ public class SpringQueryService<T extends RootEntity> implements Function<CloudM
     public SpringQueryService(EventRepositoryFactory factory) {
        // Supplier<BiFunction<String, Object, Mono>> supplier = ()-> this.requestHandler;
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringQueryService.class, 0);
-        serviceProvider = new ServiceQueryProvider<>(root, factory.createOrGetRepository(root), factory::createOrGetRepository,()->this.requestHandler);
+        serviceProvider = new ServiceQueryProvider<>(root, factory.createOrGetRepository(root), factory::createOrGetRepository,()->this.requestHandler,()->Cluster.autoWireInstance());
 
         HANDLERS.stream()
                 .filter(h -> SpringQueryService.filter(root, h))
