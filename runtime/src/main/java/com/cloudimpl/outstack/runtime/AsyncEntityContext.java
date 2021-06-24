@@ -33,8 +33,8 @@ public class AsyncEntityContext<T extends RootEntity> extends RootEntityContext<
     }
 
     public <C extends ChildEntity<T>> C create(Class<C> type, String rootId, String id, Event<C> event) {
-        ChildEntityContext childContext = (ChildEntityContext) getTx().getContext(type);
-        return (C) childContext.asChildContext().create(id, event);
+        super.setId(rootId);
+        return super.create(type, id, event);
     }
 
     @Override
