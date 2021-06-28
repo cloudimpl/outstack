@@ -19,6 +19,7 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,8 +47,9 @@ public abstract class AbstractController {
         this.cluster = cluster;
     }
 
-    protected Mono<ResponseEntity<Object>> createRootEntity(String context, String version, String rootEntity,
-                                                          String contentType, String tenantId, String body) {
+    protected Mono<ResponseEntity<Object>> createRootEntity(ServerHttpRequest httpRequest, String context, String version,
+                                                            String rootEntity, String contentType, String tenantId,
+                                                            String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
@@ -58,13 +60,14 @@ public abstract class AbstractController {
                 .withCommand(action.getName()).withPayload(body)
                 .withVersion(version)
                 .withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request)
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request)
                 .onErrorMap(this::onError)
                 .map(e -> onRootEntityCreation(context, version, rootEntity, e));
     }
 
-    protected Mono<Object> updateRootEntity(String context, String version, String rootEntity, String rootId,
-                                            String contentType, String tenantId, String body) {
+    protected Mono<Object> updateRootEntity(ServerHttpRequest httpRequest, String context, String version,
+                                            String rootEntity, String rootId, String contentType, String tenantId,
+                                            String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + rootType);
@@ -77,11 +80,12 @@ public abstract class AbstractController {
                 .withPayload(body)
                 .withId(rootId)
                 .withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> uploadRootEntityFiles(String context, String version, String rootEntity, String rootId,
-                                               String contentType, String tenantId, List<FilePart> files) {
+    protected Mono<Object> uploadRootEntityFiles(ServerHttpRequest httpRequest, String context, String version,
+                                                 String rootEntity, String rootId, String contentType, String tenantId,
+                                                 List<FilePart> files) {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -108,10 +112,11 @@ public abstract class AbstractController {
                 .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(rootId)
                 .withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<ResponseEntity<Object>> createChildEntity(String context, String version, String rootEntity,
+    protected Mono<ResponseEntity<Object>> createChildEntity(ServerHttpRequest httpRequest, String context,
+                                                             String version, String rootEntity,
                                                              String rootId, String childEntity, String contentType,
                                                              String tenantId, String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
@@ -129,14 +134,14 @@ public abstract class AbstractController {
                 .withPayload(body)
                 .withRootId(rootId)
                 .withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request)
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request)
                 .onErrorMap(this::onError)
                 .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
 
-    protected Mono<Object> updateChildEntity(String context, String version, String rootEntity, String rootId,
-                                             String childEntity, String childId, String contentType, String tenantId,
-                                             String body) {
+    protected Mono<Object> updateChildEntity(ServerHttpRequest httpRequest, String context, String version,
+                                             String rootEntity, String rootId, String childEntity, String childId,
+                                             String contentType, String tenantId, String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
@@ -151,10 +156,11 @@ public abstract class AbstractController {
                 .withVersion(version)
                 .withPayload(body)
                 .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<ResponseEntity<Object>> uploadChildEntityFiles(String context, String version, String rootEntity,
+    protected Mono<ResponseEntity<Object>> uploadChildEntityFiles(ServerHttpRequest httpRequest, String context,
+                                                                  String version, String rootEntity,
                                                                   String rootId, String childEntity, String childId,
                                                                   String contentType, String tenantId,
                                                                   List<FilePart> files) {
@@ -190,12 +196,12 @@ public abstract class AbstractController {
                 .withTenantId(tenantId)
                 .build();
 
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError)
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError)
                 .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
     }
 
-    protected Mono<Object> getRootEntity(String context, String version, String rootEntity, String rootId,
-                                         String contentType, String tenantId) {
+    protected Mono<Object> getRootEntity(ServerHttpRequest httpRequest, String context, String version,
+                                         String rootEntity, String rootId, String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
@@ -206,11 +212,12 @@ public abstract class AbstractController {
                 .withVersion(version)
                 .withQuery(action.getName())
                 .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> getRootEntityEvents(String context,  String version, String rootEntity, String rootId,
-                                             String contentType, String tenantId, Pageable pageable,
+    protected Mono<Object> getRootEntityEvents(ServerHttpRequest httpRequest, String context,  String version,
+                                               String rootEntity, String rootId, String contentType, String tenantId,
+                                               Pageable pageable,
                                              Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
@@ -229,11 +236,12 @@ public abstract class AbstractController {
                 .withId(rootId).withRootId(rootId)
                 .withTenantId(tenantId)
                 .withPageRequest(pagingReq).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> getChildEntity(String context, String version, String rootEntity, String rootId,
-                                          String childEntity, String childId, String contentType, String tenantId) {
+    protected Mono<Object> getChildEntity(ServerHttpRequest httpRequest, String context, String version,
+                                          String rootEntity, String rootId, String childEntity, String childId,
+                                          String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
@@ -247,12 +255,13 @@ public abstract class AbstractController {
                 .withVersion(version)
                 .withRootId(rootId)
                 .withId(childId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> getChildEntityEvents(String context, String version, String rootEntity, String rootId,
-                                              String childEntity, String childId, String contentType, String tenantId,
-                                              Pageable pageable, Map<String, String> reqParam) {
+    protected Mono<Object> getChildEntityEvents(ServerHttpRequest httpRequest, String context, String version,
+                                                String rootEntity, String rootId, String childEntity, String childId,
+                                                String contentType, String tenantId, Pageable pageable,
+                                                Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
@@ -276,12 +285,12 @@ public abstract class AbstractController {
                 .withTenantId(tenantId)
                 .withPageRequest(pagingReq)
                 .build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> listChildEntity(String context, String version, String rootEntity, String rootId,
-                                           String childEntity, String contentType, String tenantId,
-                                           Pageable pageable, Map<String, String> reqParam) {
+    protected Mono<Object> listChildEntity(ServerHttpRequest httpRequest, String context, String version,
+                                           String rootEntity, String rootId, String childEntity, String contentType,
+                                           String tenantId, Pageable pageable, Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
@@ -301,11 +310,12 @@ public abstract class AbstractController {
                 .withVersion(version)
                 .withRootId(rootId)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> listRootEntity(String context, String version, String rootEntity, String contentType,
-                                          String tenantId, Pageable pageable, Map<String, String> reqParam) {
+    protected Mono<Object> listRootEntity(ServerHttpRequest httpRequest, String context, String version,
+                                          String rootEntity, String contentType, String tenantId, Pageable pageable,
+                                          Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
@@ -322,12 +332,12 @@ public abstract class AbstractController {
                 .withQuery(action.getName())
                 .withVersion(version)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> deleteChildEntity(String context, String version, String rootEntity, String rootId,
-                                             String childEntity, String childId, String contentType,
-                                             String tenantId) {
+    protected Mono<Object> deleteChildEntity(ServerHttpRequest httpRequest, String context, String version,
+                                             String rootEntity, String rootId, String childEntity, String childId,
+                                             String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
@@ -341,11 +351,11 @@ public abstract class AbstractController {
                 .withCommand(action.getName())
                 .withVersion(version)
                 .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> deleteRootEntity(String context, String version, String rootEntity, String rootId,
-                                            String contentType, String tenantId) {
+    protected Mono<Object> deleteRootEntity(ServerHttpRequest httpRequest, String context, String version,
+                                            String rootEntity, String rootId, String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + rootType);
@@ -356,11 +366,11 @@ public abstract class AbstractController {
                 .withCommand(action.getName())
                 .withVersion(version)
                 .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Flux<String> getRootEntityStream(String context, String version, String rootEntity, String rootId,
-                                               String contentType, String tenantId) {
+    protected Flux<String> getRootEntityStream(String context, String version,
+                                               String rootEntity, String rootId, String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);

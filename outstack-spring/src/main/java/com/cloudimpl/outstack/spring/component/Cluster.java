@@ -19,6 +19,7 @@ import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
+import com.cloudimpl.outstack.runtime.CommandWrapperHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
@@ -28,10 +29,14 @@ import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -102,9 +107,10 @@ public class Cluster {
         return serviceDescriptorContextMan;
     }
 
-    public <T> Mono<T> requestReply(String serviceName, Object msg) {
+    public <T> Mono<T> requestReply(ServerHttpRequest httpRequest, String serviceName, Object msg) {
         if (msg instanceof CommandWrapper) {
             CommandWrapper wrapper = CommandWrapper.class.cast(msg);
+            populateExternalAttributes(httpRequest, wrapper);
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
                     .cast(PlatformAuthenticationToken.class)
@@ -135,4 +141,12 @@ public class Cluster {
 //    {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
 //    }
+
+    private void populateExternalAttributes(ServerHttpRequest httpRequest, CommandWrapper wrapper) {
+        Map<String, String> mapAttr = new HashMap<>();
+        if(httpRequest != null) {
+            mapAttr.put("remoteIp", httpRequest.getRemoteAddress().toString());
+        CommandWrapperHelper.withMapAttr(wrapper, mapAttr);
+        }
+    }
 }
