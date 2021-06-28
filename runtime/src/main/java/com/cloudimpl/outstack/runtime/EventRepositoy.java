@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -34,12 +35,14 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;
+    private final Map<String,EntityCheckpoint> mapTxDirtyCheckpoints;
     protected final ResourceHelper resourceHelper;
     protected final String version;
 
     public EventRepositoy(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
         this.version = Entity.getVersion(rootType);
+        this.mapTxDirtyCheckpoints = new ConcurrentHashMap<>();
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
         this.mapTxCheckpoints = new ResourceCache<>(1000, Duration.ofHours(1));
@@ -51,7 +54,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         startTransaction();
         List<Event> eventList = tx.getEventList();
        
-        eventList.stream().peek(e -> e.setSeqNum(getCheckpoint(e.getRootEntityTRN()).nextSeq()))
+        eventList.stream().peek(e -> e.setSeqNum(nextSeq(e.getRootEntityTRN())))
                 .forEach(e -> addEvent(e));
         long latestSeq = eventList.get(eventList.size() - 1).getSeqNum();
         tx.getEntityList().stream().forEach(e -> {
@@ -105,6 +108,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
                 deleteChildEntityBrnById(child.rootType(), child.rootId(), child.getClass(), child.entityId(), child.getTenantId());
             }
         });
+        mapTxDirtyCheckpoints.values().forEach(checkpoint->updateCheckpoint(checkpoint));
         endTransaction();
     }
 
@@ -115,8 +119,16 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         return null;
     }
 
+    private long nextSeq(String rootTrn)
+    {
+        EntityCheckpoint checkpoint = getCheckpoint(rootTrn);
+        long seq = checkpoint.nextSeq();
+        mapTxDirtyCheckpoints.put(rootTrn, checkpoint);
+        return seq;
+    }
+    
     protected EntityCheckpoint getCheckpoint(String rootTrn) {
-        return mapTxCheckpoints.get(rootTrn).or(()->_getCheckpoint(rootTrn));
+        return (EntityCheckpoint) Optional.ofNullable(mapTxDirtyCheckpoints.get(rootTrn)).or(()->mapTxCheckpoints.get(rootTrn)).or(()->_getCheckpoint(rootTrn)).get();
     }
 
 //    private <T extends Entity> T _applyEvent(Event event) {
@@ -260,9 +272,9 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     protected abstract <C extends ChildEntity<T>> void deleteChildEntityTrnById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId);
 
-    protected abstract EntityCheckpoint _getCheckpoint(String rootTrn);
+    protected abstract Optional<EntityCheckpoint> _getCheckpoint(String rootTrn);
 
-    protected abstract void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint);
+    protected abstract void updateCheckpoint(EntityCheckpoint checkpoint);
 
     protected abstract void addEvent(Event event);
 

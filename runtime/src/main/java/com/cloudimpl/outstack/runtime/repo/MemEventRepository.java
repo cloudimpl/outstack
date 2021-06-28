@@ -78,8 +78,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected EntityCheckpoint _getCheckpoint(String rootTrn) {
-        return checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn));
+    protected Optional<EntityCheckpoint> _getCheckpoint(String rootTrn) {
+        return Optional.of(checkpoints.computeIfAbsent(rootTrn, trn -> new EntityCheckpoint(trn)));
     }
 
     @Override
@@ -302,7 +302,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void updateCheckpoint(long lastSeq, EntityCheckpoint checkpoint) {
+    protected void updateCheckpoint(EntityCheckpoint checkpoint) {
         checkpoints.put(checkpoint.getRootTrn(), checkpoint);
     }
 
