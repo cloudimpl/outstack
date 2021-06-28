@@ -19,6 +19,7 @@ import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
+import com.cloudimpl.outstack.runtime.CommandWrapperHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
@@ -29,11 +30,15 @@ import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -113,17 +118,18 @@ public class Cluster {
         return serviceDescriptorContextMan;
     }
 
-    public <T> Mono<T> requestReply(String serviceName, Object msg) {
+    public <T> Mono<T> requestReply(ServerHttpRequest httpRequest, String serviceName, Object msg) {
         if (msg instanceof CommandWrapper) {
             CommandWrapper wrapper = CommandWrapper.class.cast(msg);
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
                     .cast(PlatformAuthenticationToken.class)
-                    .map(t -> PolicyStatementValidator.processPolicyStatements(wrapper.commandName(), wrapper.getRootType(), t))
-                    .doOnNext(g -> wrapper.setGrant(g))
-                    .flatMap(g -> this.node.requestReply(serviceName, msg))
-                    .switchIfEmpty(this.node.requestReply(serviceName, msg))
-                    .map(o -> (T) o);
+                    .doOnNext(c -> populateExternalAttributes(c, httpRequest, wrapper))
+                    .map(t->PolicyStatementValidator.processPolicyStatements(wrapper.commandName(),wrapper.getRootType(), t))
+                    .doOnNext(g->wrapper.setGrant(g))
+                    .flatMap(g->this.node.requestReply(serviceName,msg))
+                    .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
+                    .map(o->(T)o);
         }
 
         return this.node.requestReply(serviceName, msg);
@@ -146,4 +152,18 @@ public class Cluster {
 //    {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
 //    }
+
+    private void populateExternalAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, CommandWrapper wrapper) {
+        Map<String, String> mapAttr = new HashMap<>();
+        if(httpRequest != null) {
+            mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
+        }
+        if(token.getJwtToken().getClaim("userId") != null) {
+            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
+        }
+        if(token.getJwtToken().getClaim("userName") != null) {
+            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
+        }
+        CommandWrapperHelper.withMapAttr(wrapper, mapAttr);
+    }
 }

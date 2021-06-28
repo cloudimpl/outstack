@@ -59,6 +59,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
             throw new DomainEventException(DomainEventException.ErrorCode.ENTITY_EVENT_RELATION_VIOLATION,"root entity Id and event root id not equal. {0} , {1}", root.entityId(), event.rootEntityId());
         }
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         T child = root.createChildEntity(entityType, id, idGenerator.get());
         event.setTenantId(getTenantId());
@@ -69,6 +71,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         child.applyEvent(event);
         EntityHelper.setCreatedDate(child, event.getMeta().createdDate());
         EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
+        EntityHelper.setUserId(child, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(child, getTx().getInputMetaProvider().getUserName());
         addEvent(event);
         validator.accept(child);
         getCrudOperations().create(child);
@@ -95,6 +99,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityIdHelper.validateId(id, event);
        
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         
         event.setTenantId(getTenantId());
@@ -103,6 +109,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setAction(Event.Action.UPDATE);
         child.applyEvent(event);
         EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
+        EntityHelper.setUserId(child, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(child, getTx().getInputMetaProvider().getUserName());
         validator.accept(child);
         addEvent(event);
         getCrudOperations().update(child);
@@ -126,6 +134,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         event.setAction(Event.Action.DELETE);
         validator.accept(event); //validate event
@@ -151,6 +161,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         event.setAction(Event.Action.RENAME);
         validator.accept(event); //validate event
@@ -158,6 +170,8 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         T old = child;
         child = child.rename(newId);
         EntityHelper.setUpdatedDate(child,event.getMeta().createdDate());
+        EntityHelper.setUserId(child, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(child, getTx().getInputMetaProvider().getUserName());
         validator.accept(child); 
         getCrudOperations().rename(old, child);
         getEventPublisher().accept(event);

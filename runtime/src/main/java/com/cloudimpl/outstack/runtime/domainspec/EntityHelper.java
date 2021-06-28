@@ -33,6 +33,16 @@ public class EntityHelper {
     {
         e.getMeta().setCreatedDate(millis);
     }
+
+    public static void setUserId(Entity e,String userId)
+    {
+        e.getMeta().setUserId(userId);
+    }
+
+    public static void setUserName(Entity e, String userName)
+    {
+        e.getMeta().setUserName(userName);
+    }
     
     public static void setUpdatedDate(Entity e ,long millis)
     {
@@ -42,6 +52,16 @@ public class EntityHelper {
     public static void setCreatedDate(Event e,long millis)
     {
         e.getMeta().setCreatedDate(millis);
+    }
+
+    public static void setUserId(Event e,String userId)
+    {
+        e.getMeta().setUserId(userId);
+    }
+
+    public static void setUserName(Event e, String userName)
+    {
+        e.getMeta().setUserName(userName);
     }
     
     public  static  void validateEvent(Class<? extends RootEntity> rootType, Event event){
