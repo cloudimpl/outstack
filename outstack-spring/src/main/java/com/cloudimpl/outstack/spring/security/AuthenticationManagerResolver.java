@@ -42,6 +42,15 @@ public class AuthenticationManagerResolver implements ReactiveAuthenticationMana
         basicTokenAuthentication = new BasicTokenAuthenticationManager(authenticationProvider,authorizationProvider,tokenProvider);
     }
 
+    public BasicTokenAuthenticationManager getBasicTokenAuthentication() {
+        return basicTokenAuthentication;
+    }
+
+    public BearerTokenAuthenticationManager getBearerTokenAuthentication() {
+        return bearerTokenAuthentication;
+    }
+
+    
 //    @Autowired
 //    RSAPublicKey publicKey;
     @Override
