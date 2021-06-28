@@ -110,14 +110,14 @@ public class Cluster {
     public <T> Mono<T> requestReply(ServerHttpRequest httpRequest, String serviceName, Object msg) {
         if (msg instanceof CommandWrapper) {
             CommandWrapper wrapper = CommandWrapper.class.cast(msg);
-            populateExternalAttributes(httpRequest, wrapper);
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
                     .cast(PlatformAuthenticationToken.class)
+                    .doOnNext(c -> populateExternalAttributes(c, httpRequest, wrapper))
                     .map(t->PolicyStatementValidator.processPolicyStatements(wrapper.commandName(),wrapper.getRootType(), t))
                     .doOnNext(g->wrapper.setGrant(g))
                     .flatMap(g->this.node.requestReply(serviceName,msg))
-                    .switchIfEmpty(this.node.requestReply(serviceName, msg))
+                    .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
                     .map(o->(T)o);
         }
 
@@ -142,11 +142,17 @@ public class Cluster {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
 //    }
 
-    private void populateExternalAttributes(ServerHttpRequest httpRequest, CommandWrapper wrapper) {
+    private void populateExternalAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, CommandWrapper wrapper) {
         Map<String, String> mapAttr = new HashMap<>();
         if(httpRequest != null) {
-            mapAttr.put("remoteIp", httpRequest.getRemoteAddress().toString());
-        CommandWrapperHelper.withMapAttr(wrapper, mapAttr);
+            mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
+        if(token.getJwtToken().getClaim("userId") != null) {
+            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
+        }
+        if(token.getJwtToken().getClaim("userName") != null) {
+            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
+        }
+        CommandWrapperHelper.withMapAttr(wrapper, mapAttr);
     }
 }
