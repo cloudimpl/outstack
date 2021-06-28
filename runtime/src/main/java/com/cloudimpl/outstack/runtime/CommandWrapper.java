@@ -92,6 +92,9 @@ public class CommandWrapper implements ICommand {
         return (T) grant;
     }
 
+    public Map<String, String> getMapAttr() {
+        return mapAttr;
+    }
     
     public static Builder builder() {
         return new Builder();

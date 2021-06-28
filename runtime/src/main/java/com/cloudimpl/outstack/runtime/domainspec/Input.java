@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import java.util.Map;
+
 /**
  *
  * @author nuwansa

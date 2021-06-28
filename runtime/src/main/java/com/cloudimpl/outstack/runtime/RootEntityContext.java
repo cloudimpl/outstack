@@ -58,6 +58,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityIdHelper.validateId(id, event);
 
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         T root = RootEntity.create(entityType, id, getTenantId(), idGenerator.get());
         
@@ -68,6 +70,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         root.applyEvent(event);
         EntityHelper.setCreatedDate(root, event.getMeta().createdDate());
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+        EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(root, getTx().getInputMetaProvider().getUserName());
         validator.accept(root);
         addEvent(event);
         this._id = root.id();
@@ -78,13 +82,13 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     public <C extends ChildEntity<T>> C create(Class<C> type, String id, Event<C> event) {
         ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
-       
+       childContext.setTx(getTx());
         return (C) childContext.create(id, event);
     }
 
     public <C extends ChildEntity<T>> C update(Class<C> type, String id, Event<C> event) {
         ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
-       
+        childContext.setTx(getTx());
         return (C) childContext.update(id, event);
     }
     
@@ -105,6 +109,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityIdHelper.validateId(id, event);
 
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         event.setTenantId(getTenantId());
         event.setId(root.id());
@@ -112,6 +118,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setAction(Event.Action.UPDATE);
         root.applyEvent(event);
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+        EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(root, getTx().getInputMetaProvider().getUserName());
         validator.accept(root);
         addEvent(event);
         getCrudOperations().update(root);
@@ -139,6 +147,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setTenantId(getTenantId());
         event.setAction(Event.Action.DELETE);
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         validator.accept(event);
         addEvent(event);
@@ -174,6 +184,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setRootId(root.id());
         event.setAction(Event.Action.RENAME);
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
+        EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(event, getTx().getInputMetaProvider().getUserName());
         EntityHelper.setVersion(event, version);
         validator.accept(event);
         addEvent(event);
@@ -181,6 +193,8 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         root = root.rename(newId);
         validator.accept(root);
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
+        EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
+        EntityHelper.setUserName(root, getTx().getInputMetaProvider().getUserName());
         getCrudOperations().rename(old, root);
         getEventPublisher().accept(event);
         return root;

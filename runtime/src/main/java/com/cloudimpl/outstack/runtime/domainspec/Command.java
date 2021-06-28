@@ -65,7 +65,7 @@ public abstract class Command implements Input, ICommand {
         this._files = _files;
     }
 
-    protected Map<String, String> getMapAttr() {
+    public Map<String, String> getMapAttr() {
         return _mapAttr;
     }
 

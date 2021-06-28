@@ -107,12 +107,16 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
             e.applyEvent(event);
             EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
             EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
+            EntityHelper.setUserId(e, event.getMeta().getUserId());
+            EntityHelper.setUserName(e, event.getMeta().getUserName());
         } else {
             RootEntity root = (RootEntity) mapEntites.get(resourceHelper.getFQTrn(event.getRootEntityTRN()));
             e = root.createChildEntity(event.getOwner(), event.entityId(), event.id());
             e.applyEvent(event);
             EntityHelper.setCreatedDate(e, event.getMeta().createdDate());
             EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
+            EntityHelper.setUserId(e, event.getMeta().getUserId());
+            EntityHelper.setUserName(e, event.getMeta().getUserName());
         }
         mapEntites.put(resourceHelper.getFQTrn(e), e);
         mapEntites.put(resourceHelper.getFQBrn(e), e);
@@ -128,6 +132,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         Entity e = mapEntites.get(resourceHelper.getFQTrn(event.getEntityTRN()));
         e.applyEvent(event);
         EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
+        EntityHelper.setUserId(e, event.getMeta().getUserId());
+        EntityHelper.setUserName(e, event.getMeta().getUserName());
         return e;
     }
 
@@ -146,6 +152,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
         mapEntites.remove(resourceHelper.getFQBrn(e));
         e = e.rename(event.entityId());
         EntityHelper.setUpdatedDate(e, event.getMeta().createdDate());
+        EntityHelper.setUserId(e, event.getMeta().getUserId());
+        EntityHelper.setUserName(e, event.getMeta().getUserName());
         mapEntites.put(resourceHelper.getFQBrn(e), e);
         mapEntites.put(resourceHelper.getFQTrn(e), e);
         return e;
