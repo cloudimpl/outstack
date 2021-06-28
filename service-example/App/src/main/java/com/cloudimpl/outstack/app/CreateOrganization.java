@@ -10,18 +10,21 @@ import com.cloudimpl.outstack.domain.example.OrganizationCreated;
 import com.cloudimpl.outstack.domain.example.commands.OrganizationCreateRequest;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
-
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  *
  * @author nuwan
  */
-public class CreateOrganization extends EntityCommandHandler<Organization, OrganizationCreateRequest,Organization>{
+public class CreateOrganization extends EntityCommandHandler<Organization, OrganizationCreateRequest, Organization> {
+
+    @Value("${outstack.apiContext}")
+    private String domainOwner;
 
     @Override
     protected Organization execute(EntityContext<Organization> context, OrganizationCreateRequest command) {
         //Optional<Tenant> tenant = context.<Organization>asRootContext().getChildEntityById(Tenant.class, "xxx");
         return context.create(command.getOrgName(), new OrganizationCreated(command.getWebsite(), command.getOrgName()));
     }
- 
+
 }

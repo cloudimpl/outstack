@@ -26,6 +26,8 @@ import com.cloudimpl.outstack.spring.security.UserLoginResponse;
 import java.util.Collections;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.server.resource.BearerTokenAuthenticationToken;
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthentication;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -50,6 +52,11 @@ public class TokenProviderImpl implements TokenProvider {
 
     @Override
     public Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication) {
+        if(authentication.getSystemToken() instanceof BearerTokenAuthenticationToken)
+        {
+            authentication.setAuthenticated(true);
+            return Mono.just(authentication.setResponse(tokenGen.createTokenResponse(tokenGen.createAccessToken(new JwtTokenBuilder()), tokenGen.createRefreshToken(new JwtTokenBuilder()))));
+        }
         return AuthenticationUtil.loginUser(authentication, req ->validateLogin(req))
                 .doOnNext(t -> t.setAuthenticated(true))
                 .map(t -> t.setResponse(issueToken(t)));

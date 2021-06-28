@@ -7,6 +7,7 @@ package com.cloudimpl.outstack.spring.component;
 
 import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.core.Inject;
+import com.cloudimpl.outstack.core.Injector;
 import com.cloudimpl.outstack.core.Named;
 import com.cloudimpl.outstack.runtime.CommandHandler;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
@@ -46,7 +47,7 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     
     public SpringService(EventRepositoryFactory factory) {
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
-        serviceProvider = new ServiceProvider<>(root,factory.createOrGetRepository(root),factory::createOrGetRepository,()->requestHandler);
+        serviceProvider = new ServiceProvider<>(root,factory.createOrGetRepository(root),factory::createOrGetRepository,()->requestHandler,()->Cluster.autoWireInstance());
         HANDLERS.stream()
                 .filter(h->SpringService.filter(root, h))
                 .filter(h->EntityCommandHandler.class.isAssignableFrom(h))

@@ -26,10 +26,12 @@ import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
 import com.cloudimpl.outstack.spring.security.PolicyStatementValidator;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
+import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -57,13 +59,18 @@ public class Cluster {
     @Autowired
     private SpringApplicationConfigManager configManager;
 
+    @Autowired
+    private  AutowireCapableBeanFactory beanFactory;
+
     private ResourceHelper resourceHelper;
 
     public Cluster() {
     }
 
+    private  static AutowireCapableBeanFactory beanFactoryInstance;
     @PostConstruct
     public void init() {
+        beanFactoryInstance = beanFactory;
         Injector injector = new Injector();
         configManager.setInjector(injector);
         //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
@@ -89,6 +96,10 @@ public class Cluster {
                     node.start();
                 }).subscribe();
 
+    }
+
+    public static Consumer<Object> autoWireInstance() {
+        return beanFactoryInstance::autowireBean;
     }
 
     @PreDestroy
