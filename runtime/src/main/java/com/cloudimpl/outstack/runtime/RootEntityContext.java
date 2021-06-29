@@ -264,8 +264,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }
 
-    private RootEntityContext<T> init(String id) {
+    private RootEntityContext<T> init(EntityContextProvider.ReadOnlyTransaction tx,String id) {
         _id = getEntityById(id).get().id();
+        setTx(tx);
         return this;
     }
 
@@ -274,7 +275,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     public RootEntityContext<T> asNonTenantContext(String id) {
-        return new RootEntityContext<>(entityType, null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(id);
+        return new RootEntityContext<>(entityType, null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(getTx(),id);
     }
 
     protected void setId(String id) {
