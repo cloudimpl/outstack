@@ -101,7 +101,7 @@ public abstract class Command implements Input, ICommand {
         protected String version;
         protected String commandName;
         protected List<Object> files;
-        private Map<String, String> mapAttr;
+        private Map<String, String> mapAttr = new HashMap();
 
         public Builder withRootId(String rootId) {
             this.rootId = rootId;

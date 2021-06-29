@@ -111,7 +111,7 @@ public class CommandWrapper implements ICommand {
         private String rootType;
         private String childType;
         private List<Object> files;
-        private Map<String, String> mapAttr = null;
+        private Map<String, String> mapAttr = new HashMap<>();
 
         public Builder withCommand(String command) {
             this.command = command;
