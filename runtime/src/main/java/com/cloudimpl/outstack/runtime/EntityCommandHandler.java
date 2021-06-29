@@ -23,21 +23,21 @@ public abstract class EntityCommandHandler<T extends Entity, I extends Command, 
 
     public static final CommandResponse OK = new CommandResponse("OK");
 
-    protected final Class<T> enityType;
+    protected final Class<T> entityType;
     protected final Class<I> cmdType;
 
     public EntityCommandHandler() {
-        this.enityType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 0);
+        this.entityType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 0);
         this.cmdType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 1);
     }
 
     public EntityCommandHandler(Class<T> type) {
-        this.enityType = type;
+        this.entityType = type;
         this.cmdType = Util.extractGenericParameter(this.getClass(), EntityCommandHandler.class, 1);
     }
 
     public TenantRequirement getTenantRequirement() {
-        return Entity.checkTenantRequirement(enityType);
+        return Entity.checkTenantRequirement(entityType);
     }
 
     public R apply(EntityContext<T> context, I command) {
@@ -60,7 +60,18 @@ public abstract class EntityCommandHandler<T extends Entity, I extends Command, 
         I cmd = input.unwrap(this.cmdType);
         validateInput(cmd);
         EntityContextProvider.Transaction tx = contextProvider.createWritableTransaction(cmd.rootId(), getTenantRequirement() == TenantRequirement.NONE ? null : cmd.tenantId(), false);
-        EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
+        tx.setInputMetaProvider(new InputMetaProvider() {
+            @Override
+            public String getUserName() {
+                return cmd.getMapAttr().get("@userName");
+            }
+
+            @Override
+            public String getUserId() {
+                return cmd.getMapAttr().get("@userId");
+            }
+        });
+        EntityContext<T> context = (EntityContext<T>) tx.getContext(entityType);
         context.setTx(tx);
         R reply = apply(context, (I) cmd);
         tx.setReply(reply);

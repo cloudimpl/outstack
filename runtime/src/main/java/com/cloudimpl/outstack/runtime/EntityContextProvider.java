@@ -6,11 +6,8 @@
 package com.cloudimpl.outstack.runtime;
 
 import static com.cloudimpl.outstack.runtime.EventRepositoy.TID_PREFIX;
-import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
-import com.cloudimpl.outstack.runtime.domainspec.Entity;
-import com.cloudimpl.outstack.runtime.domainspec.Event;
-import com.cloudimpl.outstack.runtime.domainspec.Query;
-import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
+import com.cloudimpl.outstack.runtime.domainspec.*;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collection;
 import java.util.HashMap;
@@ -69,11 +66,11 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         private final List<Event> eventList;
         private final Supplier<BiFunction<String, Object, Mono>> requestHandler;
         private Object attachment;
-
+        private InputMetaProvider inputMetaProvider;
+        
         public Transaction(Class<R> type, EntityProvider entityProvider, Supplier<String> idGenerator, String rootId,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
             super(type, idGenerator, rootId, tenantId, queryOperation, validator, queryOperationSelector, version, async);
-
             this.mapBrnEntities = new TreeMap<>();
             this.mapTrnEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
@@ -102,6 +99,13 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
             this.eventList.add(event);
         }
 
+        protected InputMetaProvider getInputMetaProvider() {
+            return inputMetaProvider;
+        }
+
+        protected void setInputMetaProvider(InputMetaProvider inputMetaProvider) {
+            this.inputMetaProvider = inputMetaProvider;
+        }
         @Override
         public <C extends ChildEntity<R>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
             if (RootEntity.isMyType(entityType)) {

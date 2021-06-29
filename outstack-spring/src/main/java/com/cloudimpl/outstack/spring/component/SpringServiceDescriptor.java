@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  *
@@ -120,18 +121,44 @@ public class SpringServiceDescriptor {
         }
         private final String name;
         private final ActionType actionType;
+        private final boolean publiclyAccessible;
+        private final boolean fileUploadEnabled;
+        private final Set<String> mimeTypes;
 
         public ActionDescriptor(String name, ActionType actionType) {
             this.name = name;
             this.actionType = actionType;
+            this.publiclyAccessible = false;
+            this.fileUploadEnabled = false;
+            this.mimeTypes = Collections.emptySet();
+        }
+
+        public ActionDescriptor(String name, ActionType actionType, boolean publiclyAccessible, boolean fileUploadEnabled, Set<String> mimeTypes) {
+            this.name = name;
+            this.actionType = actionType;
+            this.publiclyAccessible = publiclyAccessible;
+            this.fileUploadEnabled = fileUploadEnabled;
+            this.mimeTypes = mimeTypes;
+        }
+
+        public String getName() {
+            return name;
         }
 
         public ActionType getActionType() {
             return actionType;
         }
 
-        public String getName() {
-            return name;
+        public boolean isPubliclyAccessible() {
+            return publiclyAccessible;
+        }
+
+        public boolean isFileUploadEnabled() {
+            return fileUploadEnabled;
+        }
+
+        public Set<String> getMimeTypes() {
+            return mimeTypes;
         }
     }
 
@@ -177,6 +204,5 @@ public class SpringServiceDescriptor {
             }
             return true;
         }
-
     }
 }

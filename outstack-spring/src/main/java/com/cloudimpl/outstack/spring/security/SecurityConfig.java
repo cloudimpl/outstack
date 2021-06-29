@@ -24,10 +24,10 @@ import org.springframework.web.server.ServerWebExchange;
 public class SecurityConfig {
 
     @Autowired
-    ReactiveAuthenticationManagerResolver<ServerWebExchange> authenticationManagerResolver;
+    AuthenticationManagerResolver authenticationManagerResolver;
 
-    @Autowired
-    ReactiveAuthenticationManager authenticationManager;
+//    @Autowired
+//    ReactiveAuthenticationManager authenticationManager;
 //    @Bean
 //    //@SneakyThrows
 //    RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
@@ -46,12 +46,12 @@ public class SecurityConfig {
 //        return new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
 //    }
 
-    public AuthenticationWebFilter authenticationFilter(ServerAuthenticationConverter convertor, String... urls) {
-        AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(this.authenticationManager);
+    public AuthenticationWebFilter authenticationFilter(ReactiveAuthenticationManager authManager,ServerAuthenticationConverter convertor, String... urls) {
+        AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(authManager);
         authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
         // authenticationFilter.setAuthenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login"));
         authenticationFilter.setAuthenticationFailureHandler(new ServerAuthenticationEntryPointFailureHandler(new BearerTokenServerAuthenticationEntryPoint()));
-        authenticationFilter.setServerAuthenticationConverter(new ServerFormLoginAuthenticationConverterEx());
+        authenticationFilter.setServerAuthenticationConverter(convertor);
         authenticationFilter.setAuthenticationSuccessHandler(new PlatformAuthenticationSuccessHandler());
         return authenticationFilter;
     }
@@ -66,8 +66,8 @@ public class SecurityConfig {
                 .and()
                 .authorizeExchange()
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
-                .pathMatchers("/login", "/authorize")
-                .permitAll()
+                .pathMatchers("/public/**").permitAll()
+                .pathMatchers("/login", "/authorize").permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .httpBasic()
@@ -76,11 +76,11 @@ public class SecurityConfig {
                 //  .formLogin()
                 //   .loginPage("/login")
                 //   .and()
-                .addFilterAt(authenticationFilter(new ServerFormLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.FORM_LOGIN)
-                .addFilterAt(authenticationFilter(new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
+                .addFilterAt(authenticationFilter(authenticationManagerResolver.getBasicTokenAuthentication(), new ServerFormLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.FORM_LOGIN)
+                .addFilterAt(authenticationFilter(authenticationManagerResolver.getBasicTokenAuthentication(),new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
                 .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver)
                 .bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false)))
-                .addFilterBefore(authenticationFilter(new ServerBearerTokenAuthenticationConverterEx(true), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
+                .addFilterBefore(authenticationFilter(authenticationManagerResolver.getBearerTokenAuthentication(),new ServerBearerTokenAuthenticationConverterEx(true), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());
         return http.build();

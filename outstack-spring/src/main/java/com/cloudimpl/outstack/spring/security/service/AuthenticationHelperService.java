@@ -70,7 +70,7 @@ public class AuthenticationHelperService {
         if ((req.getCodeChallenge() == null || req.getCodeChallengeMethod() == null) && pkceEnable) {
             return Mono.error(new PlatformAuthenticationException("PKCE mandatory", null));
         }
-        return cluster.requestReply("AuthenticationService", CloudMessage.builder()
+        return cluster.requestReply(null,"AuthenticationService", CloudMessage.builder()
                 .withData(req).withKey(cluster.getServiceRegistry().findLocalByName("AuthenticationService").orElseThrow(() -> new PlatformAuthenticationException("auth service not found", null)).id()).build());
 //        CloudService service = cluster.getServiceRegistry().findLocalByName("AuthenticationService").orElseThrow(() -> new PlatformAuthenticationException("auth service not found", null));
 //        String authKey = UUID.randomUUID().toString() + "," + service.id();
@@ -93,6 +93,6 @@ public class AuthenticationHelperService {
         {
             return Mono.error(() -> new PlatformAuthenticationException("invalid key", null));
         }
-        return cluster.requestReply("AuthenticationService", CloudMessage.builder().withData(new AuthorizeKeyRequest(key)).withKey(keys[1]).build());
+        return cluster.requestReply(null,"AuthenticationService", CloudMessage.builder().withData(new AuthorizeKeyRequest(key)).withKey(keys[1]).build());
     }
 }

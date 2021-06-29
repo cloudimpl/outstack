@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -45,18 +46,21 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
     private final static ObjectMapper objectMapper = new ObjectMapper();
-
-    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler) {
+    private final Supplier<Consumer> injector;
+    public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler,Supplier<Consumer> injector) {
         this.rootType = rootType;
         this.evtHandlerManager = new EventHandlerManager(rootType);
         this.eventRepository = eventRepository;
+        this.injector = injector;
         contextProvider = new EntityContextProvider<>(rootType, this.eventRepository::loadEntityWithClone, eventRepository::generateTid, eventRepository, queryOperationSelector,requestHandler);
     }
 
     public void registerCommandHandler(Class<? extends EntityCommandHandler> handlerType) {
 
         validateHandler(handlerType.getSimpleName().toLowerCase(), rootType, Util.extractGenericParameter(handlerType, EntityCommandHandler.class, 0));
-        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>()));
+        EntityCommandHandler handler = Util.createObject(handlerType, new Util.VarArg<>(), new Util.VarArg<>());
+        injector.get().accept(handler);
+        EntityCommandHandler exist = mapCmdHandlers.putIfAbsent(handlerType.getSimpleName().toLowerCase(), handler);
         if (exist != null) {
             throw new ServiceProviderException("commad handler {0} already exist ", handlerType.getSimpleName());
         }
@@ -64,8 +68,12 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
 
     public void registerDefaultCmdHandlersForEntity(Class<? extends Entity> entityType) {
         validateHandler("defaultCommandHandlers", rootType, entityType);
-        mapCmdHandlers.computeIfAbsent(("Delete" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultDeleteCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
-        mapCmdHandlers.computeIfAbsent(("Rename" + entityType.getSimpleName()).toLowerCase(), s -> Util.createObject(DefaultRenameCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType)));
+        EntityCommandHandler handler = Util.createObject(DefaultDeleteCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType));
+        injector.get().accept(handler);
+        mapCmdHandlers.computeIfAbsent(("Delete" + entityType.getSimpleName()).toLowerCase(), s -> handler);
+        EntityCommandHandler handler2 = Util.createObject(DefaultRenameCommandHandler.class, new Util.VarArg<>(entityType.getClass()), new Util.VarArg<>(entityType));
+        injector.get().accept(handler2);
+        mapCmdHandlers.computeIfAbsent(("Rename" + entityType.getSimpleName()).toLowerCase(), s -> handler2);
     }
 
     public void registerEventHandler(Class<? extends EntityEventHandler> handlerType) {

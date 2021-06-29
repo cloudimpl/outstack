@@ -126,6 +126,8 @@ public abstract class Entity implements IResource {
         private String version;
         private boolean idIgnoreCase;
         private boolean rootIdIgnoreCase;
+        private String userId;
+        private String userName;
 
         protected void setCreatedDate(long createdDate) {
             this.createdDate = createdDate;
@@ -147,11 +149,11 @@ public abstract class Entity implements IResource {
             return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(updatedDate));
         }
 
-        public void setIdIgnoreCase(boolean idIgnoreCase) {
+        protected void setIdIgnoreCase(boolean idIgnoreCase) {
             this.idIgnoreCase = idIgnoreCase;
         }
 
-        public void setRootIdIgnoreCase(boolean rootIdIgnoreCase) {
+        protected void setRootIdIgnoreCase(boolean rootIdIgnoreCase) {
             this.rootIdIgnoreCase = rootIdIgnoreCase;
         }
         
@@ -174,6 +176,22 @@ public abstract class Entity implements IResource {
 
         public long updatedDate() {
             return this.updatedDate;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        protected void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        protected void setUserName(String userName) {
+            this.userName = userName;
         }
     }
 }

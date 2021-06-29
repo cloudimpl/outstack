@@ -5,6 +5,10 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  *
  * @author nuwansa
@@ -16,6 +20,8 @@ public abstract class Command implements Input, ICommand {
     private String _tenantId;
     private String _version;
     private final String _commandName;
+    private List<Object> _files;
+    private Map<String, String> _mapAttr;
 
     public Command(Builder builder) {
         this._rootId = builder.rootId;
@@ -23,6 +29,8 @@ public abstract class Command implements Input, ICommand {
         this._id = builder.id;
         this._version = builder.version;
         this._commandName = builder.commandName;
+        this._files = builder.files;
+        this._mapAttr = builder.mapAttr;
     }
 
     public final String rootId() {
@@ -47,6 +55,22 @@ public abstract class Command implements Input, ICommand {
 
     protected void setVersion(String version) {
         this._version = version;
+    }
+
+    public List<Object> getFiles() {
+        return _files;
+    }
+
+    protected void setFiles(List<Object> _files) {
+        this._files = _files;
+    }
+
+    public Map<String, String> getMapAttr() {
+        return _mapAttr;
+    }
+
+    protected void setMapAttr(Map<String, String> _mapAttr) {
+        this._mapAttr = _mapAttr;
     }
 
     @Override
@@ -76,6 +100,8 @@ public abstract class Command implements Input, ICommand {
         protected String tenantId;
         protected String version;
         protected String commandName;
+        protected List<Object> files;
+        private Map<String, String> mapAttr = new HashMap();
 
         public Builder withRootId(String rootId) {
             this.rootId = rootId;
@@ -99,6 +125,19 @@ public abstract class Command implements Input, ICommand {
 
         public Builder withCommandName(String commandName) {
             this.commandName = commandName;
+            return this;
+        }
+
+        public Builder withFiles(List<Object> files) {
+            this.files = files;
+            return this;
+        }
+
+        public Builder withMapAttr(String key, String value) {
+            if(mapAttr == null) {
+                this.mapAttr = new HashMap<>();
+            }
+            this.mapAttr.put(key, value);
             return this;
         }
 

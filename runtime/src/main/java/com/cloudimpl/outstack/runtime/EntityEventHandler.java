@@ -46,6 +46,7 @@ public abstract class EntityEventHandler<T extends Entity, E extends Event<?>> i
     protected EntityContext<T> emit(EntityContextProvider.Transaction tx,E event)
     {
         EntityContext<T> context = (EntityContext<T>) tx.getContext(enityType);
+        context.setTx(tx);
         accept(context, event);
         return context;
     }

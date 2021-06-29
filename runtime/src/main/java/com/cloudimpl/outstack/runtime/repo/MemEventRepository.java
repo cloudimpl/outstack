@@ -160,6 +160,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 .filter(e -> EventRepoUtil.onFilter(e, paging.getParams()))
                 .collect(Collectors.toList());
         return EventRepoUtil.onPageable(filterCollection, paging);
+
     }
 
     @Override
@@ -231,12 +232,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveRootEntityBrnIfExist(long lastSeq,RootEntity e) {
+    protected void saveRootEntityBrnIfExist(long lastSeq, RootEntity e) {
         mapEntites.put(resourceHelper.getFQBrn(e), e);
     }
 
     @Override
-    protected void saveRootEntityTrnIfExist(long lastSeq,RootEntity e) {
+    protected void saveRootEntityTrnIfExist(long lastSeq, RootEntity e) {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
     }
 
@@ -257,12 +258,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void saveChildEntityBrnIfExist(long lastSeq,ChildEntity e) {
+    protected void saveChildEntityBrnIfExist(long lastSeq, ChildEntity e) {
         mapEntites.put(resourceHelper.getFQBrn(e), e);
     }
 
     @Override
-    protected void saveChildEntityTrnIfExist(long lastSeq,ChildEntity e) {
+    protected void saveChildEntityTrnIfExist(long lastSeq, ChildEntity e) {
         mapEntites.put(resourceHelper.getFQTrn(e), e);
     }
 

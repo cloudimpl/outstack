@@ -9,6 +9,10 @@ import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -25,7 +29,10 @@ public class CommandWrapper implements ICommand {
     private final String version;
     private final String rootType;
     private final String childType;
+    private final List<Object> files;
     private Object grant;
+    private Map<String, String> mapAttr;
+
     public CommandWrapper(Builder builder) {
         this.command = builder.command;
         this.rootId = builder.rootId;
@@ -35,6 +42,12 @@ public class CommandWrapper implements ICommand {
         this.version = builder.version;
         this.rootType = builder.rootType;
         this.childType = builder.childType;
+        this.files = builder.files;
+        this.mapAttr = builder.mapAttr;
+    }
+
+    protected void setMapAttr(Map<String, String> mapAttr) {
+        this.mapAttr = mapAttr;
     }
 
     @Override
@@ -44,6 +57,8 @@ public class CommandWrapper implements ICommand {
         CommandHelper.withTenantId(cmd, tenantId);
         CommandHelper.withId(cmd, id);
         CommandHelper.withVersion(cmd, version);
+        CommandHelper.withFiles(cmd, files);
+        CommandHelper.withMapAttr(cmd, mapAttr);
         return cmd;
     }
 
@@ -77,6 +92,9 @@ public class CommandWrapper implements ICommand {
         return (T) grant;
     }
 
+    public Map<String, String> getMapAttr() {
+        return mapAttr;
+    }
     
     public static Builder builder() {
         return new Builder();
@@ -92,6 +110,8 @@ public class CommandWrapper implements ICommand {
         private String version;
         private String rootType;
         private String childType;
+        private List<Object> files;
+        private Map<String, String> mapAttr = new HashMap<>();
 
         public Builder withCommand(String command) {
             this.command = command;
@@ -138,8 +158,22 @@ public class CommandWrapper implements ICommand {
             return this;
         }
 
+        public Builder withFiles(List<Object> files) {
+            this.files = files;
+            return this;
+        }
+
+        public Builder withMapAttr(String key, String value) {
+            if(mapAttr == null) {
+                this.mapAttr = new HashMap<>();
+            }
+            this.mapAttr.put(key, value);
+            return this;
+        }
+
         public CommandWrapper build() {
             return new CommandWrapper(this);
         }
+
     }
 }

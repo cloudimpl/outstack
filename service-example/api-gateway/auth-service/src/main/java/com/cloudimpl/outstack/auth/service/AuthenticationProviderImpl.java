@@ -34,7 +34,7 @@ public class AuthenticationProviderImpl implements AuthenticationProvider{
     
     @Override
     public Mono<PlatformAuthenticationToken> authenticate(PlatformAuthenticationToken authentication) {
-        return AuthenticationUtil.loginUser(authentication,req->cluster.requestReply("cloudimpl/example/v1/UserService", req));
+        return AuthenticationUtil.loginUser(authentication,req->cluster.requestReply(null,"cloudimpl/example/v1/UserService", req));
     }
    
 }

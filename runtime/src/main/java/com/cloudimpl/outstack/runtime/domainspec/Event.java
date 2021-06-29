@@ -229,6 +229,8 @@ public abstract class Event<T extends Entity> implements IResource, Input {
         private String version;
         private boolean idIgnoreCase;
         private boolean rootIdIgnoreCase;
+        private String userId;
+        private String userName;
 
         protected void setCreatedDate(long createdDate) {
             this.createdDate = createdDate;
@@ -256,6 +258,22 @@ public abstract class Event<T extends Entity> implements IResource, Input {
 
         public String getVersion() {
             return version;
+        }
+
+        public String getUserId() {
+            return userId;
+        }
+
+        protected void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getUserName() {
+            return userName;
+        }
+
+        protected void setUserName(String userName) {
+            this.userName = userName;
         }
     }
 }
