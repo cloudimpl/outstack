@@ -159,6 +159,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     public <C extends ChildEntity<T>> C delete(Class<C> type, String id) {
         ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        childContext.setTx(getTx());
         return (C) childContext.delete(id);
     }
 
