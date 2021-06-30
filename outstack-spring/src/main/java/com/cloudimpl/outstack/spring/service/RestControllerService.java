@@ -167,7 +167,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             eventRepo.applyEvent(event);
         });
 
-        actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
+         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
             QueryHandlerRegistered event = new QueryHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
             String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
             event.setId(childId);

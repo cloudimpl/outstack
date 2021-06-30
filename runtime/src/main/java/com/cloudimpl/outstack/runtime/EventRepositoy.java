@@ -12,6 +12,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.repo.SimpleTransaction;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Collection;
@@ -90,8 +91,8 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
                         saveChildEntityTrnIfExist(seq, child);
                         saveChildEntityBrnIfNotExist(child);
                     } else {
-                        saveRootEntityTrnIfExist(seq, (RootEntity) e);
-                        saveRootEntityBrnIfExist(seq, (RootEntity) e);
+                        saveChildEntityTrnIfExist(seq, child);
+                        saveChildEntityBrnIfExist(seq, child);
                     }
 
                 }
@@ -113,10 +114,10 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     }
 
     public <T extends Entity> T applyEvent(Event event) {
-        startTransaction();
-     //   T e = _applyEvent(event);
-        endTransaction();
-        return null;
+        SimpleTransaction transaction = new SimpleTransaction(event.getRootOwner(), this);
+        transaction.apply(event);
+        saveTx(transaction);
+        return (T) transaction.getEntityList().iterator().next();
     }
 
     private long nextSeq(String rootTrn)

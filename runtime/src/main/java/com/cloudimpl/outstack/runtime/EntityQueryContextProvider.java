@@ -77,11 +77,12 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected final Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector;
         protected final String version;
         protected final boolean async;
-
+        private Class<R> type;
         public ReadOnlyTransaction(Class<R> type, Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator,
                 Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
             this.idGenerator = idGenerator;
+            this.type = type;
             if (rootTid != null) {
                 this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId).map(t -> t.id()).orElse(null);
             }
@@ -127,9 +128,9 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             }
         }
 
-        private void validateRootTid() {
+        protected void validateRootTid() {
             if (rootTid == null) {
-                throw new ServiceProviderException("rootId not available");
+                throw new ServiceProviderException("{0} not available",type.getSimpleName());
             }
         }
 

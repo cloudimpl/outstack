@@ -140,12 +140,6 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
             }
         }
 
-        private void validateRootTid() {
-            if (rootTid == null) {
-                throw new ServiceProviderException("rootId not available");
-            }
-        }
-
         public <K extends Entity, C extends ChildEntity<R>> Optional<K> loadEntity(Class<R> rootType, String id, Class<C> childType, String childId, String tenantId) {
             if (childType == null) {
                 return (Optional<K>) loadRootEntity(rootType, id, tenantId)

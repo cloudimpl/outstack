@@ -82,7 +82,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         this.client = client;
         //this.loadTables();
         this.configs = configs;
-        this.tableName = this.configs.getOption(rootType.getSimpleName() + "Table", "defaultTable").get();
+        this.tableName = this.configs.getOption(rootType.getSimpleName() + "Table").or(()->this.configs.getOption("defaultTable")).get();
         System.out.println("table name " + this.tableName + " pick for root type: " + rootType.getSimpleName());
         //this.partitionCount = Integer.valueOf(configs.getOption("partitionCount").get());
     }
@@ -244,6 +244,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
                 .withTableName(this.tableName)
                 .withKey(item)
                 .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
+                .withExpressionAttributeValues(expressionAttributeValues)
                 .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
 
@@ -267,6 +268,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
                 .withTableName(this.tableName)
                 .withKey(item)
                 .withUpdateExpression("SET json = :json , lastSeq = :lastSeq")
+                .withExpressionAttributeValues(expressionAttributeValues)
                 .withConditionExpression("lastSeq = :checkLastSeq and attribute_exists(" + this.rangeKeyColumn + ")")
                 .withReturnValuesOnConditionCheckFailure(ReturnValuesOnConditionCheckFailure.ALL_OLD);
 
@@ -418,7 +420,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
                 .withExpressionAttributeValues(expressionAttributeValues);
 
         QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(rootType, attr.get("json").getS())).collect(Collectors.toList());
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(rootType, attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
@@ -511,7 +513,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
                 .withExpressionAttributeValues(expressionAttributeValues);
 
         QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(childType, attr.get("json").getS())).collect(Collectors.toList());
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(childType, attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
@@ -536,7 +538,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
          //       .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
         QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(attr.get("json").getS())).collect(Collectors.toList());
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
@@ -565,7 +567,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         //        .withExpressionAttributeNames(expressionAttributesNames)
                 .withExpressionAttributeValues(expressionAttributeValues);
         QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(attr.get("json").getS())).collect(Collectors.toList());
+        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
