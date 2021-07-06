@@ -1,3 +1,4 @@
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -22,6 +23,7 @@ import com.cloudimpl.outstack.node.CloudNode;
 import com.cloudimpl.outstack.runtime.CommandWrapper;
 import com.cloudimpl.outstack.runtime.CommandWrapperHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
+import com.cloudimpl.outstack.runtime.QueryWrapper;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
@@ -103,12 +105,12 @@ public class Cluster {
 
     private void bindVars(Injector injector) {
         configManager.getProviders().stream().forEach(p -> {
+            Object instance = p.getInstance();
             if (p.getStatus().isPresent() && p.getStatus().get().equals("active")) {
-                Object instance = p.getInstance();
                 injector.bind(CloudUtil.classForName(p.getBase())).to(instance);
                 injector.bind(p.getName()).to(instance);
             } else {
-                injector.bind(p.getName()).toClass(CloudUtil.classForName(p.getImpl()));
+                injector.bind(p.getName()).to(instance);
             }
         });
     }
@@ -139,9 +141,19 @@ public class Cluster {
             CommandWrapper wrapper = CommandWrapper.class.cast(msg);
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
-                    .cast(PlatformAuthenticationToken.class)               
-            .doOnNext(c -> populateExternalAttributes(c, httpRequest, wrapper))
-                    .map(t -> PolicyStatementValidator.processPolicyStatements(wrapper.commandName(), wrapper.getRootType(), t))
+                    .cast(PlatformAuthenticationToken.class)
+                    .doOnNext(c -> populateExternalAttributes(c, httpRequest, wrapper))
+                    .map(t -> PolicyStatementValidator.processPolicyStatementsForCommand(wrapper.commandName(), wrapper.getRootType(), t))
+                    .doOnNext(g -> wrapper.setGrant(g))
+                    .flatMap(g -> this.node.requestReply(serviceName, msg))
+                    .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
+                    .map(o -> (T) o);
+        } else if (msg instanceof QueryWrapper) {
+            QueryWrapper wrapper = QueryWrapper.class.cast(msg);
+            return ReactiveSecurityContextHolder
+                    .getContext().map(c -> c.getAuthentication())
+                    .cast(PlatformAuthenticationToken.class)
+                    .map(t -> PolicyStatementValidator.processPolicyStatementsForQuery(wrapper.queryName(), wrapper.getRootType(), t))
                     .doOnNext(g -> wrapper.setGrant(g))
                     .flatMap(g -> this.node.requestReply(serviceName, msg))
                     .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))

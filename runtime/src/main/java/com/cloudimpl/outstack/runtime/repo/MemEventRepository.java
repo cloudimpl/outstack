@@ -51,6 +51,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     public MemEventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         super(rootType, resourceHelper, eventStream);
+        System.out.println("MemEventRepository : "+rootType.getName() + "initialized");
     }
 
     @Override

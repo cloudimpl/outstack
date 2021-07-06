@@ -34,7 +34,8 @@ public class PolicyStatementRequest extends Command {
     private final String domainContext;
     private final String rootType;
     private final EffectType effect;
-    private final Collection<String> actions;
+    private final Collection<String> cmdActions;
+    private final Collection<String> queryActions;
     private final Collection<String> resources;
 
     public PolicyStatementRequest(Builder builder) {
@@ -44,12 +45,17 @@ public class PolicyStatementRequest extends Command {
         this.domainContext = builder.domainContext;
         this.rootType= builder.rootType;
         this.effect = builder.effect;
-        this.actions = Collections.unmodifiableCollection(builder.actions);
+        this.cmdActions = Collections.unmodifiableCollection(builder.cmdActions);
+        this.queryActions = Collections.unmodifiableCollection(builder.queryActions);
         this.resources = Collections.unmodifiableCollection(builder.resources);
     }
 
-    public Collection<String> getActions() {
-        return actions;
+    public Collection<String> getCmdActions() {
+        return cmdActions;
+    }
+
+    public Collection<String> getQueryActions() {
+        return queryActions;
     }
 
     public EffectType getEffect() {
@@ -89,7 +95,8 @@ public class PolicyStatementRequest extends Command {
         private String domainContext;
         private String rootType;
         private EffectType effect;
-        private Collection<String> actions = new LinkedList<>();
+        private Collection<String> cmdActions = new LinkedList<>();
+        private Collection<String> queryActions = new LinkedList<>();
         private Collection<String> resources = new LinkedList<>();
         
         public Builder withSid(String sid)
@@ -110,9 +117,15 @@ public class PolicyStatementRequest extends Command {
             return this;
         }
         
-        public Builder withAction(String action)
+        public Builder withCmdAction(String action)
         {
-            this.actions.add(action);
+            this.cmdActions.add(action);
+            return this;
+        }
+        
+        public Builder withQueryAction(String action)
+        {
+            this.queryActions.add(action);
             return this;
         }
         

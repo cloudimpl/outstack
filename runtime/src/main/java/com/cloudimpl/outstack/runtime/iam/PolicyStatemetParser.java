@@ -45,15 +45,20 @@ public class PolicyStatemetParser {
             throw new PolicyStatementException("policy statement effectType is null");
         }
         validateResourceName(stmt.getSid(), "statmentID");
-        Collection<ActionDescriptor> actions = stmt.getActions().stream().map(action -> parseAction(action)).collect(Collectors.toList());
-        if (actions.isEmpty()) {
-            throw new PolicyStatementException("policy statement actions are empty");
+        Collection<ActionDescriptor> cmdActions = stmt.getCmdActions().stream().map(action -> parseAction(action)).collect(Collectors.toList());
+        if (cmdActions.isEmpty()) {
+            throw new PolicyStatementException("policy statement command actions are empty");
+        }
+        
+        Collection<ActionDescriptor> queryActions = stmt.getQueryActions().stream().map(action -> parseAction(action)).collect(Collectors.toList());
+        if (cmdActions.isEmpty()) {
+            throw new PolicyStatementException("policy statement command actions are empty");
         }
         Collection<ResourceDescriptor> resources = stmt.getResources().stream().map(resource -> parse(resource)).collect(Collectors.toList());
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
         }
-        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), actions, resources);
+        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), cmdActions,queryActions, resources);
     }
 
     public static void validate(RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
@@ -61,7 +66,7 @@ public class PolicyStatemetParser {
         if (rootType == null) {
             rootType = "*";
         }
-        validateActions(context, rootType, event.getActions());
+        validateActions(context, rootType, event.getCmdActions(),event.getQueryActions());
     }
 
     private static String validateCrossResourceUsage(RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
@@ -102,22 +107,38 @@ public class PolicyStatemetParser {
         return rootType;
     }
 
-    private static void validateActions(RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> actions) {
+    private static void validateActions(RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions) {
        
-        List<String> actionsList = new LinkedList<>();
+        List<String> cmdActionList = new LinkedList<>();
+        List<String> queryActionList = new LinkedList<>();
         if (!rootType.equals("*")) {
              ServiceModule service = context.getEntityQueryProvider(ServiceModule.class).getRoot(rootType).get();
-            context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),CommandHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
-            context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),QueryHandlerEntity.class).forEach(a -> actionsList.add(a.getHandlerName()));
+            context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),CommandHandlerEntity.class).forEach(a -> cmdActionList.add(a.getHandlerName()));
+            context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),QueryHandlerEntity.class).forEach(a -> queryActionList.add(a.getHandlerName()));
         }
 
-        for (ActionDescriptor action : actions) {
+        for (ActionDescriptor action : cmdActions) {
             switch (action.getActionScope()) {
                 case EXACT_NAME: {
                     if (rootType.contains("*")) {
                         throw new PolicyValidationError("action definitions not allowed for wild card resource type");
                     }
-                    actionsList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource action " + action.getName() + " not found"));
+                    cmdActionList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource command action " + action.getName() + " not found"));
+                    break;
+                }
+                default: {
+
+                }
+            }
+        }
+        
+        for (ActionDescriptor action : queryActions) {
+            switch (action.getActionScope()) {
+                case EXACT_NAME: {
+                    if (rootType.contains("*")) {
+                        throw new PolicyValidationError("action definitions not allowed for wild card resource type");
+                    }
+                    queryActionList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource query action " + action.getName() + " not found"));
                     break;
                 }
                 default: {

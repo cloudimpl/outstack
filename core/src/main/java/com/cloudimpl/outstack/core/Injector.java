@@ -46,7 +46,7 @@ public class Injector {
         return new NamedBindHolder(name, this);
     }
 
-    public void nameBind(String name, Object value) {
+    public synchronized void nameBind(String name, Object value) {
         nameBinds.put(name, value);
     }
 
@@ -54,10 +54,11 @@ public class Injector {
         nameBindsByClass.put(name, value);
     }
 
-    public <T> T nameBind(String name) {
+    public synchronized <T> T nameBind(String name) {
         T val = (T) nameBinds.get(name);
         if (val == null) {
             val = inject((Class<T>) nameBindsByClass.get(name));
+            nameBind(name,val);
         }
         return val;
     }

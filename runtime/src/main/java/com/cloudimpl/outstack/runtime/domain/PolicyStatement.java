@@ -39,18 +39,24 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     @Id
     private final String sid;
     private  EffectType effect;
-    private  Collection<ActionDescriptor> actions;
+    private  Collection<ActionDescriptor> cmdActions;
+    private  Collection<ActionDescriptor> queryActions;
     private  Collection<ResourceDescriptor> resources;
     private final String tenantId;
     public PolicyStatement(String sid,String tenantId) {
         this.sid = sid;
         this.tenantId = tenantId;
-        this.actions = Collections.EMPTY_LIST;
+        this.cmdActions = Collections.EMPTY_LIST;
+        this.queryActions = Collections.EMPTY_LIST;
         this.resources = Collections.EMPTY_LIST;
     }
 
-    public Collection<ActionDescriptor> getActions() {
-        return actions;
+    public Collection<ActionDescriptor> getCmdActions() {
+        return cmdActions;
+    }
+
+    public Collection<ActionDescriptor> getQueryActions() {
+        return queryActions;
     }
 
     public EffectType getEffect() {
@@ -71,8 +77,12 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
         return this.tenantId;
     }
     
-    public boolean isActionMatched(String action) {
-        return actions.stream().filter(ad -> ad.isActionMatched(action)).findFirst().isPresent();
+    public boolean isQueryActionMatched(String action) {
+        return queryActions.stream().filter(ad -> ad.isActionMatched(action)).findFirst().isPresent();
+    }
+    
+     public boolean isCmdActionMatched(String action) {
+        return cmdActions.stream().filter(ad -> ad.isActionMatched(action)).findFirst().isPresent();
     }
 
     @Override
@@ -83,14 +93,16 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     private void applyEvent(PolicyStatementCreated stmtCreated)
     {
         this.effect = stmtCreated.getEffect();
-        this.actions = stmtCreated.getActions();
+        this.cmdActions = stmtCreated.getCmdActions();
+        this.queryActions = stmtCreated.getQueryActions();
         this.resources = stmtCreated.getResources();
     }
     
     private void applyEvent(PolicyStatementUpdated stmtUpdated)
     {
         this.effect = stmtUpdated.getEffect();
-        this.actions = stmtUpdated.getActions();
+        this.cmdActions = stmtUpdated.getCmdActions();
+        this.queryActions = stmtUpdated.getQueryActions();
         this.resources = stmtUpdated.getResources();
     }
     
@@ -122,7 +134,7 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
 
     @Override
     public String toString() {
-        return "PolicyStatement{" + "sid=" + sid + ", effect=" + effect + ", actions=" + actions + ", resources=" + resources + ", tenantId=" + tenantId + '}';
+        return "PolicyStatement{" + "sid=" + sid + ", effect=" + effect + ", actions=[" + cmdActions+","+ queryActions+ "], resources=" + resources + ", tenantId=" + tenantId + '}';
     }
 
     
