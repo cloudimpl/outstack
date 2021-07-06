@@ -23,13 +23,13 @@ import java.util.Optional;
  * @author nuwan
  */
 public class PolicyStatementValidator {
-    public static PlatformGrantedAuthority processPolicyStatements(String action,String rootType,PlatformAuthenticationToken token)
+    public static PlatformGrantedAuthority processPolicyStatementsForCommand(String action,String rootType,PlatformAuthenticationToken token)
     {
         PlatformGrantedAuthority grant =  token.getAuthorities().stream().map(g->PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(()->new PlatformAuthenticationException("no grant found to authenticate", null));
         Optional<PolicyStatement> denyStmt = grant.getDenyStatmentByResourceName(rootType);
         if(denyStmt.isPresent())
         {
-            denyStmt.get().getActions().stream().filter(a->a.isActionMatched(action))
+            denyStmt.get().getCmdActions().stream().filter(a->a.isActionMatched(action))
                     .findAny().ifPresent(a->{
                         throw new PlatformAuthenticationException(null,"action {0} is denied from policy statement {1}",action,a);
                     });
@@ -40,7 +40,36 @@ public class PolicyStatementValidator {
         Optional<PolicyStatement> allowStmt  = grant.getAllowStatmentByResourceName(rootType);
         if(allowStmt.isPresent())
         {
-            allowStmt.get().getActions().stream().filter(a->a.isActionMatched(action))
+            allowStmt.get().getCmdActions().stream().filter(a->a.isActionMatched(action))
+                    .findAny().orElseThrow(()-> new PlatformAuthenticationException(null,"action {0} not define in the policy statement",action));
+            allowStmt.get().getResources().stream().filter(a->a.isResourceMatched(rootType))
+                    .findAny().orElseThrow(()-> new PlatformAuthenticationException(null,"resource {0} not define in the policy statement",rootType));
+        }else
+        {
+            throw new PlatformAuthenticationException(null,"resource {0} access not allowed for action {1}",rootType,action);
+        }
+        return grant;
+    }
+    
+    
+    public static PlatformGrantedAuthority processPolicyStatementsForQuery(String action,String rootType,PlatformAuthenticationToken token)
+    {
+        PlatformGrantedAuthority grant =  token.getAuthorities().stream().map(g->PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(()->new PlatformAuthenticationException("no grant found to authenticate", null));
+        Optional<PolicyStatement> denyStmt = grant.getDenyStatmentByResourceName(rootType);
+        if(denyStmt.isPresent())
+        {
+            denyStmt.get().getQueryActions().stream().filter(a->a.isActionMatched(action))
+                    .findAny().ifPresent(a->{
+                        throw new PlatformAuthenticationException(null,"action {0} is denied from policy statement {1}",action,a);
+                    });
+            denyStmt.get().getResources().stream().filter(a->a.isResourceMatched(rootType)).findAny().ifPresent(a->{
+                        throw new PlatformAuthenticationException(null,"resource {0} is denied from policy statement {1}",action,a);
+                    });
+        }
+        Optional<PolicyStatement> allowStmt  = grant.getAllowStatmentByResourceName(rootType);
+        if(allowStmt.isPresent())
+        {
+            allowStmt.get().getQueryActions().stream().filter(a->a.isActionMatched(action))
                     .findAny().orElseThrow(()-> new PlatformAuthenticationException(null,"action {0} not define in the policy statement",action));
              allowStmt.get().getResources().stream().filter(a->a.isResourceMatched(rootType))
                     .findAny().orElseThrow(()-> new PlatformAuthenticationException(null,"resource {0} not define in the policy statement",rootType));

@@ -19,12 +19,14 @@ import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.ComponentProvider;
 import com.cloudimpl.outstack.core.ComponentProviderManager;
 import com.cloudimpl.outstack.core.Injector;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -42,7 +44,7 @@ public class SpringApplicationConfigManager implements ComponentProviderManager 
     private String domainContext;
     private String apiContext;
     private Cluster cluster = new Cluster();
-    private List<Provider> providers;
+    private Map<String,List<Provider>> providers;
     private Injector injector;
 
     public String getApiContext() {
@@ -58,7 +60,7 @@ public class SpringApplicationConfigManager implements ComponentProviderManager 
         this.injector = injector;
     }
 
-    public void setProviders(List<Provider> providers) {
+    public void setProviders(Map<String, List<Provider>> providers) {
         this.providers = providers;
     }
 
@@ -88,13 +90,20 @@ public class SpringApplicationConfigManager implements ComponentProviderManager 
         this.cluster = cluster;
     }
 
-
+    public Collection<Provider> getProviders(){
+        return providers.entrySet().stream().peek(e->e.getValue().forEach(p->p.setBase(e.getKey())))
+                .map(e->e.getValue())
+                .flatMap(l->l.stream())
+                .peek(p->p.setInjector(injector))
+                .collect(Collectors.toList());
+    }
+    
     @Override
-    public ComponentProvider getProvider(String name) {
-        return providers.stream().filter(p -> p.getName().equals(name))
-                .filter(p -> p.getStatus().isPresent())
-                .filter(p -> p.getStatus().get().equalsIgnoreCase("active"))
-                .peek(p -> p.setInjector(injector)).findFirst().get();
+    public Optional<ComponentProvider> getProvider(String name) {
+        return Optional.ofNullable(providers.get(name)).flatMap(l->l.stream()
+                .filter(p->p.getStatus().isPresent())
+                .filter(p->p.getStatus().get().equalsIgnoreCase("active"))
+                .peek(p -> p.setInjector(injector)).findFirst());
     }
 
     public static final class Cluster {
@@ -139,11 +148,13 @@ public class SpringApplicationConfigManager implements ComponentProviderManager 
         
         
     }
-
+    
+    
     public static final class Provider implements ComponentProvider {
 
         private String name;
         private String impl;
+        private String base;
         public Map<String, String> configs = new HashMap<>();
         private String status;
         private Injector injector;
@@ -154,6 +165,14 @@ public class SpringApplicationConfigManager implements ComponentProviderManager 
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public String getBase() {
+            return base;
+        }
+
+        public void setBase(String base) {
+            this.base = base;
         }
 
         public void setStatus(String status) {

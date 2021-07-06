@@ -39,7 +39,7 @@ public class AuthorizationProviderImpl implements AuthorizationProvider {
     public AuthorizationProviderImpl() {
         PolicyStatement adminPolicy = new PolicyStatement("fullAdminAccess", null);
         adminPolicy.applyEvent(new PolicyStatementCreated("fullAdminAccess", PolicyStatement.EffectType.DENY,
-                Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)), Collections.singleton(ResourceDescriptor.builder().withResourceScope(ResourceDescriptor.ResourceScope.GLOBAL).build())));
+                Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)),Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)), Collections.singleton(ResourceDescriptor.builder().withResourceScope(ResourceDescriptor.ResourceScope.GLOBAL).build())));
         adminAuth = new PlatformGrantedAuthority(Collections.EMPTY_MAP, Collections.singletonMap("*", adminPolicy));
     }
 

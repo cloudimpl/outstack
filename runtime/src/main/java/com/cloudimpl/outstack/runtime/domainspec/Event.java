@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
 import com.cloudimpl.outstack.runtime.EntityMetaDetail;
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
@@ -33,6 +34,7 @@ public abstract class Event<T extends Entity> implements IResource, Input {
             EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getOwner());
             EntityMetaDetail rootMeta = EntityMetaDetailCache.instance().getEntityMeta(this.getRootOwner());
             _meta.setIdIgnoreCase(meta.isIdIgnoreCase());
+            _meta.setVersion(rootMeta.getVersion());
             _meta.setRootIdIgnoreCase(rootMeta.isIdIgnoreCase());
         }
     }
@@ -76,10 +78,12 @@ public abstract class Event<T extends Entity> implements IResource, Input {
     }
 
     public void setRootId(String rootId) {
+        EntityIdHelper.validateTechnicalId(rootId);
         this._rootId = rootId;
     }
 
     public void setId(String id) {
+        EntityIdHelper.validateTechnicalId(id);
         this._id = id;
     }
 

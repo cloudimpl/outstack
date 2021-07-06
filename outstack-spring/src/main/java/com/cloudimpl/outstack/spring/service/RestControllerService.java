@@ -58,7 +58,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     
     @Inject
     public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
-            ServiceDescriptorContextManager serviceManager, EventRepositoryFactory eventRepoFactory, ILogger logger) {
+            ServiceDescriptorContextManager serviceManager,@Named("MemRepositoryFactory") EventRepositoryFactory eventRepoFactory, ILogger logger) {
         this.logger = logger.createSubLogger(RestControllerService.class);
         this.eventRepoFactory = eventRepoFactory;
         this.serviceFlux = serviceFlux;
@@ -167,7 +167,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             eventRepo.applyEvent(event);
         });
 
-        actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
+         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
             QueryHandlerRegistered event = new QueryHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
             String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
             event.setId(childId);

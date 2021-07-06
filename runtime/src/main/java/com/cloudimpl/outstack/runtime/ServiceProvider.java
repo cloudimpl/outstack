@@ -116,13 +116,13 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
             if (AsyncEntityCommandHandler.class.isInstance(handler)) {
                 Mono<EntityContext> mono = AsyncEntityCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd);
                 return mono.doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                        .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx())))
                         .flatMap(ct -> resolveReply(ct.getTx().getReply()))
                         .map(r -> encode(cmd, r));
             } else {
                 return Mono.just(handler.emit(contextProvider, cmd))
                         .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                        .doOnNext(ct -> eventRepository.saveTx((EntityContextProvider.Transaction) ct.getTx()))
+                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx())))
                         .flatMap(ct -> resolveReply(ct.getTx().getReply()))
                         .map(r -> encode(cmd, r));
             }

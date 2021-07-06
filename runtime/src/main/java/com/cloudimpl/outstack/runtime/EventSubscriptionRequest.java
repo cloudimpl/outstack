@@ -13,14 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.core;
+package com.cloudimpl.outstack.runtime;
 
-import java.util.Optional;
+import java.util.Set;
 
 /**
  *
  * @author nuwan
  */
-public interface ComponentProviderManager {
-    Optional<ComponentProvider> getProvider(String name);
+public class EventSubscriptionRequest {
+    private String rootType;
+    private long seq;
+    private Set<String> eventTypes;
 }

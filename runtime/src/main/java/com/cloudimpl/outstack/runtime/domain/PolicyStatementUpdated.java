@@ -30,13 +30,15 @@ public class PolicyStatementUpdated extends Event<PolicyStatement> {
 
     private final String sid;
     private final PolicyStatement.EffectType effect;
-    private final Collection<ActionDescriptor> actions;
+    private final Collection<ActionDescriptor> cmdActions;
+    private final Collection<ActionDescriptor> queryActions;
     private final Collection<ResourceDescriptor> resources;
 
-    public PolicyStatementUpdated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> actions, Collection<ResourceDescriptor> resources) {
+    public PolicyStatementUpdated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources) {
         this.sid = sid;
         this.effect = effect;
-        this.actions = actions;
+        this.cmdActions = cmdActions;
+        this.queryActions = queryActions;
         this.resources = resources;
     }
 
@@ -48,8 +50,12 @@ public class PolicyStatementUpdated extends Event<PolicyStatement> {
         return effect;
     }
 
-    public Collection<ActionDescriptor> getActions() {
-        return actions;
+    public Collection<ActionDescriptor> getCmdActions() {
+        return cmdActions;
+    }
+
+    public Collection<ActionDescriptor> getQueryActions() {
+        return queryActions;
     }
 
     public Collection<ResourceDescriptor> getResources() {

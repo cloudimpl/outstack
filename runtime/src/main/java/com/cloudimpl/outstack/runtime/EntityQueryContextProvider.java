@@ -13,6 +13,8 @@ import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -64,7 +66,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         return version;
     }
 
-    public static class ReadOnlyTransaction< R extends RootEntity> implements QueryOperations<R> {
+    public static class ReadOnlyTransaction< R extends RootEntity> implements ITransaction<R> {
 
         protected final QueryOperations<R> queryOperation;
         protected final String tenantId;
@@ -75,11 +77,12 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected final Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector;
         protected final String version;
         protected final boolean async;
-
+        private Class<R> type;
         public ReadOnlyTransaction(Class<R> type, Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator,
                 Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
             this.idGenerator = idGenerator;
+            this.type = type;
             if (rootTid != null) {
                 this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId).map(t -> t.id()).orElse(null);
             }
@@ -125,9 +128,9 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             }
         }
 
-        private void validateRootTid() {
+        protected void validateRootTid() {
             if (rootTid == null) {
-                throw new ServiceProviderException("rootId not available");
+                throw new ServiceProviderException("{0} not available",type.getSimpleName());
             }
         }
 
@@ -170,6 +173,36 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         @Override
         public <T extends ChildEntity<R>> ResultSet<Event<T>> getEventsByChildId(Class<R> rootType, String id, Class<T> childType, String childId, String tenantId, Query.PagingRequest paging) {
             return queryOperation.getEventsByChildId(rootType, id, childType, childId, tenantId, paging);
+        }
+
+        @Override
+        public void setAttachment(Object attachment) {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public <K> K getAttachment() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public List<Event> getEventList() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Collection<Entity> getEntityList() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Map<String, Entity> getDeletedEntities() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Map<String, Entity> getRenameEntities() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
     }

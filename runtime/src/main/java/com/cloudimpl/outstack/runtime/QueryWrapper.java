@@ -19,18 +19,22 @@ public class QueryWrapper implements IQuery {
 
     private final String query;
     private final String rootId;
+    private final String rootType;
     private final String id;
     private final String tenantId;
     private final String version;
     private final String payload;
+    private Object grant;
     private final Query.PagingRequest pagingRequest;
+
     public QueryWrapper(Builder builder) {
         this.query = builder.query;
+        this.rootType = builder.rootType;
         this.rootId = builder.rootId;
         this.id = builder.id;
         this.version = builder.version;
         this.tenantId = builder.tenantId;
-        this.payload = builder.payload == null?"{}":builder.payload;
+        this.payload = builder.payload == null ? "{}" : builder.payload;
         this.pagingRequest = builder.pageRequest;
     }
 
@@ -51,77 +55,86 @@ public class QueryWrapper implements IQuery {
     }
 
     @Override
-    public String version(){
+    public String version() {
         return this.version;
     }
-    
+
     public Optional<String> getRootId() {
         return Optional.ofNullable(rootId);
     }
 
-    public Optional<String> getId()
-    {
+    public Optional<String> getId() {
         return Optional.ofNullable(id);
     }
-    
-    public static Builder builder()
-    {
+
+    public String getRootType() {
+        return rootType;
+    }
+
+    public void setGrant(Object grant) {
+        this.grant = grant;
+    }
+
+    public <T> T getGrant() {
+        return (T) grant;
+    }
+
+    public static Builder builder() {
         return new Builder();
     }
-    
+
     public static final class Builder {
 
-        private  String query;
-        private  String rootId;
-        private  String id;
-        private  String tenantId;
-        private  String version;
-        private  String payload;
+        private String query;
+        private String rootType;
+        private String rootId;
+        private String id;
+        private String tenantId;
+        private String version;
+        private String payload;
         private Query.PagingRequest pageRequest;
-        
-        public Builder withQuery(String query)
-        {
+
+        public Builder withQuery(String query) {
             this.query = query;
             return this;
         }
-        
-        public Builder withRootId(String rootId)
-        {
+
+        public Builder withRootId(String rootId) {
             this.rootId = rootId;
             return this;
         }
-        
-        public Builder withVersion(String version)
-        {
+
+        public Builder withVersion(String version) {
             this.version = version;
             return this;
         }
-        
-        public Builder withId(String id)
-        {
+
+        public Builder withId(String id) {
             this.id = id;
             return this;
         }
-        
-        public Builder withTenantId(String tenantId)
-        {
+
+        public Builder withTenantId(String tenantId) {
             this.tenantId = tenantId;
             return this;
         }
-        
-        public Builder withPayload(String payload)
-        {
+
+        public Builder withRootType(String rootType) {
+            this.rootType = rootType;
+            return this;
+        }
+
+        public Builder withPayload(String payload) {
             this.payload = payload;
             return this;
         }
-        
-        public Builder withPageRequest(Query.PagingRequest pagingRequest)
-        {
+
+        public Builder withPageRequest(Query.PagingRequest pagingRequest) {
             this.pageRequest = pagingRequest;
             return this;
         }
-        public QueryWrapper build()
-        {
+
+        public QueryWrapper build() {
             return new QueryWrapper(this);
         }
     }

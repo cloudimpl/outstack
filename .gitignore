@@ -13,3 +13,4 @@ buildNumber.properties
 /service-example/nbproject/
 .DS_Store
 /runtime/nbproject/
+/outstack-spring/nbproject/

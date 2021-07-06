@@ -5,8 +5,10 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException.ErrorCode;
 import com.cloudimpl.outstack.runtime.util.Util;
+import java.util.Objects;
 
 /**
  *
@@ -64,6 +66,11 @@ public class EntityHelper {
         e.getMeta().setUserName(userName);
     }
     
+    public static void setLastEq(Entity e,long lastSeq)
+    {
+        e.getMeta().setLastSeq(lastSeq);
+    }
+    
     public  static  void validateEvent(Class<? extends RootEntity> rootType, Event event){
         if(event.getRootOwner()!= rootType){
             throw new DomainEventException(ErrorCode.BASIC_VIOLATION,"root entity type {0} mismatched with event root owner {1}",rootType,event.getRootOwner());
@@ -116,14 +123,27 @@ public class EntityHelper {
 
     }
     
-    public static <R extends RootEntity,T extends ChildEntity<R>> T createChildEntity(Class<? extends RootEntity> rootType,String rootId,Class<T> childType,String entityId, String tenantId) {
-        if (tenantId != null) {
-            return Util.createObject(childType,
-                    new Util.VarArg<>(String.class,String.class, String.class), new Util.VarArg<>(rootId,entityId, tenantId));
-        } else {
-            return Util.createObject(childType,
-                    new Util.VarArg<>(String.class,String.class), new Util.VarArg<>(rootId,entityId));
+    public static <R extends RootEntity,T extends ChildEntity<R>> T createChildEntity(Class<? extends RootEntity> rootType,String rootId,Class<T> childType,String entityId, String tenantId,String id) {
+        EntityIdHelper.validateTechnicalId(id);
+         T t;
+         TenantRequirement tr = Entity.checkTenantRequirement(rootType);
+        switch (tr) {
+            case REQUIRED: {
+                Objects.requireNonNull(tenantId);
+                t = Util.createObject(childType, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, tenantId));
+                break;
+            }
+            case OPTIONAL: {
+                t = Util.createObject(childType, new Util.VarArg<>(String.class, String.class), new Util.VarArg<>(entityId, tenantId));
+                break;
+            }
+            default: {
+                t = Util.createObject(childType, new Util.VarArg<>(String.class), new Util.VarArg<>(entityId));
+            }
         }
+        EntityHelper.updateId(t, id);
+        EntityHelper.updateRootId(t, rootId);
+        return t;
 
     }
 }

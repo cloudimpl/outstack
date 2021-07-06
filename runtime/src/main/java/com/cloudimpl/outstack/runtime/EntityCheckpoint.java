@@ -18,14 +18,23 @@ public class EntityCheckpoint {
         this.seq = 0;
     }
     
-    public long setSeq(long seq)
+    public EntityCheckpoint setSeq(long seq)
     {
         this.seq = seq;
-        return this.seq;
+        return this;
+    }
+    
+    public long nextSeq()
+    {
+        return ++this.seq;
     }
 
     public long getSeq() {
         return seq;
+    }
+
+    public String getRootTrn() {
+        return rootTrn;
     }
     
     
