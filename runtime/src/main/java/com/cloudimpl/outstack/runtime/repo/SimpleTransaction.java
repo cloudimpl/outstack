@@ -15,11 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.repo;
 
-import com.cloudimpl.outstack.runtime.EntityIdHelper;
-import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
-import com.cloudimpl.outstack.runtime.ITransaction;
-import com.cloudimpl.outstack.runtime.QueryOperations;
-import com.cloudimpl.outstack.runtime.ResultSet;
+import com.cloudimpl.outstack.runtime.*;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
@@ -153,6 +149,21 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
     @Override
     public <K> K getAttachment() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public <K> K getReply() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public <C extends ChildEntity<T>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public InputMetaProvider getInputMetaProvider() {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override

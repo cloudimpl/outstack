@@ -32,7 +32,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     protected final Optional<CRUDOperations> crudOperations;
     protected final QueryOperations<?> queryOperation;
     protected final Optional<Consumer<Event>> eventPublisher;
-    protected EntityContextProvider.ReadOnlyTransaction tx;
+    protected ITransaction tx;
     protected final Consumer<Object> validator;
     protected final Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector;
     protected final String version;
@@ -55,7 +55,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.entityMeta = EntityMetaDetailCache.instance().getEntityMeta(entityType);
     }
 
-    protected EntityContextProvider.ReadOnlyTransaction getTx() {
+    protected ITransaction getTx() {
         return this.tx;
     }
 
@@ -71,8 +71,9 @@ public abstract class EntityContext<T extends Entity> implements Context {
         return (QueryOperations<R>) queryOperation;
     }
 
-    public void setTx(EntityContextProvider.ReadOnlyTransaction tx) {
+    public <X extends EntityContext> X setTx(ITransaction tx) {
         this.tx = tx;
+        return (X)this;
     }
 
     public Consumer<Event> getEventPublisher() {
@@ -110,6 +111,10 @@ public abstract class EntityContext<T extends Entity> implements Context {
     public abstract <R extends RootEntity> RootEntityContext<R> asRootContext();
 
     public abstract <R extends RootEntity> AsyncEntityContext<R> asAsyncEntityContext();
+
+    public <R extends RootEntity> UnboundedEntityContext<R> asUnboundedEntityContext() {
+        throw new UnsupportedOperationException("Not supported.");
+    }
 
     public abstract <R extends RootEntity, K extends ChildEntity<R>> ChildEntityContext<R, K> asChildContext();
 

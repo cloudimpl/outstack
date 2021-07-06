@@ -94,7 +94,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             this.async = async;
         }
 
-        protected InputMetaProvider getInputMetaProvider() {
+        public InputMetaProvider getInputMetaProvider() {
             throw new UnsupportedOperationException("Not supported.");
         }
         public String getTenantId() {

@@ -18,12 +18,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.validation.ConstraintViolation;
+import javax.validation.Validator;
+
 import reactor.core.publisher.Mono;
 
 /**
@@ -45,6 +48,10 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
     public Transaction<T> createWritableTransaction(String rootTid, String tenantId, boolean async) {
         return new Transaction(type, entityProvider, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async, requestHandler);
+    }
+
+    public UnboundedTransaction<T> createUnboundedTransaction(String tenantId) {
+        return new UnboundedTransaction<T>(this, tenantId, idGenerator, queryOperation, this::validateObject, this.queryOperationSelector, type, requestHandler);
     }
 
     private <T> void validateObject(T target) {
@@ -99,12 +106,13 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
             this.eventList.add(event);
         }
 
-        protected InputMetaProvider getInputMetaProvider() {
+        public InputMetaProvider getInputMetaProvider() {
             return inputMetaProvider;
         }
 
-        protected void setInputMetaProvider(InputMetaProvider inputMetaProvider) {
+        protected Transaction setInputMetaProvider(InputMetaProvider inputMetaProvider) {
             this.inputMetaProvider = inputMetaProvider;
+            return this;
         }
         @Override
         public <C extends ChildEntity<R>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
@@ -117,7 +125,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                             idGenerator, Optional.of((CRUDOperations) this),
                             this,
                             Optional.of((Consumer<Event>) this::publishEvent),
-                            validator, this.queryOperationSelector, version, requestHandler.get());
+                            validator, this.queryOperationSelector, version, requestHandler.get()).setTx(this);
                 } else {
                     return (Z) new RootEntityContext(rootType,
                             rootTid, tenantId,
@@ -125,7 +133,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                             idGenerator, Optional.of((CRUDOperations) this),
                             this,
                             Optional.of((Consumer<Event>) this::publishEvent),
-                            validator, this.queryOperationSelector, version);
+                            validator, this.queryOperationSelector, version).setTx(this);
                 }
 
             } else {
@@ -136,7 +144,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                         rootType,
                         rootTid, childType, tenantId,
                         Optional.of((EntityProvider) this::loadEntity), idGenerator, Optional.of((CRUDOperations) this),
-                        this, Optional.of((Consumer<Event>) this::publishEvent), validator, this.queryOperationSelector, version);
+                        this, Optional.of((Consumer<Event>) this::publishEvent), validator, this.queryOperationSelector, version).setTx(this);
             }
         }
 
@@ -262,6 +270,173 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         @Override
         public Map<String, Entity> getRenameEntities() {
             return renameEntities;
+        }
+    }
+
+    public static final class UnboundedTransaction< R extends RootEntity> implements ITransaction<R>, CRUDOperations {
+        private EntityContextProvider entityContextProvider;
+        private String tenantId;
+        private Supplier<String> idGenerator;
+        private QueryOperations<R> queryOperation;
+        private Consumer<Object> validator;
+        private Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector;
+        private Map<String, ITransaction<R>> transactionMap = new ConcurrentHashMap<>();
+        private EntityMetaDetail entityMetaDetail;
+        private InputMetaProvider inputMetaProvider;
+        private Object reply;
+        private Supplier<BiFunction<String, Object, Mono>> requestHandler;
+
+        public UnboundedTransaction(EntityContextProvider entityContextProvider, String tenantId, Supplier<String> idGenerator, QueryOperations<R> queryOperation,
+                                    Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,
+                                    Class<? extends Entity> entityType, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
+            this.entityContextProvider = entityContextProvider;
+            this.tenantId = tenantId;
+            this.idGenerator = idGenerator;
+            this.queryOperation = queryOperation;
+            this.validator = validator;
+            this.queryOperationSelector = queryOperationSelector;
+            this.entityMetaDetail = EntityMetaDetailCache.instance().getEntityMeta(entityType);
+            this.requestHandler = requestHandler;
+        }
+
+        protected void setInputMetaProvider(InputMetaProvider inputMetaProvider) {
+            this.inputMetaProvider = inputMetaProvider;
+        }
+
+        public void setReply(Object reply) {
+            this.reply = reply;
+        }
+
+        @Override
+        public List<Event> getEventList() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Collection<Entity> getEntityList() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Map<String, Entity> getDeletedEntities() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Map<String, Entity> getRenameEntities() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void setAttachment(Object attachment) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public <K> K getAttachment() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public boolean isEntityRenamed(String trn) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Collection<ITransaction<R>> getTxList() {
+            return transactionMap.values();
+        }
+
+        @Override
+        public <K> K getReply() {
+            return (K) reply;
+        }
+
+        @Override
+        public <C extends ChildEntity<R>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType) {
+            if (RootEntity.isMyType(entityType)) {
+                Class<R> rootType = (Class<R>) entityType;
+                return (Z) new UnboundedEntityContext<>(entityContextProvider, rootType,
+                            tenantId,
+                            idGenerator, Optional.of((CRUDOperations) this),
+                            this.queryOperation,
+                            Optional.of((Consumer<Event>) this::publishEvent),
+                            validator, this.queryOperationSelector, entityMetaDetail.getVersion(), requestHandler.get());
+
+            } else {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        }
+
+        @Override
+        public InputMetaProvider getInputMetaProvider() {
+            return inputMetaProvider;
+        }
+
+        public <K extends Entity, C extends ChildEntity<R>> Optional<K> loadEntity(Class<R> rootType, String id, Class<C> childType, String childId, String tenantId) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        protected void publishEvent(Event event) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ResultSet<R> getAllByRootType(Class<R> rootType, String tenantId, Query.PagingRequest paging) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Optional<R> getRootById(Class<R> rootType, String id, String tenantId) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType, String id, Class<T> childType, String childId, String tenantId) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId, Query.PagingRequest paging) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ResultSet<Event<R>> getEventsByRootId(Class<R> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public <T extends ChildEntity<R>> ResultSet<Event<T>> getEventsByChildId(Class<R> rootType, String id, Class<T> childType, String childId, String tenantId, Query.PagingRequest paging) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        protected ITransaction<R> getTransaction(String rootId) {
+            if(EntityIdHelper.isTechnicalId(rootId)) {
+                rootId = queryOperation.getRootById((Class<R>) entityMetaDetail.getType(), rootId,
+                        tenantId).orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity not available for entity {0}", entityMetaDetail.getType().getSimpleName())).entityId();
+            }
+            return transactionMap.computeIfAbsent(rootId, id -> entityContextProvider.createWritableTransaction(id, tenantId, false).setInputMetaProvider(inputMetaProvider));
+        }
+
+        @Override
+        public void create(Entity entity) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void update(Entity entity) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void delete(Entity entity) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void rename(Entity oldEntity, Entity newEntity) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 }

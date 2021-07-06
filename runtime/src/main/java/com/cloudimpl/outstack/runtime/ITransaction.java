@@ -15,10 +15,12 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,4 +46,14 @@ public interface ITransaction<R extends RootEntity> extends QueryOperations<R> {
     default boolean isEntityRenamed(String trn) {
         return getRenameEntities().containsKey(trn);
     }
+
+    default Collection<ITransaction<R>> getTxList() {
+        return Collections.singletonList(this);
+    }
+
+    <K> K getReply();
+
+    <C extends ChildEntity<R>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType);
+
+    InputMetaProvider getInputMetaProvider();
 }
