@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -116,15 +117,22 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
             if (AsyncEntityCommandHandler.class.isInstance(handler)) {
                 Mono<EntityContext> mono = AsyncEntityCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd);
                 return mono.doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx())))
+                        .doOnNext(ct -> eventRepository.saveTx((ct.getTx())))
                         .flatMap(ct -> resolveReply(ct.getTx().getReply()))
-                        .map(r -> encode(cmd, r));
+                        .map(r -> encode(cmd, r)).doOnError(e -> ((Throwable)e).printStackTrace());
+            } else if(UnboundedCommandHandler.class.isInstance(handler)) {
+                return UnboundedCommandHandler.class.cast(handler).<EntityContext>emitAsync(contextProvider, cmd)
+                        .flatMap(ct -> Flux.fromIterable(((EntityContext)ct).getTx().getTxList())
+                                .doOnNext(tx -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) tx, ((EntityContextProvider.Transaction<?>) tx).getEventList()))
+                                .doOnNext(tx -> eventRepository.saveTx((ITransaction)tx)).collectList().map(list -> ct))
+                        .flatMap(ct -> resolveReply(((EntityContext)ct).getTx().getReply()))
+                        .map(r -> encode(cmd, r)).doOnError(e -> ((Throwable)e).printStackTrace());
             } else {
                 return Mono.just(handler.emit(contextProvider, cmd))
                         .doOnNext(ct -> this.evtHandlerManager.emit((EntityContextProvider.Transaction) ct.getTx(), ct.getEvents()))
-                        .doOnNext(ct -> eventRepository.saveTx(((EntityContextProvider.Transaction) ct.getTx())))
+                        .doOnNext(ct -> eventRepository.saveTx((ct.getTx())))
                         .flatMap(ct -> resolveReply(ct.getTx().getReply()))
-                        .map(r -> encode(cmd, r));
+                        .map(r -> encode(cmd, r)).doOnError(e -> ((Throwable)e).printStackTrace());
             }
 
         } catch (Throwable thr) {
