@@ -52,9 +52,11 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     }
 
     public void saveTx(ITransaction<T> tx) {
-        startTransaction();
         List<Event> eventList = tx.getEventList();
-       
+        if(eventList.size() == 0) {
+            return;
+        }
+        startTransaction();
         eventList.stream().peek(e -> e.setSeqNum(nextSeq(e.getRootEntityTRN())))
                 .forEach(e -> addEvent(e));
         long latestSeq = eventList.get(eventList.size() - 1).getSeqNum();
