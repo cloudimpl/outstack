@@ -106,7 +106,6 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
         EntityIdHelper.validateId(id, root);
         EntityIdHelper.validateId(_id, root);
-        EntityIdHelper.validateId(id, event);
 
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
@@ -121,6 +120,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
         EntityHelper.setUserName(root, getTx().getInputMetaProvider().getUserName());
         validator.accept(root);
+        EntityIdHelper.validateId(id, event);
         addEvent(event);
         getCrudOperations().update(root);
         getEventPublisher().accept(event);
