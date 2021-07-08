@@ -14,3 +14,5 @@ buildNumber.properties
 .DS_Store
 /runtime/nbproject/
 /outstack-spring/nbproject/
+.idea
+*.iml
