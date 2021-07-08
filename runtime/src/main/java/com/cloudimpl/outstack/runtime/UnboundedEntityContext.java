@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 public class UnboundedEntityContext<T extends RootEntity> extends EntityContext<T> implements EntityQueryContext {
 private EntityContextProvider entityContextProvider;
     private final BiFunction<String, Object, Mono> requestHandler;
+    public static final CommandResponse OK = new CommandResponse("OK");
 
     public UnboundedEntityContext(EntityContextProvider entityContextProvider, Class<T> entityType, String tenantId, Supplier<String> idGenerator, Optional<CRUDOperations> crudOperations, QueryOperations<?> queryOperation, Optional<Consumer<Event>> eventPublisher,
                                   Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, BiFunction<String, Object, Mono> requestHandler) {
@@ -105,6 +106,11 @@ private EntityContextProvider entityContextProvider;
 
     public <T> Mono<T> sendRequest(String domainOwner, String domainContext, String version, String serviceName, Object req) {
         return requestHandler.apply(MessageFormat.format("{0}/{1}/{2}/{3}", domainOwner, domainContext, version, serviceName), req);
+    }
+
+    public <R extends  RootEntity> RootEntityContext<R> asNonTenantContext(String rootId) {
+        EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
+        return entityContext.asRootContext();
     }
 
 }
