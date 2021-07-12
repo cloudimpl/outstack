@@ -59,8 +59,11 @@ public class Auth2Util {
         String tenantId = req.getHeaders().getFirst("X-TenantId");
         String userAgent = req.getHeaders().getFirst("User-Agent");
         String userData = req.getHeaders().getFirst("X-UserData");
+        String state = req.getHeaders().getFirst("state");
+        String codeChallenge = req.getHeaders().getFirst("code_challenge");
+        String codeChallengeMethod = req.getHeaders().getFirst("code_challenge_method");
         String remoteIp = req.getRemoteAddress().toString();
-        return new AuthenticationMeta.ClientMeta(clientId, clientSecret, code, redirectUri, codeVerfier, tenantId,accessType,userAgent,remoteIp,userData);
+        return new AuthenticationMeta.ClientMeta(clientId, clientSecret, code, redirectUri, codeVerfier, tenantId,accessType,userAgent,remoteIp,userData,state,codeChallenge,codeChallengeMethod);
     }
 
     public static void validateAuthentcationMeta(Object detail) {
