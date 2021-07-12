@@ -40,7 +40,7 @@ public class CreateOrUpdateRole extends AsyncEntityCommandHandler<Role, RoleCrea
     @Override
     protected Mono<Role> execute(EntityContext<Role> context, RoleCreateRequest command) {
         AsyncEntityContext<Role> asyncContext = context.asAsyncEntityContext();
-        Role role = asyncContext.getEntity().orElseGet(()->asyncContext.create(command.getRoleName(),new RoleCreated(command.getRoleName())));
+        Role role = asyncContext.getEntity().orElseGet(()->asyncContext.create(command.getRoleName(),new RoleCreated(command.getRoleName(),"system")));
         Collection<PolicyRef> existRefs  = asyncContext.<PolicyRef>getAllChildEntitiesByType(PolicyRef.class);
         
         Collection<PolicyRef> newRefs = command.getPolicyRef();

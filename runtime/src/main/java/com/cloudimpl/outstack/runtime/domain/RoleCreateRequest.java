@@ -24,6 +24,8 @@ import java.util.List;
  */
 public class RoleCreateRequest extends Command{
     private String roleName;
+    private String type;
+    
     private List<PolicyRef> policyRef;
     
     public RoleCreateRequest(Builder builder) {
@@ -37,12 +39,15 @@ public class RoleCreateRequest extends Command{
     public List<PolicyRef> getPolicyRef() {
         return policyRef;
     }
-    
-    
-    
+
+    public String getType() { return type;}
+
     public static final class Builder extends Command.Builder
     {
         private String roleName;
+
+        private String type;
+        
         private List<PolicyRef> policyRef;
 
         public Builder() {
