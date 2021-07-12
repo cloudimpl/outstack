@@ -26,15 +26,19 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 public class RoleCreated extends Event<Role>{
 
     private final String roleName;
+    private final String type;
 
-    public RoleCreated(String roleName) {
+    public RoleCreated(String roleName,String type) {
         this.roleName = roleName;
+        this.type = type;
     }
 
     public String getRoleName() {
         return roleName;
     }
-    
+
+    public String getType() { return type;}
+
     @Override
     public Class<? extends Entity> getOwner() {
         return Role.class;
