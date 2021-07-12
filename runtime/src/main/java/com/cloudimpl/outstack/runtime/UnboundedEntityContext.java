@@ -113,4 +113,8 @@ private EntityContextProvider entityContextProvider;
         return entityContext.asRootContext();
     }
 
+    public <R extends  RootEntity> RootEntityContext<R> asNonTenantContext(ITransaction tx, String rootId) {
+        EntityContext entityContext = (EntityContext) tx.getContext(getEntityMeta().getType());
+        return entityContext.asRootContext();
+    }
 }

@@ -421,11 +421,14 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         }
 
         protected ITransaction<R> getNonTenantTransaction(String rootId) {
-            if(EntityIdHelper.isTechnicalId(rootId)) {
-                rootId = queryOperation.getRootById((Class<R>) entityMetaDetail.getType(), rootId,
-                        null).orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity not available for entity {0}", entityMetaDetail.getType().getSimpleName())).entityId();
+            if (rootId != null) {
+                if (EntityIdHelper.isTechnicalId(rootId)) {
+                    rootId = queryOperation.getRootById((Class<R>) entityMetaDetail.getType(), rootId,
+                            null).orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND, "root entity not available for entity {0}", entityMetaDetail.getType().getSimpleName())).entityId();
+                }
             }
             String tmpRootId = rootId;
+
             return transactionMap.computeIfAbsent(rootId+":"+null, id -> entityContextProvider.createWritableTransaction(tmpRootId, null, false).setInputMetaProvider(inputMetaProvider));
         }
 
