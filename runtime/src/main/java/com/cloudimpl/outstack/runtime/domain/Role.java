@@ -38,6 +38,8 @@ public class Role extends RootEntity implements ITenantOptional {
         return roleName;
     }
 
+    @Override
+    public String getTenantId() {return tenantId;}
 
     public String getType() { return type;}
 
