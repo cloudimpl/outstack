@@ -21,6 +21,8 @@ public interface EntityQueryContext<T extends Entity> {
 
     Optional<T> getEntityById(String id);
 
+    String getTenantId();
+
     <R extends RootEntity> RootEntityQueryContext<R> asRootQueryContext();
 
     <R extends RootEntity, K extends ChildEntity<R>> ChildEntityQueryContext<R, K> asChildQueryContext();

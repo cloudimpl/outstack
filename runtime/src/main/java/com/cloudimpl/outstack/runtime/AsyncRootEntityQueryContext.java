@@ -31,6 +31,11 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     public AsyncRootEntityQueryContext(RootEntityContext<T> inst) {
         this.inst = inst;
     }
+
+    @Override
+    public String getTenantId() {
+        return inst.getTenantId();
+    }
     
     @Override
     public <C extends ChildEntity<T>> Optional<C> getChildEntityById(Class<C> childType, String id) {
