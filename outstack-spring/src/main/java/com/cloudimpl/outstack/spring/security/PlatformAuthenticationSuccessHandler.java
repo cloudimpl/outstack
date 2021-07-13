@@ -52,7 +52,16 @@ public class PlatformAuthenticationSuccessHandler implements ServerAuthenticatio
             throw new PlatformAuthenticationException("invalid authentication token", null);
         }
         PlatformAuthenticationToken pToken = PlatformAuthenticationToken.class.cast(a);
-        if (pToken.getResponse() != null) {
+        if (pToken.getResponse() == null) {
+            return Mono.error(new RuntimeException("token response is empty"));
+        }
+
+        if (pToken.getResponse() instanceof RedirectionUrl) {
+            RedirectionUrl url = RedirectionUrl.class.cast(pToken.getResponse());
+            ServerWebExchange exchange = wfe.getExchange();
+            return this.requestCache.getRedirectUri(exchange).defaultIfEmpty(URI.create(url.getUrl()))
+                    .flatMap((location) -> this.redirectStrategy.sendRedirect(exchange, location));
+        } else {
             try {
                 Mono<DataBuffer> buffer = Mono.just(mapper.writeValueAsBytes(pToken.getResponse())).map(b -> wfe.getExchange().getResponse().bufferFactory().wrap(b));
                 wfe.getExchange().getResponse().getHeaders().add("Content-Type", "application/json");
@@ -65,9 +74,5 @@ public class PlatformAuthenticationSuccessHandler implements ServerAuthenticatio
                 return Mono.error(ex);
             }
         }
-        ServerWebExchange exchange = wfe.getExchange();
-        return this.requestCache.getRedirectUri(exchange).defaultIfEmpty(this.location)
-                .flatMap((location) -> this.redirectStrategy.sendRedirect(exchange, location));
     }
-
 }
