@@ -40,8 +40,10 @@ public class ResourceCache<T> {
         });
     }
 
-    public void remove(String id) {
+    public <T> Optional<T> remove(String id) {
+        Optional<T> optional = Optional.ofNullable((T) map.getIfPresent(id));
         map.invalidate(id);
+        return optional;
     }
 
     public static void main(String[] args) {
