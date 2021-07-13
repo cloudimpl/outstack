@@ -25,7 +25,8 @@ import java.util.Objects;
 public enum GrantType {
     AUTHORIZATION_CODE,
     PASSWORD,
-    REFRESH_TOKEN;
+    REFRESH_TOKEN,
+    TENANT_TOKEN;
 
     public static GrantType from(String type) {
         Objects.requireNonNull(type,"grant type cannot be null");
@@ -40,6 +41,10 @@ public enum GrantType {
             case "refresh_token": {
                 return REFRESH_TOKEN;
             }
+            case "tenant_token": {
+                return TENANT_TOKEN;
+            }
+
             default:
                 throw new ValidationErrorException("unknown grant type:" + type);
         }
