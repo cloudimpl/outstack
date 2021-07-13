@@ -11,7 +11,7 @@
     </head>
     <body>
         <div class="container">
-            <form class="form-signin" method="post" th:action="@{/login}">
+            <form class="form-signin" method="post" th:action="@{/login?response_type=code&code_challenge=NGJjNzUwMzVkNzNmNjA4MzY4M2UwNDBmYzMxZjI4ZTBlYzZkMWNiY2U1Y2IwYTVlMjYxMWViODliY2ViNmMxNg%3D%3D&code_challenge_method=S256&client_id=PUBLIC&%20&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Fwelcome&state=STATE}">
                 <input th:type="hidden"
                        th:name="authKey"
                        th:value="${authKey}"/>
