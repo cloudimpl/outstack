@@ -81,13 +81,13 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     public <C extends ChildEntity<T>> C create(Class<C> type, String id, Event<C> event) {
-        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, getTenantId(), entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
        childContext.setTx(getTx());
         return (C) childContext.create(id, event);
     }
 
     public <C extends ChildEntity<T>> C update(Class<C> type, String id, Event<C> event) {
-        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, getTenantId(), entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
         childContext.setTx(getTx());
         return (C) childContext.update(id, event);
     }
@@ -106,7 +106,6 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
         EntityIdHelper.validateId(id, root);
         EntityIdHelper.validateId(_id, root);
-        EntityIdHelper.validateId(id, event);
 
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
@@ -121,6 +120,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
         EntityHelper.setUserName(root, getTx().getInputMetaProvider().getUserName());
         validator.accept(root);
+        EntityIdHelper.validateId(id, event);
         addEvent(event);
         getCrudOperations().update(root);
         getEventPublisher().accept(event);
@@ -158,7 +158,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     public <C extends ChildEntity<T>> C delete(Class<C> type, String id) {
-        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, null, entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, getTenantId(), entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
         childContext.setTx(getTx());
         return (C) childContext.delete(id);
     }

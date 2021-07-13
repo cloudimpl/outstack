@@ -36,14 +36,14 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     private final EventStream eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;
-    private final Map<String,EntityCheckpoint> mapTxDirtyCheckpoints;
+    private final ThreadLocal<Map<String, EntityCheckpoint>> mapTxDirtyCheckpoints;
     protected final ResourceHelper resourceHelper;
     protected final String version;
 
     public EventRepositoy(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
         this.rootType = rootType;
         this.version = Entity.getVersion(rootType);
-        this.mapTxDirtyCheckpoints = new ConcurrentHashMap<>();
+        this.mapTxDirtyCheckpoints = ThreadLocal.withInitial(()->new ConcurrentHashMap<>());
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
         this.mapTxCheckpoints = new ResourceCache<>(1000, Duration.ofHours(1));
@@ -53,7 +53,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     public void saveTx(ITransaction<T> tx) {
         List<Event> eventList = tx.getEventList();
-        if(eventList.size() == 0) {
+        if (eventList.size() == 0) {
             return;
         }
         startTransaction();
@@ -100,19 +100,23 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
                 }
             }
         });
-        tx.getDeletedEntities().values().forEach(e->{
-            if(e.isRoot())
-            {
-                deleteRootEntityBrnById((Class<T>)e.getClass(),e.entityId(),e.getTenantId());
-            }
-            else
-            {
-                ChildEntity child = (ChildEntity)e;
+        tx.getDeletedEntities().values().forEach(e -> {
+            if (e.isRoot()) {
+                deleteRootEntityBrnById((Class<T>) e.getClass(), e.entityId(), e.getTenantId());
+            } else {
+                ChildEntity child = (ChildEntity) e;
                 deleteChildEntityBrnById(child.rootType(), child.rootId(), child.getClass(), child.entityId(), child.getTenantId());
             }
         });
-        mapTxDirtyCheckpoints.values().forEach(checkpoint->updateCheckpoint(checkpoint));
-        endTransaction();
+        mapTxDirtyCheckpoints.get().values().forEach(checkpoint -> updateCheckpoint(checkpoint));
+        try {
+            endTransaction();
+            mapTxDirtyCheckpoints.get().entrySet().forEach(ck -> mapTxCheckpoints.put(ck.getValue().getRootTrn(), ck.getValue()));
+        } catch (Exception ex) {
+            throw ex;
+        } finally {
+            mapTxDirtyCheckpoints.get().clear();;
+        }
     }
 
     public <T extends Entity> T applyEvent(Event event) {
@@ -122,16 +126,15 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         return (T) transaction.getEntityList().iterator().next();
     }
 
-    private long nextSeq(String rootTrn)
-    {
+    private long nextSeq(String rootTrn) {
         EntityCheckpoint checkpoint = getCheckpoint(rootTrn);
         long seq = checkpoint.nextSeq();
-        mapTxDirtyCheckpoints.put(rootTrn, checkpoint);
+        mapTxDirtyCheckpoints.get().put(rootTrn, checkpoint);
         return seq;
     }
-    
+
     protected EntityCheckpoint getCheckpoint(String rootTrn) {
-        return (EntityCheckpoint) Optional.ofNullable(mapTxDirtyCheckpoints.get(rootTrn)).or(()->mapTxCheckpoints.get(rootTrn)).or(()->_getCheckpoint(rootTrn)).get();
+        return (EntityCheckpoint) Optional.ofNullable(mapTxDirtyCheckpoints.get().get(rootTrn)).or(() -> mapTxCheckpoints.get(rootTrn)).or(() -> _getCheckpoint(rootTrn)).get();
     }
 
 //    private <T extends Entity> T _applyEvent(Event event) {
@@ -166,7 +169,6 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //        updateCheckpoint(nextSeq - 1, checkpoint);
 //        return (T) e;
 //    }
-
 //    private Entity createEntity(Event event) {
 //        Entity e;
 //        if (event.isRootEvent()) {
@@ -193,7 +195,6 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //        //      mapEntites.put(resourceHelper.getFQBrn(e), e);
 //        return e;
 //    }
-
 //    private Entity updateEntity(Event event) {
 //
 //        Entity e;
@@ -218,7 +219,6 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //        }
 //        return e;
 //    }
-
 //    private void deleteEntity(Event event) {
 //        if (event.isRootEvent()) {
 //            deleteRootEntityBrnById(event.getRootOwner(), event.entityId(), event.tenantId());
@@ -226,7 +226,6 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //            deleteChildEntityBrnById(event.getRootOwner(), event.rootId(), event.getOwner(), event.entityId(), event.tenantId());
 //        }
 //    }
-
 //    private void renameEntity(EntityRenamed event) {
 //        if (event.isRootEvent()) {
 //            deleteRootEntityBrnById(event.getOwner(), event.getOldEntityId(), event.tenantId());
@@ -246,7 +245,6 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 //            saveChildEntityBrnIfNotExist(event.getRootEntityTRN(), e);
 //        }
 //    }
-
     protected abstract void startTransaction();
 
     protected abstract void endTransaction();

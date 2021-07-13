@@ -67,7 +67,7 @@ public class SecurityConfig {
                 .authorizeExchange()
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/public/**").permitAll()
-                .pathMatchers("/login", "/authorize").permitAll()
+                .pathMatchers("/login/**", "/authorize").permitAll()
                 .anyExchange().authenticated()
                 .and()
                 .httpBasic()

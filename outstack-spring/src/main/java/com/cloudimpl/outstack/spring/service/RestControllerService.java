@@ -115,7 +115,8 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
     private void addEntities(SpringServiceDescriptor desc) {
 
-        ServiceModule service = eventRepoFactory.createOrGetRepository(ServiceModule.class).getRootById(ServiceModule.class, desc.getRootType(), null).orElseGet(()->createMicroService(desc));
+        ServiceModule service = eventRepoFactory.createOrGetRepository(ServiceModule.class).getRootById(ServiceModule.class, desc.getDomainOwner()+":"+desc.getDomainContext() + ":" + desc.getRootType(), null)
+                .orElseGet(()->createMicroService(desc));
         addActions(eventRepoFactory.createOrGetRepository(ServiceModule.class),service.id(), desc.getRootType(), desc, desc.getRootActions());
         desc.entityDescriptors().forEach(ed -> {
             addActions(eventRepoFactory.createOrGetRepository(ServiceModule.class),service.id(), ed.getName(), desc, desc.getChildActions(ed.getName()));
@@ -126,7 +127,8 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
         DomainContext domainContext = createOrGetDomainContext(desc);
         
         String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(desc.getDomainOwner()+"/"+desc.getDomainContext() + ":" + desc.getRootType());
-        ServiceModuleProvisioned provisioned = new ServiceModuleProvisioned(desc.getServiceName(), desc.getRootType(), desc.getVersion(), desc.getApiContext(), desc.getTenancy());
+        ServiceModuleProvisioned provisioned = new ServiceModuleProvisioned(desc.getServiceName(), desc.getDomainOwner()+":"+desc.getDomainContext() + ":" + desc.getRootType(),
+                desc.getVersion(), desc.getApiContext(), desc.getTenancy());
         provisioned.setId(id);
         provisioned.setRootId(id);
         provisioned.setAction(Event.Action.CREATE);

@@ -96,6 +96,6 @@ public class EntityIdHelper {
         if (!refId.startsWith("ref:id-")) {
             throw new DomainEventException(DomainEventException.ErrorCode.NOT_A_REF_ID, "invalid reference id", refId);
         }
-        return refId.substring(7);
+        return refId.substring(4);
     }
 }

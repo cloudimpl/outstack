@@ -72,8 +72,10 @@ public class AuthenticationMeta {
         private final String userAgent;
         private final String remoteIp;
         private final String userData;
-
-        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier, String tenantId, String accessType,String userAgent,String remoteIp,String userData) {
+        private final String state;
+        private final String codeChallenge;
+        private final String codeChallengeMethod;
+        public ClientMeta(String clientId, String clientSecret, String code, String redirectUri, String codeVerifier, String tenantId, String accessType,String userAgent,String remoteIp,String userData,String state,String codeChallenge,String codeChallengeMethod) {
             this.clientId = clientId;
             this.clientSecret = clientSecret;
             this.code = code;
@@ -84,6 +86,9 @@ public class AuthenticationMeta {
             this.userAgent= userAgent;
             this.remoteIp = remoteIp;
             this.userData = userData;
+            this.state = state;
+            this.codeChallenge = codeChallenge;
+            this.codeChallengeMethod = codeChallengeMethod;
         }
 
         public String getClientId() {
@@ -122,6 +127,19 @@ public class AuthenticationMeta {
             return userAgent;
         }
 
+        public String getCodeChallenge() {
+            return codeChallenge;
+        }
+
+        public String getCodeChallengeMethod() {
+            return codeChallengeMethod;
+        }
+
+        public String getState() {
+            return state;
+        }
+
+        
         public String getUserData() { return userData;
         }
 

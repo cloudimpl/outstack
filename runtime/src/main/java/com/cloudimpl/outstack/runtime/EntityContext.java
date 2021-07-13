@@ -55,7 +55,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
         this.entityMeta = EntityMetaDetailCache.instance().getEntityMeta(entityType);
     }
 
-    protected ITransaction getTx() {
+    public ITransaction getTx() {
         return this.tx;
     }
 
