@@ -127,4 +127,14 @@ private EntityContextProvider entityContextProvider;
         EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
         return (C) entityContext.asRootContext().create(type, id, event);
     }
+
+    public <C extends ChildEntity<T>> C update(String rootId, Class<C> type, String id, Event<C> event) {
+        EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
+        return (C) entityContext.asRootContext().update(type, id, event);
+    }
+
+    public <C extends ChildEntity<T>> C delete(String rootId, Class<C> type, String id) {
+        EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
+        return (C) entityContext.asRootContext().delete(type, id);
+    }
 }
