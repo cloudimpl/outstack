@@ -66,7 +66,11 @@ private EntityContextProvider entityContextProvider;
 
     @Override
     public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, String tenantId) {
-        return null;
+        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
+        {
+            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowed");
+        }
+        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);
     }
 
     @Override
@@ -116,5 +120,11 @@ private EntityContextProvider entityContextProvider;
     public <R extends  RootEntity> RootEntityContext<R> asNonTenantContext(ITransaction tx, String rootId) {
         EntityContext entityContext = (EntityContext) tx.getContext(getEntityMeta().getType());
         return entityContext.asRootContext();
+    }
+
+    public <C extends ChildEntity<T>> C create(String rootId, Class<C> type,  String id, Event<C> event) {
+        EntityIdHelper.validateEntityId(id);
+        EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
+        return (C) entityContext.asRootContext().create(type, id, event);
     }
 }
