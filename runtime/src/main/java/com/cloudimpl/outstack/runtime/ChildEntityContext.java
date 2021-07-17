@@ -68,7 +68,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setId(child.id());
         event.setAction(Event.Action.CREATE);
     
-        child.applyEvent(event);
+        EntityHelper.applyEvent(child,event);
         EntityHelper.setCreatedDate(child, event.getMeta().createdDate());
         EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
         EntityHelper.setUserId(child, getTx().getInputMetaProvider().getUserId());
@@ -107,7 +107,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         event.setRootId(root.id());
         event.setId(child.id());
         event.setAction(Event.Action.UPDATE);
-        child.applyEvent(event);
+        EntityHelper.applyEvent(child,event);
         EntityHelper.setUpdatedDate(child, event.getMeta().createdDate());
         EntityHelper.setUserId(child, getTx().getInputMetaProvider().getUserId());
         EntityHelper.setUserName(child, getTx().getInputMetaProvider().getUserName());
