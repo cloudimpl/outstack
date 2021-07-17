@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.auth.service;
 
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
+import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import com.cloudimpl.outstack.spring.security.AuthorizationProvider;
@@ -38,7 +39,7 @@ public class AuthorizationProviderImpl implements AuthorizationProvider {
 
     public AuthorizationProviderImpl() {
         PolicyStatement adminPolicy = new PolicyStatement("fullAdminAccess", null);
-        adminPolicy.applyEvent(new PolicyStatementCreated("fullAdminAccess", PolicyStatement.EffectType.DENY,
+        EntityHelper.applyEvent(adminPolicy,new PolicyStatementCreated("fullAdminAccess", PolicyStatement.EffectType.DENY,
                 Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)),Collections.singleton(new ActionDescriptor("*", ActionDescriptor.ActionScope.ALL)), Collections.singleton(ResourceDescriptor.builder().withResourceScope(ResourceDescriptor.ResourceScope.GLOBAL).build())));
         adminAuth = new PlatformGrantedAuthority(Collections.EMPTY_MAP, Collections.singletonMap("*", adminPolicy));
     }

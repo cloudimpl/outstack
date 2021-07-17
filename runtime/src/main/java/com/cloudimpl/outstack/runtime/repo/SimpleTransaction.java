@@ -69,13 +69,13 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
             case CREATE: {
                 if (e.isRootEvent()) {
                     RootEntity root = RootEntity.create(e.getOwner(), e.entityId(), e.tenantId(), e.id());
-                    root.applyEvent(e);
+                    EntityHelper.applyEvent(root,e);
                     mapBrnEntities.put(root.getBRN(), root);
                     mapTrnEntities.put(root.getTRN(), root);
                 } else {
                     RootEntity root = (RootEntity) getRootById(e.getRootOwner(),e.rootId(), e.tenantId()).get();
                     ChildEntity child = root.createChildEntity(e.getOwner(), e.entityId(),e.id());
-                    child.applyEvent(e);
+                    EntityHelper.applyEvent(child,e);
                     mapBrnEntities.put(child.getBRN(), child);
                     mapTrnEntities.put(child.getTRN(), child);
                 }
@@ -84,12 +84,12 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
             case UPDATE: {
                 if (e.isRootEvent()) {
                     T root = (T) getRootById(e.getOwner(), e.id(), e.tenantId()).get();
-                    root.applyEvent(e);
+                    EntityHelper.applyEvent(root,e);
                     mapBrnEntities.put(root.getBRN(), root);
                     mapTrnEntities.put(root.getTRN(), root);
                 } else {
                     ChildEntity child = (ChildEntity) getChildById(e.getRootOwner(), e.rootId(), e.getOwner(), e.entityId(), e.tenantId()).get();
-                    child.applyEvent(e);
+                    EntityHelper.applyEvent(child,e);
                     mapBrnEntities.put(child.getBRN(), child);
                     mapTrnEntities.put(child.getTRN(), child);
                 }
