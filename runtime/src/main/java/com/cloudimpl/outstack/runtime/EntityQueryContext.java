@@ -23,6 +23,12 @@ public interface EntityQueryContext<T extends Entity> {
 
     String getTenantId();
 
+    default IConfigProvider getConfigProvider()
+    {
+        return new IConfigProvider() {
+        };
+    }
+    
     <R extends RootEntity> RootEntityQueryContext<R> asRootQueryContext();
 
     <R extends RootEntity, K extends ChildEntity<R>> ChildEntityQueryContext<R, K> asChildQueryContext();
