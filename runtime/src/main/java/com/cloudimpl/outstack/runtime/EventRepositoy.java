@@ -89,7 +89,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
                     long seq = e.getMeta().getLastSeq();
                     EntityHelper.setLastEq(child, latestSeq);
                     if (tx.isEntityRenamed(e.getTRN())) {
-                        deleteChildEntityBrnById(child.rootType(), child.rootId(), child.getClass(), child.entityId(), child.getTenantId());
+                    //    deleteChildEntityBrnById(child.rootType(), child.rootId(), child.getClass(), child.entityId(), child.getTenantId());
                         saveChildEntityTrnIfExist(seq, child);
                         saveChildEntityBrnIfNotExist(child);
                     } else {
