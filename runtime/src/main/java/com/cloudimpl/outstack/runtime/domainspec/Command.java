@@ -22,6 +22,7 @@ public abstract class Command implements Input, ICommand {
     private final String _commandName;
     private List<Object> _files;
     private Map<String, String> _mapAttr;
+    private String _context;
 
     public Command(Builder builder) {
         this._rootId = builder.rootId;
@@ -31,6 +32,7 @@ public abstract class Command implements Input, ICommand {
         this._commandName = builder.commandName;
         this._files = builder.files;
         this._mapAttr = builder.mapAttr;
+        this._context = builder.context;
     }
 
     public final String rootId() {
@@ -63,6 +65,10 @@ public abstract class Command implements Input, ICommand {
 
     protected void setFiles(List<Object> _files) {
         this._files = _files;
+    }
+
+    public void setContext(String _context) {
+        this._context = _context;
     }
 
     public Map<String, String> getMapAttr() {
@@ -101,6 +107,7 @@ public abstract class Command implements Input, ICommand {
         protected String version;
         protected String commandName;
         protected List<Object> files;
+        protected String context;
         private Map<String, String> mapAttr = new HashMap();
 
         public Builder withRootId(String rootId) {
@@ -125,6 +132,11 @@ public abstract class Command implements Input, ICommand {
 
         public Builder withCommandName(String commandName) {
             this.commandName = commandName;
+            return this;
+        }
+
+        public Builder withContext(String context) {
+            this.context = context;
             return this;
         }
 
