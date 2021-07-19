@@ -137,4 +137,14 @@ private EntityContextProvider entityContextProvider;
         EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
         return (C) entityContext.asRootContext().delete(type, id);
     }
+
+    public <C extends ChildEntity<T>> Optional<C> getChildEntityById(String rootId, Class<C> childType, String id) {
+        EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
+        return entityContext.asRootContext().getChildEntityById(childType, id);
+    }
+
+    public <C extends ChildEntity<T>> ResultSet<C> getAllChildEntitiesByType(String rootId, Class<C> childType, Query.PagingRequest pageable) {
+        EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
+        return entityContext.asRootContext().getAllChildEntitiesByType(childType, pageable);
+    }
 }
