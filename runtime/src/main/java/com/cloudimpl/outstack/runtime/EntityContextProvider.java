@@ -198,7 +198,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
         @Override
         public void delete(Entity entity) {
-            mapBrnEntities.get(entity.getBRN());
+            mapBrnEntities.remove(entity.getBRN());
             removeEntites.put(entity.getBRN(), entity);
         }
 
@@ -206,6 +206,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         public void rename(Entity oldEntity, Entity newEntity) {
             renameEntities.put(oldEntity.getTRN(), oldEntity);
             mapBrnEntities.remove(oldEntity.getBRN());
+            removeEntites.put(oldEntity.getBRN(), oldEntity);
             mapBrnEntities.put(newEntity.getBRN(), newEntity);
             mapTrnEntities.put(newEntity.getTRN(), newEntity);
         }

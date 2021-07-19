@@ -67,7 +67,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setId(root.id());
         event.setRootId(root.id());
         event.setAction(Event.Action.CREATE);
-        root.applyEvent(event);
+        EntityHelper.applyEvent(root, event);
         EntityHelper.setCreatedDate(root, event.getMeta().createdDate());
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
         EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
@@ -115,7 +115,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         event.setId(root.id());
         event.setRootId(root.id());
         event.setAction(Event.Action.UPDATE);
-        root.applyEvent(event);
+        EntityHelper.applyEvent(root,event);
         EntityHelper.setUpdatedDate(root, event.getMeta().createdDate());
         EntityHelper.setUserId(root, getTx().getInputMetaProvider().getUserId());
         EntityHelper.setUserName(root, getTx().getInputMetaProvider().getUserName());

@@ -36,6 +36,11 @@ public class EntityHelper {
         e.getMeta().setCreatedDate(millis);
     }
 
+    public static  void applyEvent(Entity e ,Event event)
+    {
+         e.applyEvent(event);
+    }
+    
     public static void setUserId(Entity e,String userId)
     {
         e.getMeta().setUserId(userId);
