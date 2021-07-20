@@ -22,6 +22,7 @@ public abstract class Query implements IQuery {
     private PagingRequest _pagingReq;
     private Map<String, String> _mapAttr;
     private String _context;
+    private String _queryName;
 
     public Query(Builder builder) {
         this._rootId = builder.rootId;
@@ -31,6 +32,7 @@ public abstract class Query implements IQuery {
         this._version = builder.version;
         this._mapAttr = builder.mapAttr;
         this._context = builder.context;
+        this._queryName = builder.queryName;
     }
 
     public final String tenantId() {
@@ -68,7 +70,7 @@ public abstract class Query implements IQuery {
 
     @Override
     public String queryName() {
-        return this.getClass().getSimpleName();
+        return this._queryName;
     }
 
     @Override
@@ -100,6 +102,7 @@ public abstract class Query implements IQuery {
         private String version;
         private Map<String, String> mapAttr;
         private String context;
+        private String queryName;
         private PagingRequest pagingReq;
 
         public Builder withRootId(String rootId) {
@@ -129,6 +132,11 @@ public abstract class Query implements IQuery {
 
         public Builder withContext(String context){
             this.context = context;
+            return this;
+        }
+
+        public Builder withQueryName(String queryName) {
+            this.queryName = queryName;
             return this;
         }
         
