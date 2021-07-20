@@ -10,4 +10,14 @@ public class CommandWrapperHelper {
         cmd.setMapAttr(mapAttr);
         return cmd;
     }
+
+    public static CommandWrapper withContext(CommandWrapper cmd, String context) {
+        cmd.setContext(context);
+        return cmd;
+    }
+
+    public static CommandWrapper withTenantId(CommandWrapper cmd, String tenantId) {
+        cmd.setTenantId(tenantId);
+        return cmd;
+    }
 }

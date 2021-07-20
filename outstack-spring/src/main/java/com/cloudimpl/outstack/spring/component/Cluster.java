@@ -9,7 +9,6 @@ package com.cloudimpl.outstack.spring.component;
 import com.cloudimpl.outstack.app.AppConfig;
 import com.cloudimpl.outstack.app.ResourcesLoader;
 import com.cloudimpl.outstack.collection.CollectionOptions;
-import com.cloudimpl.outstack.collection.CollectionProvider;
 import com.cloudimpl.outstack.common.CloudMessage;
 import com.cloudimpl.outstack.common.CloudMessageDecoder;
 import com.cloudimpl.outstack.common.CloudMessageEncoder;
@@ -20,18 +19,15 @@ import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
-import com.cloudimpl.outstack.runtime.CommandWrapper;
-import com.cloudimpl.outstack.runtime.CommandWrapperHelper;
-import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
-import com.cloudimpl.outstack.runtime.QueryWrapper;
-import com.cloudimpl.outstack.runtime.ResourceHelper;
-import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
+import com.cloudimpl.outstack.runtime.*;
 import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
 import com.cloudimpl.outstack.spring.security.PolicyStatementValidator;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
@@ -47,6 +43,7 @@ import java.util.Map;
  *
  * @author nuwan
  */
+@Slf4j
 @Component("OUTSTACK_CLUSTER")
 public class Cluster {
 
@@ -142,7 +139,8 @@ public class Cluster {
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
                     .cast(PlatformAuthenticationToken.class)
-                    .doOnNext(c -> populateExternalAttributes(c, httpRequest, wrapper))
+                    .doOnNext(c -> validateTenantId(c, httpRequest))
+                    .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
                     .map(t -> PolicyStatementValidator.processPolicyStatementsForCommand(wrapper.commandName(), wrapper.getRootType(), t))
                     .doOnNext(g -> wrapper.setGrant(g))
                     .flatMap(g -> this.node.requestReply(serviceName, msg))
@@ -153,6 +151,8 @@ public class Cluster {
             return ReactiveSecurityContextHolder
                     .getContext().map(c -> c.getAuthentication())
                     .cast(PlatformAuthenticationToken.class)
+                    .doOnNext(c -> validateTenantId(c, httpRequest))
+                    .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
                     .map(t -> PolicyStatementValidator.processPolicyStatementsForQuery(wrapper.queryName(), wrapper.getRootType(), t))
                     .doOnNext(g -> wrapper.setGrant(g))
                     .flatMap(g -> this.node.requestReply(serviceName, msg))
@@ -180,7 +180,7 @@ public class Cluster {
 //    {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
 //    }
-    private void populateExternalAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, CommandWrapper wrapper) {
+    private void populateAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, CommandWrapper wrapper) {
         Map<String, String> mapAttr = new HashMap<>();
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
@@ -191,6 +191,45 @@ public class Cluster {
         if (token.getJwtToken().getClaim("userName") != null) {
             mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
         }
+
+        String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
+        String tokenTenantId = token.getJwtToken().getClaim("tenantId");
+
+        CommandWrapperHelper.withTenantId(wrapper, tokenTenantId != null? tokenTenantId: headerTenantId);
+        CommandWrapperHelper.withContext(wrapper, token.getJwtToken().getClaim("ctx"));
+
         CommandWrapperHelper.withMapAttr(wrapper, mapAttr);
     }
+
+    private void validateTenantId(PlatformAuthenticationToken token, ServerHttpRequest httpRequest) {
+        String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
+        String tokenTenantId = token.getJwtToken().getClaim("tenantId");
+
+        if(tokenTenantId != null && headerTenantId != null && !tokenTenantId.equals(headerTenantId)) {
+            log.error("Tenant identifier violation");
+            throw new ValidationErrorException("Tenant identifier violation");
+        }
+    }
+
+    private void populateAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, QueryWrapper wrapper) {
+        Map<String, String> mapAttr = new HashMap<>();
+        if (httpRequest != null) {
+            mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
+        }
+        if (token.getJwtToken().getClaim("userId") != null) {
+            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
+        }
+        if (token.getJwtToken().getClaim("userName") != null) {
+            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
+        }
+
+        String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
+        String tokenTenantId = token.getJwtToken().getClaim("tenantId");
+
+        QueryWrapperHelper.withTenantId(wrapper, tokenTenantId != null?tokenTenantId: headerTenantId);
+        QueryWrapperHelper.withContext(wrapper, token.getJwtToken().getClaim("ctx"));
+
+        QueryWrapperHelper.withMapAttr(wrapper, mapAttr);
+    }
+
 }

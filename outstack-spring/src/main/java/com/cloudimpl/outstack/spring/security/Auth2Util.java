@@ -26,7 +26,7 @@ public class Auth2Util {
 
     public static AuthenticationMeta createAuthMeta(String authKey,String context,ServerWebExchange exchange){
         PlatformAuthenticationToken.TokenFlow flow = Auth2Util.createFlow(exchange);
-        return new AuthenticationMeta(flow, authKey,context,Auth2Util.getGrantType(flow, exchange),Auth2Util.getClientMeta(exchange));
+        return new AuthenticationMeta(flow, authKey,context, Auth2Util.getGrantType(flow, exchange), Auth2Util.getClientMeta(exchange));
     }
     
     public static PlatformAuthenticationToken.TokenFlow createFlow(ServerWebExchange exchange) {

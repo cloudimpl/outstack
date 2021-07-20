@@ -20,6 +20,8 @@ public abstract class Query implements IQuery {
     private String _id;
     private String _version;
     private PagingRequest _pagingReq;
+    private Map<String, String> _mapAttr;
+    private String _context;
 
     public Query(Builder builder) {
         this._rootId = builder.rootId;
@@ -27,6 +29,8 @@ public abstract class Query implements IQuery {
         this._id = builder.id;
         this._pagingReq = builder.pagingReq;
         this._version = builder.version;
+        this._mapAttr = builder.mapAttr;
+        this._context = builder.context;
     }
 
     public final String tenantId() {
@@ -47,6 +51,14 @@ public abstract class Query implements IQuery {
 
     protected void setId(String id) {
         this._id = id;
+    }
+
+    public void setMapAttr(Map<String, String> mapAttr) {
+        this._mapAttr = mapAttr;
+    }
+
+    public void setContext(String context) {
+        this._context = context;
     }
 
     @Override
@@ -86,6 +98,8 @@ public abstract class Query implements IQuery {
         private String tenantId;
         private String id;
         private String version;
+        private Map<String, String> mapAttr;
+        private String context;
         private PagingRequest pagingReq;
 
         public Builder withRootId(String rootId) {
@@ -103,8 +117,18 @@ public abstract class Query implements IQuery {
             return this;
         }
 
+        public Builder withMapAttr(Map<String, String> mapAttr){
+            this.mapAttr = mapAttr;
+            return this;
+        }
+
         public Builder withVersion(String version){
             this.version = version;
+            return this;
+        }
+
+        public Builder withContext(String context){
+            this.context = context;
             return this;
         }
         

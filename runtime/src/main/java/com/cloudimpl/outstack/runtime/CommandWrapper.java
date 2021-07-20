@@ -24,13 +24,14 @@ public class CommandWrapper implements ICommand {
     private final String command;
     private final String rootId;
     private final String id;
-    private final String tenantId;
     private final String payload;
     private final String version;
     private final String rootType;
     private final String childType;
     private final List<Object> files;
     private Object grant;
+    private String tenantId;
+    private String context;
     private Map<String, String> mapAttr;
 
     public CommandWrapper(Builder builder) {
@@ -44,11 +45,21 @@ public class CommandWrapper implements ICommand {
         this.childType = builder.childType;
         this.files = builder.files;
         this.mapAttr = builder.mapAttr;
+        this.context = builder.context;
     }
 
     protected void setMapAttr(Map<String, String> mapAttr) {
         this.mapAttr = mapAttr;
     }
+
+    protected void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    protected void setContext(String context) {
+        this.context = context;
+    }
+
 
     @Override
     public final <T extends Command> T unwrap(Class<T> type) {
@@ -59,6 +70,7 @@ public class CommandWrapper implements ICommand {
         CommandHelper.withVersion(cmd, version);
         CommandHelper.withFiles(cmd, files);
         CommandHelper.withMapAttr(cmd, mapAttr);
+        CommandHelper.withContext(cmd, context);
         return cmd;
     }
 
@@ -92,6 +104,10 @@ public class CommandWrapper implements ICommand {
         return (T) grant;
     }
 
+    public String getContext() {
+        return context;
+    }
+
     public Map<String, String> getMapAttr() {
         return mapAttr;
     }
@@ -110,6 +126,7 @@ public class CommandWrapper implements ICommand {
         private String version;
         private String rootType;
         private String childType;
+        private String context;
         private List<Object> files;
         private Map<String, String> mapAttr = new HashMap<>();
 
@@ -160,6 +177,11 @@ public class CommandWrapper implements ICommand {
 
         public Builder withFiles(List<Object> files) {
             this.files = files;
+            return this;
+        }
+
+        public Builder withContext(String context) {
+            this.context = context;
             return this;
         }
 

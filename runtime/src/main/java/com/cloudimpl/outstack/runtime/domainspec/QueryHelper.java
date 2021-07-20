@@ -5,6 +5,8 @@
  */
 package com.cloudimpl.outstack.runtime.domainspec;
 
+import java.util.Map;
+
 /**
  *
  * @author nuwan
@@ -32,6 +34,16 @@ public class QueryHelper {
     {
         query.setVersion(version);
         return query;
+    }
+
+    public static Query withContext(Query cmd, String context) {
+        cmd.setContext(context);
+        return cmd;
+    }
+
+    public static Query withMapAttr(Query cmd, Map<String, String> mapAttr) {
+        cmd.setMapAttr(mapAttr);
+        return cmd;
     }
     
     public static Query withPageable(Query query, Query.PagingRequest pageable)

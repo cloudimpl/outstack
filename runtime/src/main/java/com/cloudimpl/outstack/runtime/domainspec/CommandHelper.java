@@ -37,6 +37,11 @@ public class CommandHelper {
         return cmd;
     }
 
+    public static Command withContext(Command cmd, String context) {
+        cmd.setContext(context);
+        return cmd;
+    }
+
     public static Command withMapAttr(Command cmd, Map<String, String> mapAttr) {
         cmd.setMapAttr(mapAttr);
         return cmd;

@@ -9,6 +9,9 @@ import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryHelper;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -21,10 +24,12 @@ public class QueryWrapper implements IQuery {
     private final String rootId;
     private final String rootType;
     private final String id;
-    private final String tenantId;
     private final String version;
     private final String payload;
     private Object grant;
+    private String tenantId;
+    private String context;
+    private Map<String, String> mapAttr;
     private final Query.PagingRequest pagingRequest;
 
     public QueryWrapper(Builder builder) {
@@ -36,6 +41,20 @@ public class QueryWrapper implements IQuery {
         this.tenantId = builder.tenantId;
         this.payload = builder.payload == null ? "{}" : builder.payload;
         this.pagingRequest = builder.pageRequest;
+        this.mapAttr = builder.mapAttr;
+        this.context = builder.context;
+    }
+
+    protected void setMapAttr(Map<String, String> mapAttr) {
+        this.mapAttr = mapAttr;
+    }
+
+    protected void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    protected void setContext(String context) {
+        this.context = context;
     }
 
     @Override
@@ -92,6 +111,8 @@ public class QueryWrapper implements IQuery {
         private String tenantId;
         private String version;
         private String payload;
+        private String context;
+        private Map<String, String> mapAttr;
         private Query.PagingRequest pageRequest;
 
         public Builder withQuery(String query) {
@@ -126,6 +147,19 @@ public class QueryWrapper implements IQuery {
 
         public Builder withPayload(String payload) {
             this.payload = payload;
+            return this;
+        }
+
+        public Builder withContext(String context) {
+            this.context = context;
+            return this;
+        }
+
+        public Builder withMapAttr(String key, String value) {
+            if(mapAttr == null) {
+                this.mapAttr = new HashMap<>();
+            }
+            this.mapAttr.put(key, value);
             return this;
         }
 
