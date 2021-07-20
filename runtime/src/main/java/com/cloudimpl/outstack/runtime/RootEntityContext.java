@@ -86,6 +86,11 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return (C) childContext.create(id, event);
     }
 
+    public <C extends ChildEntity<T>> C create(Class<C> type, String rootId, String id, Event<C> event) {
+        setId(rootId);
+        return create(type, id, event);
+    }
+
     public <C extends ChildEntity<T>> C update(Class<C> type, String id, Event<C> event) {
         ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, getTenantId(), entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
         childContext.setTx(getTx());
