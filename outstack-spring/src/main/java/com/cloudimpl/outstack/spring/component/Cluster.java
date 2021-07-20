@@ -192,24 +192,17 @@ public class Cluster {
             mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
         }
 
-        String headerTenantId = httpRequest.getHeaders().get("X-TenantId") != null && httpRequest.getHeaders().get("X-TenantId").size()
-                > 0 ? httpRequest.getHeaders().get("X-TenantId").get(0): null;
+        String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
 
-        if(tokenTenantId != null) {
-            CommandWrapperHelper.withTenantId(wrapper, tokenTenantId);
-        } else if(tokenTenantId == null && headerTenantId != null) {
-            CommandWrapperHelper.withTenantId(wrapper, headerTenantId);
-        }
-
+        CommandWrapperHelper.withTenantId(wrapper, tokenTenantId != null? tokenTenantId: headerTenantId);
         CommandWrapperHelper.withContext(wrapper, token.getJwtToken().getClaim("ctx"));
 
         CommandWrapperHelper.withMapAttr(wrapper, mapAttr);
     }
 
     private void validateTenantId(PlatformAuthenticationToken token, ServerHttpRequest httpRequest) {
-        String headerTenantId = httpRequest.getHeaders().get("X-TenantId") != null && httpRequest.getHeaders().get("X-TenantId").size()
-                > 0 ? httpRequest.getHeaders().get("X-TenantId").get(0): null;
+        String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
 
         if(tokenTenantId != null && headerTenantId != null && !tokenTenantId.equals(headerTenantId)) {
@@ -230,16 +223,10 @@ public class Cluster {
             mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
         }
 
-        String headerTenantId = httpRequest.getHeaders().get("X-TenantId") != null && httpRequest.getHeaders().get("X-TenantId").size()
-                > 0 ? httpRequest.getHeaders().get("X-TenantId").get(0): null;
+        String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
 
-        if(tokenTenantId != null) {
-            QueryWrapperHelper.withTenantId(wrapper, tokenTenantId);
-        } else if(tokenTenantId == null && headerTenantId != null) {
-            QueryWrapperHelper.withTenantId(wrapper, headerTenantId);
-        }
-
+        QueryWrapperHelper.withTenantId(wrapper, tokenTenantId != null?tokenTenantId: headerTenantId);
         QueryWrapperHelper.withContext(wrapper, token.getJwtToken().getClaim("ctx"));
 
         QueryWrapperHelper.withMapAttr(wrapper, mapAttr);
