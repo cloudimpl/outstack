@@ -58,11 +58,12 @@ public final class BearerTokenServerAuthenticationEntryPoint implements ServerAu
                 Mono<DataBuffer> buffer = Mono.just(mapper.writeValueAsBytes(new Error(authException.getMessage()))).map(b -> exchange.getResponse().bufferFactory().wrap(b));
                 exchange.getResponse().getHeaders().add("Content-Type", "application/json");
                 ServerHttpResponse response = exchange.getResponse();
-                response.writeWith(buffer);
+                
                 response.getHeaders().set(HttpHeaders.WWW_AUTHENTICATE, wwwAuthenticate);
                 response.getHeaders().set("X-Error", authException.getMessage());
                 response.setStatusCode(status);
-                return response.setComplete();
+               // return response.setComplete();
+               return response.writeWith(buffer);
             } catch (JsonProcessingException ex) {
                 Logger.getLogger(PlatformAuthenticationSuccessHandler.class.getName()).log(Level.SEVERE, null, ex);
                 return Mono.error(ex);

@@ -15,29 +15,24 @@
  */
 package com.cloudimpl.outstack.spring.service.config;
 
-import com.cloudimpl.outstack.common.RouterType;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
-import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.configs.ConfigEntity;
 import com.cloudimpl.outstack.runtime.configs.ConfigGroupEntity;
-import com.cloudimpl.outstack.spring.component.SpringService;
+import com.cloudimpl.outstack.spring.component.SpringQueryService;
 
 /**
  *
  * @author nuwan
  */
-@CloudFunction(name = "ConfigService")
-@Router(routerType = RouterType.ROUND_ROBIN)
-public class ConfigService extends SpringService<ConfigGroupEntity>{
+@CloudFunction(name = "ConfigQueryService")
+public class ConfigQueryService extends SpringQueryService<ConfigGroupEntity>{
     {
-        $(CreateConfigGroupEntity.class);
-        $(UpdateConfigGroupEntity.class);
         $$(ConfigGroupEntity.class);
         $$(ConfigEntity.class);
     }
     
-    public ConfigService(EventRepositoryFactory factory) {
+    public ConfigQueryService(EventRepositoryFactory factory) {
         super(factory);
     }
     
