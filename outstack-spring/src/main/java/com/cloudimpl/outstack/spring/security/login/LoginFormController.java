@@ -20,7 +20,6 @@ package com.cloudimpl.outstack.spring.security.login;
  * @author nuwan
  */
 import com.cloudimpl.outstack.spring.security.service.AuthenticationHelperService;
-import com.cloudimpl.outstack.spring.security.service.AuthorizeRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

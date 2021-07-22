@@ -18,18 +18,23 @@ package com.cloudimpl.outstack.runtime.configs;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 
 /**
  *
  * @author nuwan
  */
-public class ConfigEntity extends ChildEntity<ConfigGroupEntity> {
+public class ConfigEntity extends ChildEntity<ConfigGroupEntity> implements ITenantOptional{
 
+    @Id
     private final String configName;
     private String configValue;
-
-    public ConfigEntity(String configName) {
+    private final String tenantId;
+    
+    public ConfigEntity(String configName,String tenantId) {
         this.configName = configName;
+        this.tenantId = tenantId;
     }
 
     public String getConfigName() {
@@ -50,9 +55,19 @@ public class ConfigEntity extends ChildEntity<ConfigGroupEntity> {
         return configName;
     }
 
+    @Override
+    public String getTenantId() {
+        return tenantId;
+    }
+    
     private void applyEvent(ConfigCreated configCreated)
     {
         this.configValue = configCreated.getConfigValue();
+    }
+    
+    private void applyEvent(ConfigUpdated configUpdated)
+    {
+        this.configValue = configUpdated.getConfigValue();
     }
     
     @Override
@@ -60,6 +75,10 @@ public class ConfigEntity extends ChildEntity<ConfigGroupEntity> {
          switch (event.getClass().getSimpleName()) {
             case "ConfigCreated": {
                 applyEvent((ConfigCreated) event);
+                break;
+            }
+            case "ConfigUpdated": {
+                applyEvent((ConfigUpdated) event);
                 break;
             }
             default: {

@@ -17,18 +17,23 @@ package com.cloudimpl.outstack.runtime.configs;
 
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
+import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 /**
  *
  * @author nuwan
  */
-public class ConfigGroupEntity extends RootEntity {
+public class ConfigGroupEntity extends RootEntity implements ITenantOptional{
 
+    @Id
     private final String groupName;
-
-    public ConfigGroupEntity(String groupName) {
+    private final String tenantId;
+    
+    public ConfigGroupEntity(String groupName,String tenantId) {
         this.groupName = groupName;
+        this.tenantId = tenantId;
     }
 
     public String getGroupName() {
@@ -40,6 +45,12 @@ public class ConfigGroupEntity extends RootEntity {
         return groupName;
     }
 
+     @Override
+    public String getTenantId()
+    {
+        return this.tenantId;
+    }
+    
     private void applyEvent(ConfigGroupCreated configGroupCreatedEvent) {
 
     }
