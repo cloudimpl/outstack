@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.runtime.configs;
 
 import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
+import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.Id;
@@ -25,6 +26,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  *
  * @author nuwan
  */
+@EntityMeta(plural = "config-group-entities",version = "v1")
 public class ConfigGroupEntity extends RootEntity implements ITenantOptional{
 
     @Id
