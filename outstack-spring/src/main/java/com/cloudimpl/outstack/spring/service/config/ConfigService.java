@@ -32,7 +32,7 @@ import com.cloudimpl.outstack.spring.component.SpringService;
 public class ConfigService extends SpringService<ConfigGroupEntity>{
     {
         $(CreateConfigGroupEntity.class);
-        $(UpdateConfigGroupEntity.class);
+        $(UpdateConfigEntity.class);
         $$(ConfigGroupEntity.class);
         $$(ConfigEntity.class);
     }
