@@ -29,13 +29,20 @@ import reactor.core.publisher.Mono;
  *
  * @author nuwan
  */
-public class UpdateConfigGroupEntity extends AsyncEntityCommandHandler<ConfigGroupEntity, CreateConfigRequest,ConfigEntity>{
+public class UpdateConfigGroupEntity extends AsyncEntityCommandHandler<ConfigGroupEntity, CreateConfigRequest, ConfigEntity> {
 
     @Override
     protected Mono<ConfigEntity> execute(EntityContext<ConfigGroupEntity> context, CreateConfigRequest command) {
         AsyncEntityContext<ConfigGroupEntity> asyncContext = context.asAsyncEntityContext();
-        ConfigGroupEntity group = asyncContext.<ConfigGroupEntity>getEntityById(command.getGroupName()).orElseGet(()->asyncContext.<ConfigGroupEntity>create(command.getGroupName(), new ConfigGroupCreated(command.getGroupName())));
-        return Mono.just(asyncContext.update(ConfigEntity.class, command.getConfigName(), new ConfigUpdated(group.entityId(), command.getConfigName(),command.getValue())));
+        ConfigGroupEntity group = asyncContext.<ConfigGroupEntity>getEntityById(command.getGroupName()).orElseGet(() -> asyncContext.<ConfigGroupEntity>create(command.getGroupName(), new ConfigGroupCreated(command.getGroupName())));
+        ConfigEntity entity = asyncContext.getChildEntityById(ConfigEntity.class, command.getConfigName()).get();
+        if (!entity.entityId().equals(command.getConfigName())) {
+            asyncContext.rename(ConfigEntity.class, entity.entityId(), command.getConfigName());
+            entity = asyncContext.update(ConfigEntity.class, command.getConfigName(), new ConfigUpdated(group.entityId(), command.getConfigName(), command.getValue()));
+        } else {
+            entity = asyncContext.update(ConfigEntity.class, command.getConfigName(), new ConfigUpdated(group.entityId(), command.getConfigName(), command.getValue()));
+        }
+        return Mono.just(entity);
     }
-    
+
 }
