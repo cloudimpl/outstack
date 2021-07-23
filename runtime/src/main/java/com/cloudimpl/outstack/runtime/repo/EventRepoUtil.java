@@ -63,7 +63,7 @@ public class EventRepoUtil {
                     } else if (entry.getValue().contains("*")) {
                         String queryStr = entry.getValue();
                         queryStr = queryStr.replaceAll("\\*", "\\\\w*");
-                        if (!jsonPrim.getAsString().matches(queryStr)) {
+                        if (!jsonPrim.getAsString().matches("(?i).*" + queryStr + ".*")) {
                             internalStatus = false;
                         }
                     } else if (!jsonPrim.getAsString().equalsIgnoreCase(entry.getValue())) {
