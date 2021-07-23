@@ -17,32 +17,38 @@ package com.cloudimpl.outstack.spring.service.config;
 
 import com.cloudimpl.outstack.runtime.AsyncEntityCommandHandler;
 import com.cloudimpl.outstack.runtime.AsyncEntityContext;
+import com.cloudimpl.outstack.runtime.ChildEntityContext;
+import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
 import com.cloudimpl.outstack.runtime.configs.ConfigEntity;
 import com.cloudimpl.outstack.runtime.configs.ConfigGroupCreated;
 import com.cloudimpl.outstack.runtime.configs.ConfigGroupEntity;
 import com.cloudimpl.outstack.runtime.configs.ConfigUpdated;
 import com.cloudimpl.outstack.runtime.configs.CreateConfigRequest;
+import com.cloudimpl.outstack.runtime.configs.UpdateConfigRequest;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
-public class UpdateConfigGroupEntity extends AsyncEntityCommandHandler<ConfigGroupEntity, CreateConfigRequest, ConfigEntity> {
+public class UpdateConfigEntity extends EntityCommandHandler<ConfigEntity, UpdateConfigRequest, ConfigEntity> {
 
     @Override
-    protected Mono<ConfigEntity> execute(EntityContext<ConfigGroupEntity> context, CreateConfigRequest command) {
-        AsyncEntityContext<ConfigGroupEntity> asyncContext = context.asAsyncEntityContext();
-        ConfigGroupEntity group = asyncContext.<ConfigGroupEntity>getEntityById(command.getGroupName()).orElseGet(() -> asyncContext.<ConfigGroupEntity>create(command.getGroupName(), new ConfigGroupCreated(command.getGroupName())));
-        ConfigEntity entity = asyncContext.getChildEntityById(ConfigEntity.class, command.getConfigName()).get();
+    protected ConfigEntity execute(EntityContext<ConfigEntity> context, UpdateConfigRequest command) {
+        ChildEntityContext<ConfigGroupEntity,ConfigEntity> childContext = context.asChildContext();
+
+        ConfigEntity entity = childContext.getEntityById(command.id()).get();
         if (!entity.entityId().equals(command.getConfigName())) {
-            asyncContext.rename(ConfigEntity.class, entity.entityId(), command.getConfigName());
-            entity = asyncContext.update(ConfigEntity.class, command.getConfigName(), new ConfigUpdated(group.entityId(), command.getConfigName(), command.getValue()));
+            entity = childContext.rename(entity.entityId(), command.getConfigName());
+            if(command.getValue() != null && !command.getValue().equals(entity.getConfigValue()))
+            {
+                entity = childContext.update(command.getConfigName(), new ConfigUpdated(command.getGroupName(), command.getConfigName(), command.getValue()));
+            }
         } else {
-            entity = asyncContext.update(ConfigEntity.class, command.getConfigName(), new ConfigUpdated(group.entityId(), command.getConfigName(), command.getValue()));
+            entity = childContext.update(command.getConfigName(), new ConfigUpdated(command.getGroupName(), command.getConfigName(), command.getValue()));
         }
-        return Mono.just(entity);
+        return entity;
     }
 
 }

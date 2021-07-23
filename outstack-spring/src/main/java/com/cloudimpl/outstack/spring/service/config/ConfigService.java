@@ -33,7 +33,7 @@ public class ConfigService extends SpringService<ConfigGroupEntity>{
 
     static {
         $(CreateConfigGroupEntity.class);
-        $(UpdateConfigGroupEntity.class);
+        $(UpdateConfigEntity.class);
         $$(ConfigGroupEntity.class);
         $$(ConfigEntity.class);
     }
