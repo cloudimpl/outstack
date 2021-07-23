@@ -92,6 +92,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return (C) childContext.update(id, event);
     }
     
+     public <C extends ChildEntity<T>> C rename(Class<C> type, String id, String newId) {
+        ChildEntityContext childContext = new ChildEntityContext(entityType, _id, type, getTenantId(), entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        childContext.setTx(getTx());
+        return (C) childContext.rename(id, newId);
+    }
+    
     @Override
     public T update(String id, Event<T> event) {
         Objects.requireNonNull(id);
