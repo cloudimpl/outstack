@@ -36,48 +36,56 @@ public class EventRepoUtil {
         if (params.isEmpty()) {
             return true;
         }
+        Boolean status = null;
         JsonObject json = GsonCodecRuntime.encodeToJson(item).getAsJsonObject();
         for (Map.Entry<String, String> entry : params.entrySet()) {
+            boolean internalStatus = true;
             JsonElement el = json.get(entry.getKey());
             if (el == null || !el.isJsonPrimitive()) {
                 System.out.println("el " + entry.getKey() + " not found or not an primitive data type");
-                return false;
+                internalStatus = false;
             } else {
                 JsonPrimitive jsonPrim = (JsonPrimitive) el;
                 if (jsonPrim.isNumber()) {
                     BigDecimal target = new BigDecimal(entry.getValue());
                     if (jsonPrim.getAsBigDecimal().compareTo(target) != 0) {
-                        return false;
+                        internalStatus = false;
                     }
                 } else if (jsonPrim.isString()) {
                     if (entry.getValue().startsWith("%") && entry.getValue().length() > 1) {
                         if (!jsonPrim.getAsString().toLowerCase().endsWith(entry.getValue().substring(1).toLowerCase())) {
-                            return false;
+                            internalStatus = false;
                         }
                     } else if (entry.getValue().endsWith("%") && entry.getValue().length() > 1) {
                         if (!jsonPrim.getAsString().toLowerCase().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1).toLowerCase())) {
-                            return false;
+                            internalStatus = false;
                         }
                     } else if (entry.getValue().contains("*")) {
                         String queryStr = entry.getValue();
                         queryStr = queryStr.replaceAll("\\*", "\\\\w*");
                         if (!jsonPrim.getAsString().matches(queryStr)) {
-                            return false;
+                            internalStatus = false;
                         }
                     } else if (!jsonPrim.getAsString().equalsIgnoreCase(entry.getValue())) {
-                        return false;
+                        internalStatus = false;
                     }
                 } else if (jsonPrim.isBoolean()) {
                     if (jsonPrim.getAsBoolean() != Boolean.valueOf(entry.getValue())) {
-                        return false;
+                        internalStatus = false;
                     }
                 } else {
                     System.out.println("unhandle primitive data type:" + jsonPrim);
-                    return false;
+                    internalStatus = false;
                 }
             }
+
+            if(status == null) {
+                status = internalStatus;
+            } else if(status == false && internalStatus == true) {
+                status = internalStatus;
+            }
         }
-        return true;
+        return status;
     }
     
      public static int compare(String name, Object left, Object right) {
