@@ -58,7 +58,13 @@ public class EventRepoUtil {
                         if (!jsonPrim.getAsString().toLowerCase().startsWith(entry.getValue().substring(0, entry.getValue().length() - 1).toLowerCase())) {
                             return false;
                         }
-                    } else if (!jsonPrim.getAsString().equals(entry.getValue())) {
+                    } else if (entry.getValue().contains("*")) {
+                        String queryStr = entry.getValue();
+                        queryStr = queryStr.replaceAll("\\*", "\\\\w*");
+                        if (!jsonPrim.getAsString().matches(queryStr)) {
+                            return false;
+                        }
+                    } else if (!jsonPrim.getAsString().equalsIgnoreCase(entry.getValue())) {
                         return false;
                     }
                 } else if (jsonPrim.isBoolean()) {
