@@ -30,13 +30,14 @@ import com.cloudimpl.outstack.spring.component.SpringQueryService;
 @CloudFunction(name = "ConfigQueryService")
 @Router(routerType = RouterType.ROUND_ROBIN)
 public class ConfigQueryService extends SpringQueryService<ConfigGroupEntity>{
-    {
+
+    static {
         $$(ConfigGroupEntity.class);
         $$(ConfigEntity.class);
     }
-    
+
     public ConfigQueryService(EventRepositoryFactory factory) {
         super(factory);
     }
-    
+
 }

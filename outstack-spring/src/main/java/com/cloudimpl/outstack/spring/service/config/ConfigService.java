@@ -30,7 +30,8 @@ import com.cloudimpl.outstack.spring.component.SpringService;
 @CloudFunction(name = "ConfigService")
 @Router(routerType = RouterType.ROUND_ROBIN)
 public class ConfigService extends SpringService<ConfigGroupEntity>{
-    {
+
+    static {
         $(CreateConfigGroupEntity.class);
         $(UpdateConfigGroupEntity.class);
         $$(ConfigGroupEntity.class);
