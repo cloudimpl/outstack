@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -32,11 +33,26 @@ import java.util.stream.Collectors;
  * @author nuwan
  */
 public class EventRepoUtil {
-    public static <T> boolean onFilter(T item, Map<String, String> params) {
+    
+    public static <T> boolean onFilter(T item, Map<String, String> params){
+        return  onFilter(item,params,null);
+    }
+
+    public  static  <T>  T injectField(Class<T> type,T obj,String fieldName,String value){
+        JsonObject json = GsonCodecRuntime.encodeToJson(obj).getAsJsonObject();
+        json.addProperty(fieldName,value);
+        
+        return GsonCodecRuntime.decode(type,json.toString());
+    }
+    public static <T> boolean onFilter(T item, Map<String, String> params,Consumer<JsonObject> injector) {
         if (params.isEmpty()) {
             return true;
         }
         JsonObject json = GsonCodecRuntime.encodeToJson(item).getAsJsonObject();
+        
+        if(injector != null){
+            injector.accept(json);
+        }
         for (Map.Entry<String, String> entry : params.entrySet()) {
             JsonElement el = json.get(entry.getKey());
             if (el == null || !el.isJsonPrimitive()) {

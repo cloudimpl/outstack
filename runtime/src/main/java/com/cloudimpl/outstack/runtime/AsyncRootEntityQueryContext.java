@@ -96,5 +96,11 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     public  AsyncRootEntityQueryContext<T> asAsyncQueryContext() {
         return this;
     }
-    
+
+    @Override
+    public RootEntityContext<T> asNonTenantContext(String id) {
+        return inst.asNonTenantContext(id);
+    }
+
+
 }

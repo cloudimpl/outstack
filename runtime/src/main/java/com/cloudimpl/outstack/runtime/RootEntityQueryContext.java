@@ -33,6 +33,8 @@ public interface RootEntityQueryContext<T extends RootEntity> extends EntityQuer
     Optional<T> getEntity();
     
     <T extends RootEntity> ResultSet<T> getAll(Query.PagingRequest pagingRequest);
-    
-   // <E extends RootEntity> getQueryProvider(Class<E> rootType);
+   
+    RootEntityQueryContext<T> asNonTenantContext(String id);
+
+    // <E extends RootEntity> getQueryProvider(Class<E> rootType);
 }

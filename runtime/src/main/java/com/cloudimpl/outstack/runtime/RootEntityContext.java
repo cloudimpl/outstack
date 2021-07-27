@@ -277,7 +277,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     private RootEntityContext<T> init(ITransaction tx,String id) {
-        _id = getEntityById(id).get().id();
+        if(id != null) {
+            _id = getEntityById(id).get().id();
+        }
         setTx(tx);
         return this;
     }
@@ -286,6 +288,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return _id;
     }
 
+    @Override
     public RootEntityContext<T> asNonTenantContext(String id) {
         return new RootEntityContext<>(entityType, null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(getTx(),id);
     }
