@@ -12,11 +12,13 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
+import reactor.core.publisher.Mono;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,8 +41,9 @@ public class EntityQueryContextProvider<T extends RootEntity> {
     protected final Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector;
     protected final Class<T> type;
     protected final String version;
+    private final Supplier<BiFunction<String, Object, Mono>> requestHandler;
 
-    public EntityQueryContextProvider(Class<T> type, Supplier<String> idGenerator, QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector) {
+    public EntityQueryContextProvider(Class<T> type, Supplier<String> idGenerator, QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
         this.type = type;
         this.version = Entity.getVersion(type);
         this.idGenerator = idGenerator;
@@ -48,10 +51,11 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         this.factory = Validation.buildDefaultValidatorFactory();
         this.validator = this.factory.getValidator();
         this.queryOperationSelector = queryOperationSelector;
+        this.requestHandler = requestHandler;
     }
 
     public ReadOnlyTransaction<T> createTransaction(String rootTid, String tenantId, boolean async) {
-        return new ReadOnlyTransaction(type, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async);
+        return new ReadOnlyTransaction(type, idGenerator, rootTid, tenantId, queryOperation, this::validateObject, this.queryOperationSelector, version, async, requestHandler);
     }
 
     private <T> void validateObject(T target) {
@@ -78,9 +82,10 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         protected final String version;
         protected final boolean async;
         private Class<R> type;
+        private final Supplier<BiFunction<String, Object, Mono>> requestHandler;
         public ReadOnlyTransaction(Class<R> type, Supplier<String> idGenerator, String rootTid,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator,
-                Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async) {
+                Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
             this.idGenerator = idGenerator;
             this.type = type;
             if (rootTid != null) {
@@ -92,6 +97,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             this.queryOperationSelector = queryOperationSelector;
             this.version = version;
             this.async = async;
+            this.requestHandler = requestHandler;
         }
 
         public InputMetaProvider getInputMetaProvider() {
@@ -118,7 +124,7 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             if (RootEntity.isMyType(entityType)) {
                 Class<R> rootType = (Class<R>) entityType;
                 RootEntityContext context = new RootEntityContext<>(rootType, rootTid, tenantId, Optional.empty(), idGenerator, Optional.empty(), this, Optional.empty(), validator, this.queryOperationSelector, version);
-                return async ? (Z) new AsyncRootEntityQueryContext(context)
+                return async ? (Z) new AsyncRootEntityQueryContext(context, requestHandler.get())
                         : (Z) context;
             } else {
                 validateRootTid();

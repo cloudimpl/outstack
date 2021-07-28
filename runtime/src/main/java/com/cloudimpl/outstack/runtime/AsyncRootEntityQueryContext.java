@@ -19,7 +19,10 @@ import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import reactor.core.publisher.Mono;
+import java.text.MessageFormat;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 /**
  *
@@ -27,9 +30,11 @@ import java.util.Optional;
  */
 public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEntityQueryContext<T>{
     private final RootEntityContext<T> inst;
+    private final BiFunction<String, Object, Mono> requestHandler;
 
-    public AsyncRootEntityQueryContext(RootEntityContext<T> inst) {
+    public AsyncRootEntityQueryContext(RootEntityContext<T> inst,  BiFunction<String, Object, Mono> requestHandler) {
         this.inst = inst;
+        this.requestHandler = requestHandler;
     }
 
     @Override
@@ -100,6 +105,10 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     @Override
     public RootEntityContext<T> asNonTenantContext(String id) {
         return inst.asNonTenantContext(id);
+    }
+
+    public <T> Mono<T> sendRequest(String domainOwner, String domainContext, String version, String serviceName, Object req) {
+        return requestHandler.apply(MessageFormat.format("{0}/{1}/{2}/{3}", domainOwner, domainContext, version, serviceName), req);
     }
 
 
