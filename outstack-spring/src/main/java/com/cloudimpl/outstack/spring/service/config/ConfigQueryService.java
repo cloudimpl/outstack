@@ -38,6 +38,7 @@ public class ConfigQueryService extends SpringQueryService<ConfigGroupEntity>{
 
     public ConfigQueryService(EventRepositoryFactory factory) {
         super(factory);
+        ConfigQueryProvider.getInstance().setEventRepositroy(factory);
     }
 
 }

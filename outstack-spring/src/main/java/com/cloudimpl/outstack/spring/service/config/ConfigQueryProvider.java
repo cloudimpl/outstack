@@ -15,6 +15,11 @@
  */
 package com.cloudimpl.outstack.spring.service.config;
 
+import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
+import com.cloudimpl.outstack.runtime.EventRepositoy;
+import com.cloudimpl.outstack.runtime.configs.ConfigEntity;
+import com.cloudimpl.outstack.runtime.configs.ConfigGroupEntity;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,5 +29,79 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConfigQueryProvider {                         
 
+    private static final ConfigQueryProvider inst = new ConfigQueryProvider();
     
+    private EventRepositoy<ConfigGroupEntity> eventRepo;
+    
+    
+    public static ConfigQueryProvider getInstance()
+    {
+        return inst;
+    }
+    
+    public String getConfig(String configGroup,String configName,String defaultValue)
+    {
+       return inst.getRawConfig(null, configGroup, configName, defaultValue);
+    }
+    
+    public String getConfig(String tenantId,String configGroup,String configName,String defaultValue)
+    {
+       return inst.getRawConfig(tenantId, configGroup, configName, defaultValue);
+    }
+    
+    public int getConfig(String tenantId,String configGroup,String configName,int defaultValue)
+    {
+       String val = inst.getRawConfig(tenantId, configGroup, configName, null);
+       if(val == null)
+           return defaultValue;
+       return Integer.valueOf(val);
+    }
+    
+    public int getConfig(String configGroup,String configName,int defaultValue)
+    {
+        return getConfig(null, configGroup, configName, defaultValue);
+    }
+    
+    public boolean getConfig(String tenantId,String configGroup,String configName,boolean defaultValue)
+    {
+       String val = inst.getRawConfig(tenantId, configGroup, configName, null);
+       if(val == null)
+           return defaultValue;
+       return Boolean.valueOf(val);
+    }
+    
+    public boolean getConfig(String configGroup,String configName,boolean defaultValue)
+    {
+        return getConfig(null, configGroup, configName, defaultValue);
+    }
+    
+    public long getConfig(String tenantId,String configGroup,String configName,long defaultValue)
+    {
+       String val = inst.getRawConfig(tenantId, configGroup, configName, null);
+       if(val == null)
+           return defaultValue;
+       return Long.valueOf(val);
+    }
+    
+    public long getConfig(String configGroup,String configName,long defaultValue)
+    {
+        return getConfig(null, configGroup, configName, defaultValue);
+    }
+    
+    private String getRawConfig(String tenantId,String configGroup,String configName,String defaultValue)
+    {
+        Optional<ConfigGroupEntity> cg = eventRepo.getRootById(ConfigGroupEntity.class,configGroup,tenantId);
+        if(cg.isEmpty())
+            return defaultValue;
+        Optional<ConfigEntity> cf =  eventRepo.getChildById(ConfigGroupEntity.class, cg.get().id(),ConfigEntity.class,configName, tenantId);
+        if(cf.isEmpty())
+            return defaultValue;
+        return cf.get().getConfigValue();
+    }
+    
+    protected void setEventRepositroy(EventRepositoryFactory factory)
+    {
+        eventRepo = factory.createOrGetRepository(ConfigGroupEntity.class);
+    }
+            
 }
