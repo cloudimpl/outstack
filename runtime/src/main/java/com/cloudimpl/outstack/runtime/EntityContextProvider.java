@@ -41,7 +41,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
     public EntityContextProvider(Class<T> type, EntityProvider entityProvider, Supplier<String> idGenerator,
             QueryOperations<T> queryOperation, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
-        super(type, idGenerator, queryOperation, queryOperationSelector);
+        super(type, idGenerator, queryOperation, queryOperationSelector, requestHandler);
         this.entityProvider = entityProvider;
         this.requestHandler = requestHandler;
     }
@@ -77,7 +77,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         
         public Transaction(Class<R> type, EntityProvider entityProvider, Supplier<String> idGenerator, String rootId,
                 String tenantId, QueryOperations<R> queryOperation, Consumer<Object> validator, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
-            super(type, idGenerator, rootId, tenantId, queryOperation, validator, queryOperationSelector, version, async);
+            super(type, idGenerator, rootId, tenantId, queryOperation, validator, queryOperationSelector, version, async, requestHandler);
             this.mapBrnEntities = new TreeMap<>();
             this.mapTrnEntities = new TreeMap<>();
             this.entityProvider = entityProvider;
