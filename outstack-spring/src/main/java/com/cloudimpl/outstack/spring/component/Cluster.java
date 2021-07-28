@@ -23,6 +23,7 @@ import com.cloudimpl.outstack.runtime.*;
 import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
 import com.cloudimpl.outstack.spring.security.PolicyStatementValidator;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
+import com.cloudimpl.outstack.spring.service.config.ConfigQueryProvider;
 import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -86,6 +87,7 @@ public class Cluster {
         injector.bind(ServiceDescriptorContextManager.class).to(serviceDescriptorContextMan);
         injector.bind(LogWriter.class).to(new ConsoleLogWriter());
         bindVars(injector);
+        ConfigQueryProvider.getInstance().setEventRepositroy(injector.getInjecterbleInstance(EventRepositoryFactory.class));
         //injector.bind(CollectionProvider.class).to(new AwsCollectionProvider("http://localhost:4566"));
         injector.nameBind("leaderOptions", CollectionOptions.builder().withOption("TableName", "Test").build());
         //injector.bind(CollectionProvider.class).to(configManager.getProvider(CollectionProvider.class.getName()).get().getInstance());

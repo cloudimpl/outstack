@@ -99,7 +99,7 @@ public class ConfigQueryProvider {
         return cf.get().getConfigValue();
     }
     
-    protected void setEventRepositroy(EventRepositoryFactory factory)
+    public void setEventRepositroy(EventRepositoryFactory factory)
     {
         eventRepo = factory.createOrGetRepository(ConfigGroupEntity.class);
     }
