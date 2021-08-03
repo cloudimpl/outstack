@@ -32,7 +32,7 @@ public class CommandWrapper implements ICommand {
     private Object grant;
     private String tenantId;
     private String context;
-    private Map<String, Object> mapAttr;
+    private Map<String, String> mapAttr;
 
     public CommandWrapper(Builder builder) {
         this.command = builder.command;
@@ -48,7 +48,7 @@ public class CommandWrapper implements ICommand {
         this.context = builder.context;
     }
 
-    protected void setMapAttr(Map<String, Object> mapAttr) {
+    protected void setMapAttr(Map<String, String> mapAttr) {
         this.mapAttr = mapAttr;
     }
 
@@ -108,7 +108,7 @@ public class CommandWrapper implements ICommand {
         return context;
     }
 
-    public Map<String, Object> getMapAttr() {
+    public Map<String, String> getMapAttr() {
         return mapAttr;
     }
     
@@ -128,7 +128,7 @@ public class CommandWrapper implements ICommand {
         private String childType;
         private String context;
         private List<Object> files;
-        private Map<String, Object> mapAttr = new HashMap<>();
+        private Map<String, String> mapAttr = new HashMap<>();
 
         public Builder withCommand(String command) {
             this.command = command;

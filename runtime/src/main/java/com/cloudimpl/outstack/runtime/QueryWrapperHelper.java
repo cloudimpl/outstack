@@ -4,7 +4,7 @@ import java.util.Map;
 
 public class QueryWrapperHelper {
 
-    public static QueryWrapper withMapAttr(QueryWrapper cmd, Map<String, Object> mapAttr) {
+    public static QueryWrapper withMapAttr(QueryWrapper cmd, Map<String, String> mapAttr) {
         cmd.setMapAttr(mapAttr);
         return cmd;
     }

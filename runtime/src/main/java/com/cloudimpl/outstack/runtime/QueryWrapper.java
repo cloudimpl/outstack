@@ -30,7 +30,7 @@ public class QueryWrapper implements IQuery {
     private Object grant;
     private String tenantId;
     private String context;
-    private Map<String, Object> mapAttr;
+    private Map<String, String> mapAttr;
     private final Query.PagingRequest pagingRequest;
 
     public QueryWrapper(Builder builder) {
@@ -46,7 +46,7 @@ public class QueryWrapper implements IQuery {
         this.context = builder.context;
     }
 
-    protected void setMapAttr(Map<String, Object> mapAttr) {
+    protected void setMapAttr(Map<String, String> mapAttr) {
         this.mapAttr = mapAttr;
     }
 
@@ -114,7 +114,7 @@ public class QueryWrapper implements IQuery {
         private String version;
         private String payload;
         private String context;
-        private Map<String, Object> mapAttr;
+        private Map<String, String> mapAttr;
         private Query.PagingRequest pageRequest;
 
         public Builder withQuery(String query) {

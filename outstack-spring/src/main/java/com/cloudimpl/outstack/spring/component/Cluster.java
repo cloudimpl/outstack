@@ -39,6 +39,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -183,12 +184,12 @@ public class Cluster {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
 //    }
     private void populateAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, CommandWrapper wrapper) {
-        Map<String, Object> mapAttr = new HashMap<>();
+        Map<String, String> mapAttr = new HashMap<>();
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
 
-        mapAttr.putAll(token.getJwtToken().getClaims());
+        mapAttr.putAll(token.getJwtToken().getClaims().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> String.valueOf(entry.getValue()))));
 
         String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
@@ -210,12 +211,12 @@ public class Cluster {
     }
 
     private void populateAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, QueryWrapper wrapper) {
-        Map<String, Object> mapAttr = new HashMap<>();
+        Map<String, String> mapAttr = new HashMap<>();
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
 
-        mapAttr.putAll(token.getJwtToken().getClaims());
+        mapAttr.putAll(token.getJwtToken().getClaims().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> String.valueOf(entry.getValue()))));
 
         String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
