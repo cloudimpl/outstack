@@ -39,6 +39,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -187,12 +188,8 @@ public class Cluster {
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
-        if (token.getJwtToken().getClaim("userId") != null) {
-            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
-        }
-        if (token.getJwtToken().getClaim("userName") != null) {
-            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
-        }
+
+        mapAttr.putAll(token.getJwtToken().getClaims().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> String.valueOf(entry.getValue()))));
 
         String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
@@ -218,12 +215,8 @@ public class Cluster {
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
-        if (token.getJwtToken().getClaim("userId") != null) {
-            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
-        }
-        if (token.getJwtToken().getClaim("userName") != null) {
-            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
-        }
+
+        mapAttr.putAll(token.getJwtToken().getClaims().entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, entry -> String.valueOf(entry.getValue()))));
 
         String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");

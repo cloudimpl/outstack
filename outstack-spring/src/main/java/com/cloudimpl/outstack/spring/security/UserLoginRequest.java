@@ -27,7 +27,7 @@ import java.util.Map;
 public class UserLoginRequest extends Command{
     private final String userId;
     private final String password;
-    private final Map<String,String> mapAttr;
+    private final Map<String, String> mapAttr;
     
     public UserLoginRequest(Builder builder) {
         super(builder);
