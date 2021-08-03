@@ -75,6 +75,10 @@ public abstract class Query implements IQuery {
         return _context;
     }
 
+    public Map<String, String> getMapAttr() {
+        return _mapAttr;
+    }
+
     public void setContext(String context) {
         this._context = context;
     }
