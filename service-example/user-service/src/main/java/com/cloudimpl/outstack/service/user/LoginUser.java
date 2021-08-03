@@ -33,7 +33,8 @@ public class LoginUser extends EntityCommandHandler<User, UserLoginRequest, User
     @Override
     protected UserLoginResponse execute(EntityContext<User> context, UserLoginRequest command) {
         User user = context.<User>asRootContext().getEntity().orElseThrow(()->new PlatformAuthenticationException("user not found",null)); 
-        context.update(user.entityId(), new UserLoggedIn(command.getMapAttr().get("remoteIp"), command.getMapAttr().get("browserDetail"), command.getUserId()));
+        context.update(user.entityId(), new UserLoggedIn(command.getMapAttr().get("remoteIp") != null ? command.getMapAttr().get("remoteIp").toString() : null,
+                command.getMapAttr().get("browserDetail") != null ? command.getMapAttr().get("browserDetail").toString() : null, command.getUserId()));
         return new UserLoginResponse(user.id(),"","",user.getUsername(),"safsaf",false,true,Collections.EMPTY_LIST);
     }
     

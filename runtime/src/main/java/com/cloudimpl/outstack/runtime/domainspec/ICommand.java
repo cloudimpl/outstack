@@ -15,5 +15,5 @@ public interface ICommand {
     String commandName();
     String version();
     <T extends Command> T unwrap(Class<T> type);
-    Map<String, String> getMapAttr();
+    Map<String, Object> getMapAttr();
 }

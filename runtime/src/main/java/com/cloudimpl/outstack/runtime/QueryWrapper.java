@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
+import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryHelper;
@@ -29,7 +30,7 @@ public class QueryWrapper implements IQuery {
     private Object grant;
     private String tenantId;
     private String context;
-    private Map<String, String> mapAttr;
+    private Map<String, Object> mapAttr;
     private final Query.PagingRequest pagingRequest;
 
     public QueryWrapper(Builder builder) {
@@ -45,7 +46,7 @@ public class QueryWrapper implements IQuery {
         this.context = builder.context;
     }
 
-    protected void setMapAttr(Map<String, String> mapAttr) {
+    protected void setMapAttr(Map<String, Object> mapAttr) {
         this.mapAttr = mapAttr;
     }
 
@@ -64,6 +65,7 @@ public class QueryWrapper implements IQuery {
         QueryHelper.withId(query, id);
         QueryHelper.withTenantId(query, tenantId);
         QueryHelper.withVersion(query, version);
+        QueryHelper.withMapAttr(query, mapAttr);
         QueryHelper.withPageable(query, this.pagingRequest);
         return query;
     }
@@ -112,7 +114,7 @@ public class QueryWrapper implements IQuery {
         private String version;
         private String payload;
         private String context;
-        private Map<String, String> mapAttr;
+        private Map<String, Object> mapAttr;
         private Query.PagingRequest pageRequest;
 
         public Builder withQuery(String query) {

@@ -20,7 +20,7 @@ public abstract class Query implements IQuery {
     private String _id;
     private String _version;
     private PagingRequest _pagingReq;
-    private Map<String, String> _mapAttr;
+    private Map<String, Object> _mapAttr;
     private String _context;
     private String _queryName;
 
@@ -55,7 +55,7 @@ public abstract class Query implements IQuery {
         this._id = id;
     }
 
-    public void setMapAttr(Map<String, String> mapAttr) {
+    public void setMapAttr(Map<String, Object> mapAttr) {
         this._mapAttr = mapAttr;
     }
 
@@ -100,7 +100,7 @@ public abstract class Query implements IQuery {
         private String tenantId;
         private String id;
         private String version;
-        private Map<String, String> mapAttr;
+        private Map<String, Object> mapAttr;
         private String context;
         private String queryName;
         private PagingRequest pagingReq;
@@ -120,7 +120,7 @@ public abstract class Query implements IQuery {
             return this;
         }
 
-        public Builder withMapAttr(Map<String, String> mapAttr){
+        public Builder withMapAttr(Map<String, Object> mapAttr){
             this.mapAttr = mapAttr;
             return this;
         }

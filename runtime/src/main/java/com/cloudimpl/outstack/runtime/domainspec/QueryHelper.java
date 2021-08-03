@@ -41,7 +41,7 @@ public class QueryHelper {
         return cmd;
     }
 
-    public static Query withMapAttr(Query cmd, Map<String, String> mapAttr) {
+    public static Query withMapAttr(Query cmd, Map<String, Object> mapAttr) {
         cmd.setMapAttr(mapAttr);
         return cmd;
     }

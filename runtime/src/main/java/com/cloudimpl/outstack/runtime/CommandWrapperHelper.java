@@ -6,7 +6,7 @@ import java.util.Map;
 
 public class CommandWrapperHelper {
 
-    public static CommandWrapper withMapAttr(CommandWrapper cmd, Map<String, String> mapAttr) {
+    public static CommandWrapper withMapAttr(CommandWrapper cmd, Map<String, Object> mapAttr) {
         cmd.setMapAttr(mapAttr);
         return cmd;
     }

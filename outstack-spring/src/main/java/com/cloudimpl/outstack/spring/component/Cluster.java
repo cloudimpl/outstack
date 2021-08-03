@@ -183,16 +183,12 @@ public class Cluster {
 //        return requestReply(MessageFormat.format("{0}/{1}/{2}/serviceName", domainOwner,domainContext), msg);
 //    }
     private void populateAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, CommandWrapper wrapper) {
-        Map<String, String> mapAttr = new HashMap<>();
+        Map<String, Object> mapAttr = new HashMap<>();
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
-        if (token.getJwtToken().getClaim("userId") != null) {
-            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
-        }
-        if (token.getJwtToken().getClaim("userName") != null) {
-            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
-        }
+
+        mapAttr.putAll(token.getJwtToken().getClaims());
 
         String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");
@@ -214,16 +210,12 @@ public class Cluster {
     }
 
     private void populateAttributes(PlatformAuthenticationToken token, ServerHttpRequest httpRequest, QueryWrapper wrapper) {
-        Map<String, String> mapAttr = new HashMap<>();
+        Map<String, Object> mapAttr = new HashMap<>();
         if (httpRequest != null) {
             mapAttr.put("@remoteIp", httpRequest.getRemoteAddress().toString());
         }
-        if (token.getJwtToken().getClaim("userId") != null) {
-            mapAttr.put("@userId", token.getJwtToken().getClaim("userId"));
-        }
-        if (token.getJwtToken().getClaim("userName") != null) {
-            mapAttr.put("@userName", token.getJwtToken().getClaim("userName"));
-        }
+
+        mapAttr.putAll(token.getJwtToken().getClaims());
 
         String headerTenantId = httpRequest.getHeaders().getFirst("X-TenantId");
         String tokenTenantId = token.getJwtToken().getClaim("tenantId");

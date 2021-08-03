@@ -42,7 +42,7 @@ public class CommandHelper {
         return cmd;
     }
 
-    public static Command withMapAttr(Command cmd, Map<String, String> mapAttr) {
+    public static Command withMapAttr(Command cmd, Map<String, Object> mapAttr) {
         cmd.setMapAttr(mapAttr);
         return cmd;
     }

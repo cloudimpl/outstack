@@ -21,7 +21,7 @@ public abstract class Command implements Input, ICommand {
     private String _version;
     private final String _commandName;
     private List<Object> _files;
-    private Map<String, String> _mapAttr;
+    private Map<String, Object> _mapAttr;
     private String _context;
 
     public Command(Builder builder) {
@@ -71,11 +71,11 @@ public abstract class Command implements Input, ICommand {
         this._context = _context;
     }
 
-    public Map<String, String> getMapAttr() {
+    public Map<String, Object> getMapAttr() {
         return _mapAttr;
     }
 
-    protected void setMapAttr(Map<String, String> _mapAttr) {
+    protected void setMapAttr(Map<String, Object> _mapAttr) {
         this._mapAttr = _mapAttr;
     }
 
@@ -108,7 +108,7 @@ public abstract class Command implements Input, ICommand {
         protected String commandName;
         protected List<Object> files;
         protected String context;
-        private Map<String, String> mapAttr = new HashMap();
+        private Map<String, Object> mapAttr = new HashMap();
 
         public Builder withRootId(String rootId) {
             this.rootId = rootId;
