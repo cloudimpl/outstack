@@ -79,6 +79,22 @@ public abstract class Command implements Input, ICommand {
         this._mapAttr = _mapAttr;
     }
 
+    public String getRootId() {
+        return _rootId;
+    }
+
+    public String getId() {
+        return _id;
+    }
+
+    public String getTenantId() {
+        return _tenantId;
+    }
+
+    public String getContext() {
+        return _context;
+    }
+
     @Override
     public final String commandName() {
         return _commandName;
