@@ -59,6 +59,26 @@ public abstract class Query implements IQuery {
         this._mapAttr = mapAttr;
     }
 
+    public String getRootId() {
+        return _rootId;
+    }
+
+    public String getTenantId() {
+        return _tenantId;
+    }
+
+    public String getId() {
+        return _id;
+    }
+
+    public String getContext() {
+        return _context;
+    }
+
+    public Map<String, String> getMapAttr() {
+        return _mapAttr;
+    }
+
     public void setContext(String context) {
         this._context = context;
     }
