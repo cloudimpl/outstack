@@ -26,12 +26,14 @@ public class UpdateConfigRequest extends Command {
     private String groupName;
     private String configName;
     private String value;
+    private String configType;
 
     public UpdateConfigRequest(Builder builder) {
         super(builder);
         this.groupName = builder.groupName;
         this.configName = builder.configName;
         this.value = builder.value;
+        this.configType = builder.configType;
     }
 
     public String getGroupName() {
@@ -46,6 +48,10 @@ public class UpdateConfigRequest extends Command {
         return value;
     }
 
+    public String getConfigType() {
+        return configType;
+    }
+
     public static final Builder builder() {
         return new Builder();
     }
@@ -55,6 +61,7 @@ public class UpdateConfigRequest extends Command {
         private String groupName;
         private String configName;
         private String value;
+        private String configType;
 
         public Builder() {
         }
@@ -71,6 +78,11 @@ public class UpdateConfigRequest extends Command {
         
         public Builder withValue(String value) {
             this.value = value;
+            return this;
+        }
+
+        public Builder withConfigType(String configType) {
+            this.configType = configType;
             return this;
         }
     }
