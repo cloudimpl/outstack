@@ -63,12 +63,12 @@ public abstract class EntityCommandHandler<T extends Entity, I extends Command, 
         tx.setInputMetaProvider(new InputMetaProvider() {
             @Override
             public String getUserName() {
-                return cmd.getMapAttr().get("@userName");
+                return cmd.getMapAttr().get("userName");
             }
 
             @Override
             public String getUserId() {
-                return cmd.getMapAttr().get("@userId");
+                return cmd.getMapAttr().get("userId");
             }
         });
         EntityContext<T> context = (EntityContext<T>) tx.getContext(entityType);
