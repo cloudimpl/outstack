@@ -18,12 +18,12 @@ public abstract class UnboundedCommandHandler<T extends RootEntity,C extends Com
         tx.setInputMetaProvider(new InputMetaProvider() {
             @Override
             public String getUserName() {
-                return cmd.getMapAttr().get("@userName");
+                return cmd.getMapAttr().get("userName");
             }
 
             @Override
             public String getUserId() {
-                return cmd.getMapAttr().get("@userId");
+                return cmd.getMapAttr().get("userId");
             }
         });
         UnboundedEntityContext<T> context = (UnboundedEntityContext<T>) tx.getContext(entityType);
