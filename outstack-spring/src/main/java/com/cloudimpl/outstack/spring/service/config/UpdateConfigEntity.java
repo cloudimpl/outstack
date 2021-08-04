@@ -43,10 +43,10 @@ public class UpdateConfigEntity extends EntityCommandHandler<ConfigEntity, Updat
             entity = childContext.rename(entity.entityId(), command.getConfigName());
             if(command.getValue() != null && !command.getValue().equals(entity.getConfigValue()))
             {
-                entity = childContext.update(command.getConfigName(), new ConfigUpdated(command.getGroupName(), command.getConfigName(), command.getValue()));
+                entity = childContext.update(command.getConfigName(), new ConfigUpdated(command.getGroupName(), command.getConfigName(), command.getValue(), command.getConfigType()));
             }
         } else {
-            entity = childContext.update(command.getConfigName(), new ConfigUpdated(command.getGroupName(), command.getConfigName(), command.getValue()));
+            entity = childContext.update(command.getConfigName(), new ConfigUpdated(command.getGroupName(), command.getConfigName(), command.getValue(), command.getConfigType()));
         }
         return entity;
     }

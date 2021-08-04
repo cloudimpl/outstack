@@ -33,7 +33,8 @@ public class ConfigEntity extends ChildEntity<ConfigGroupEntity> implements ITen
     private final String configName;
     private String configValue;
     private final String tenantId;
-    
+    private String configType;
+
     public ConfigEntity(String configName,String tenantId) {
         this.configName = configName;
         this.tenantId = tenantId;
@@ -41,6 +42,10 @@ public class ConfigEntity extends ChildEntity<ConfigGroupEntity> implements ITen
 
     public String getConfigName() {
         return configName;
+    }
+
+    public String getConfigType() {
+        return configType;
     }
 
     public String getConfigValue() {
@@ -65,11 +70,13 @@ public class ConfigEntity extends ChildEntity<ConfigGroupEntity> implements ITen
     private void applyEvent(ConfigCreated configCreated)
     {
         this.configValue = configCreated.getConfigValue();
+        this.configType = configCreated.getConfigType();
     }
     
     private void applyEvent(ConfigUpdated configUpdated)
     {
         this.configValue = configUpdated.getConfigValue();
+        this.configType = configUpdated.getConfigType();
     }
     
     @Override

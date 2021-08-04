@@ -28,11 +28,13 @@ public class ConfigUpdated extends Event<ConfigEntity> {
     private final String groupName;
     private final String configName;
     private final String configValue;
+    private final String configType;
     
-    public ConfigUpdated(String groupName,String configName,String configValue) {
+    public ConfigUpdated(String groupName,String configName,String configValue, String configType) {
         this.groupName = groupName;
         this.configName = configName;
         this.configValue = configValue;
+        this.configType = configType;
     }
 
     public String getGroupName() {
@@ -45,6 +47,9 @@ public class ConfigUpdated extends Event<ConfigEntity> {
 
     public String getConfigValue() {
         return configValue;
+    }
+    public String getConfigType() {
+        return configType;
     }
 
     @Override

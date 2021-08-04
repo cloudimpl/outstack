@@ -35,7 +35,7 @@ public class CreateConfigGroupEntity extends AsyncEntityCommandHandler<ConfigGro
     protected Mono<ConfigEntity> execute(EntityContext<ConfigGroupEntity> context, CreateConfigRequest command) {
         AsyncEntityContext<ConfigGroupEntity> asyncContext = context.asAsyncEntityContext();
         ConfigGroupEntity group = asyncContext.<ConfigGroupEntity>getEntityById(command.getGroupName()).orElseGet(()->asyncContext.<ConfigGroupEntity>create(command.getGroupName(), new ConfigGroupCreated(command.getGroupName())));
-        return Mono.just(asyncContext.create(ConfigEntity.class, group.id(), command.getConfigName(), new ConfigCreated(group.entityId(), command.getConfigName(),command.getValue())));
+        return Mono.just(asyncContext.create(ConfigEntity.class, group.id(), command.getConfigName(), new ConfigCreated(group.entityId(), command.getConfigName(),command.getValue(), command.getConfigType())));
     }
     
 }
