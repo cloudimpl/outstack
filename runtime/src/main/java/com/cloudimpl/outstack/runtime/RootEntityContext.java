@@ -290,7 +290,7 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
 
     @Override
     public RootEntityContext<T> asNonTenantContext(String id) {
-        return new RootEntityContext<>(entityType, null, null, entitySupplier, idGenerator, crudOperations, tx, eventPublisher, validator, queryOperationSelector, version).init(getTx(),id);
+        return new RootEntityContext<T>(entityType, null, null, entitySupplier, idGenerator, crudOperations, this.<T>getQueryOperations(), eventPublisher, validator, queryOperationSelector, version).init(getTx(),id);
     }
 
     protected void setId(String id) {
