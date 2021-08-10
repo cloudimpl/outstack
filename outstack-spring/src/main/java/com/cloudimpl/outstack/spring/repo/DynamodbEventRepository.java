@@ -496,19 +496,14 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         //   expressionAttributesNames.put("#partitionKey", "partitionKey");
         //   expressionAttributesNames.put("#rangeKey", "rangeKey");
 
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(pKey));
-        expressionAttributeValues.put(":rangeKey", new AttributeValue().withS(rkey));
+        Table table = this.dynamodb.getTable(this.tableName);
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("partitionKey = :partitionKey AND begins_with(rangeKey ,:rangeKey)").withValueMap(new ValueMap().withString(":partitionKey", pKey).withString(":rangeKey", rkey)).withConsistentRead(true);
+        ItemCollection<QueryOutcome> query = table.query(querySpec);
+        Iterator<Item> iterator = query.iterator();
+        Iterable<Item> iterable = () -> iterator;
 
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(this.tableName)
-                //     .withAttributesToGet("json")
-                .withKeyConditionExpression("partitionKey = :partitionKey AND begins_with(rangeKey ,:rangeKey)")
-                //       .withExpressionAttributeNames(expressionAttributesNames)
-                .withExpressionAttributeValues(expressionAttributeValues);
+        List items = StreamSupport.stream(iterable.spliterator(), false).map(attr -> GsonCodec.decode(childType, attr.getString("json"))).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
 
-        QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(childType, attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
