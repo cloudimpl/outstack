@@ -514,21 +514,19 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
    //     expressionAttributesNames.put("#partitionKey", "partitionKey");
    //     expressionAttributesNames.put("#eventOwner", "eventOwner");
 
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(trn));
-        expressionAttributeValues.put(":rangeKey", new AttributeValue().withS(String.format("%019d", 0)));
-        expressionAttributeValues.put(":eventOwner", new AttributeValue().withS(rootType.getSimpleName()));
-
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(this.tableName)
-                //     .withAttributesToGet("json")
-                .withScanIndexForward(Boolean.FALSE)
-                .withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey > :rangeKey")
+        Table table = this.dynamodb.getTable(this.tableName);
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey > :rangeKey")
                 .withFilterExpression("eventOwner = :eventOwner")
-         //       .withExpressionAttributeNames(expressionAttributesNames)
-                .withExpressionAttributeValues(expressionAttributeValues);
-        QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+                .withValueMap(new ValueMap()
+                        .withString(":partitionKey", trn).withString(":rangeKey", String.format("%019d", 0)).withString(":eventOwner", rootType.getSimpleName()))
+                .withConsistentRead(true)
+                .withScanIndexForward(Boolean.FALSE);
+
+        ItemCollection<QueryOutcome> query = table.query(querySpec);
+        Iterator<Item> iterator = query.iterator();
+        Iterable<Item> iterable = () -> iterator;
+        List items = StreamSupport.stream(iterable.spliterator(), false).map(attr -> GsonCodec.decode(attr.getString("json"))).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+
         return EventRepoUtil.onPageable(items, paging);
     }
 
@@ -542,22 +540,20 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         {
             childId = getChildById(rootType, id, childType, childId, tenantId).get().id();
         }
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(trn));
-        expressionAttributeValues.put(":rangeKey", new AttributeValue().withS(String.format("%019d", 0)));
-        expressionAttributeValues.put(":ownerId", new AttributeValue().withS(childId));
-        expressionAttributeValues.put(":eventOwner", new AttributeValue().withS(childType.getSimpleName()));
 
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(this.tableName)
-    //            .withAttributesToGet("json")
-                .withScanIndexForward(Boolean.FALSE)
-                .withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey > :rangeKey")
+        Table table = this.dynamodb.getTable(this.tableName);
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("partitionKey = :partitionKey AND rangeKey > :rangeKey")
                 .withFilterExpression("eventOwner = :eventOwner AND ownerId = :ownerId")
-        //        .withExpressionAttributeNames(expressionAttributesNames)
-                .withExpressionAttributeValues(expressionAttributeValues);
-        QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+                .withValueMap(new ValueMap()
+                        .withString(":partitionKey", trn).withString(":rangeKey", String.format("%019d", 0)).withString(":ownerId", childId).withString(":eventOwner", childType.getSimpleName()))
+                .withConsistentRead(true)
+                .withScanIndexForward(Boolean.FALSE);
+
+        ItemCollection<QueryOutcome> query = table.query(querySpec);
+        Iterator<Item> iterator = query.iterator();
+        Iterable<Item> iterable = () -> iterator;
+        List items = StreamSupport.stream(iterable.spliterator(), false).map(attr -> GsonCodec.decode(attr.getString("json"))).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+
         return EventRepoUtil.onPageable(items, paging);
     }
 
