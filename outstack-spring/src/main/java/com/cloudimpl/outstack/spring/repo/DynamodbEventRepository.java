@@ -16,7 +16,10 @@
 package com.cloudimpl.outstack.spring.repo;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.*;
+import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
+import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
+import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.Delete;
 import com.amazonaws.services.dynamodbv2.model.Put;
@@ -45,13 +48,10 @@ import com.cloudimpl.outstack.runtime.repo.EventRepoUtil;
 import com.cloudimpl.outstack.runtime.repo.RepositoryException;
 import com.cloudimpl.outstack.spring.component.SpringApplicationConfigManager.Provider;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  *
@@ -409,18 +409,13 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         //    Map<String, String> expressionAttributesNames = new HashMap<>();
         //    expressionAttributesNames.put("#partitionKey", "partitionKey");
 
-        Map<String, AttributeValue> expressionAttributeValues = new HashMap<>();
-        expressionAttributeValues.put(":partitionKey", new AttributeValue().withS(partitionKey));
+        Table table = this.dynamodb.getTable(this.tableName);
+        QuerySpec querySpec = new QuerySpec().withKeyConditionExpression("partitionKey = :partitionKey").withValueMap(new ValueMap().withString(":partitionKey", partitionKey)).withConsistentRead(true);
+        ItemCollection<QueryOutcome> query = table.query(querySpec);
+        Iterator<Item> iterator = query.iterator();
+        Iterable<Item> iterable = () -> iterator;
+        List items = StreamSupport.stream(iterable.spliterator(), false).map(attr -> GsonCodec.decode(rootType, attr.getString("json"))).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
 
-        QueryRequest queryRequest = new QueryRequest()
-                .withTableName(this.tableName)
-                //           .withAttributesToGet("json")
-                .withKeyConditionExpression("partitionKey = :partitionKey")
-                //           .withExpressionAttributeNames(expressionAttributesNames)
-                .withExpressionAttributeValues(expressionAttributeValues);
-
-        QueryResult queryResult = client.query(queryRequest);
-        List items = queryResult.getItems().stream().map(attr -> GsonCodec.decode(rootType, attr.get("json").getS())).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
