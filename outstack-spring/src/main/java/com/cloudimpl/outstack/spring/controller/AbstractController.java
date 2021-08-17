@@ -201,7 +201,13 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> getRootEntity(ServerHttpRequest httpRequest, String context, String version,
-                                         String rootEntity, String rootId, String contentType, String tenantId) {
+                                         String rootEntity, String rootId, String contentType, String tenantId, Pageable pageable,
+                                         Map<String, String> reqParam) {
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().get()
+                        .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
+                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                removePagingParam(reqParam));
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
@@ -211,7 +217,9 @@ public abstract class AbstractController {
         QueryWrapper request = QueryWrapper.builder()
                 .withVersion(version)
                 .withQuery(action.getName())
-                .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
+                .withId(rootId).withRootId(rootId)
+                .withPageRequest(pagingReq)
+                .withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
@@ -241,7 +249,13 @@ public abstract class AbstractController {
 
     protected Mono<Object> getChildEntity(ServerHttpRequest httpRequest, String context, String version,
                                           String rootEntity, String rootId, String childEntity, String childId,
-                                          String contentType, String tenantId) {
+                                          String contentType, String tenantId, Pageable pageable,
+                                          Map<String, String> reqParam) {
+        Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
+                pageable.getSort().get()
+                        .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
+                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                removePagingParam(reqParam));
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
@@ -253,6 +267,7 @@ public abstract class AbstractController {
         QueryWrapper request = QueryWrapper.builder()
                 .withQuery(action.getName())
                 .withVersion(version)
+                .withPageRequest(pagingReq)
                 .withRootId(rootId)
                 .withId(childId).withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
