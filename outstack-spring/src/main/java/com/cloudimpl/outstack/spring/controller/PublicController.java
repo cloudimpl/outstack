@@ -135,8 +135,9 @@ public class PublicController extends AbstractController {
                                          @PathVariable String version,
                                          @PathVariable String rootEntity, @PathVariable String rootId,
                                          @RequestHeader("Content-Type") String contentType,
-                                         @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return super.getRootEntity(request, context, version, rootEntity, rootId, contentType, tenantId);
+                                         @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+                                         Pageable pageable, @RequestParam Map<String, String> reqParam) {
+        return super.getRootEntity(request, context, version, rootEntity, rootId, contentType, tenantId, pageable, reqParam);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/events", consumes = {APPLICATION_JSON_VALUE})
@@ -159,8 +160,10 @@ public class PublicController extends AbstractController {
                                           @PathVariable String rootEntity, @PathVariable String rootId,
                                           @PathVariable String childEntity, @PathVariable String childId,
                                           @RequestHeader("Content-Type") String contentType,
-                                          @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return super.getChildEntity(request, context, version, rootEntity, rootId, childEntity, childId, contentType, tenantId);
+                                          @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+                                          Pageable pageable, @RequestParam Map<String, String> reqParam
+                                          ) {
+        return super.getChildEntity(request, context, version, rootEntity, rootId, childEntity, childId, contentType, tenantId, pageable, reqParam);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}/events",
