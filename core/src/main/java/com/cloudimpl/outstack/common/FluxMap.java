@@ -43,7 +43,7 @@ public class FluxMap<K, V> {
     }
 
     public Flux<Event<K, V>> flux() {
-        return publisher.flux();
+        return publisher.flux().subscribeOn(scheduler);
     }
 
     public Collection<V> values() {
