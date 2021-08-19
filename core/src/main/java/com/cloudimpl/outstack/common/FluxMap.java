@@ -28,12 +28,14 @@ public class FluxMap<K, V> {
     //private final Flux<Event<K, V>> flux;
     private final FluxProcessor<Event<K, V>> publisher;
     public static final Scheduler defaultSched = Schedulers.newSingle("fluxmap",true);
-    
+    public static final Scheduler sched;
     public FluxMap(){
         this(defaultSched);
+        this.sched = defaultSched;
     }
     
     public FluxMap(Scheduler scheduler) {
+        this.sched = scheduler;
         map = new ConcurrentHashMap<>();
         itemProcessor = new SingleFluxProcessor<>(this::onEmitter);
         itemProcessor.flux().subscribeOn(scheduler).doOnNext(this::onItem).subscribe();
@@ -43,7 +45,7 @@ public class FluxMap<K, V> {
     }
 
     public Flux<Event<K, V>> flux() {
-        return publisher.flux().subscribeOn(scheduler);
+        return publisher.flux().subscribeOn(sched);
     }
 
     public Collection<V> values() {
