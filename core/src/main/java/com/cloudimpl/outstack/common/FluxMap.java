@@ -31,7 +31,6 @@ public class FluxMap<K, V> {
     public static final Scheduler sched;
     public FluxMap(){
         this(defaultSched);
-        this.sched = defaultSched;
     }
     
     public FluxMap(Scheduler scheduler) {
