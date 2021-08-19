@@ -99,13 +99,24 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     }
 
     private void addCmdDescriptor(SpringServiceDescriptor desc) {
-        this.serviceManager.putCmdContext(desc.getApiContext(), desc.getVersion(), desc);
-        addEntities(desc);
+        try
+        {
+            this.serviceManager.putCmdContext(desc.getApiContext(), desc.getVersion(), desc);
+            addEntities(desc);
+        }catch(Exception ex)
+        {
+            logger.exception(ex,"addCmdDescriptor");
+        }
     }
 
     private void addQueryDescriptor(SpringServiceDescriptor desc) {
-        this.serviceManager.putQueryContext(desc.getApiContext(), desc.getVersion(), desc);
-        addEntities(desc);
+        try{
+             this.serviceManager.putQueryContext(desc.getApiContext(), desc.getVersion(), desc);
+             addEntities(desc);
+        }catch(Exception ex)
+        {
+            logger.exception(ex,"addQueryDescriptor");
+        }
     }
 
     @Override
