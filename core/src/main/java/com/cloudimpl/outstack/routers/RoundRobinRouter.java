@@ -31,6 +31,7 @@ public class RoundRobinRouter implements CloudRouter {
   @Inject
   public RoundRobinRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
     this.topic = topic;
+    serviceRegistry.services().filter(s->s.name().equals(topic)).forEach(s->services.add(s));
     serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD)
         .map(e -> e.getValue())
         .filter(srv -> srv.name().equals(topic))
