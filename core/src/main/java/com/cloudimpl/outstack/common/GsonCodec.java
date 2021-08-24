@@ -56,7 +56,7 @@ public class GsonCodec {
 //  }
 
     private static Gson createGson(boolean pretty) {
-        GsonBuilder builder = new GsonBuilder();
+        GsonBuilder builder = new GsonBuilder().enableComplexMapKeySerialization();
         if (pretty) {
             builder.setPrettyPrinting();
         }
