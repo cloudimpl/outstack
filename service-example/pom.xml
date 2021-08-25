@@ -19,12 +19,12 @@
             <artifactId>domaingen-example</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
+<!--        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>outstack-spring-test</artifactId>
             <version>${project.version}</version>
-            <!--<scope>test</scope>-->
-        </dependency>
+            <scope>test</scope>
+        </dependency>-->
     </dependencies>
      <build>
         <plugins>
