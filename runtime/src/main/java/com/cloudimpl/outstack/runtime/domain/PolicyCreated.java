@@ -27,9 +27,15 @@ public class PolicyCreated extends Event<Policy> {
 
     private final String policyName;
     private final String policyContext;
-    public PolicyCreated(String policyName,String policyContext) {
+    private final String domainOwner;
+    private final String domainContext;
+    private final String apiContext;
+    public PolicyCreated(String policyName,String policyContext,String domainOwner,String domainContext,String apiContext) {
         this.policyName = policyName;
-        this.policyContext = policyContext;                                                                                                                                                                                                                             
+        this.policyContext = policyContext;    
+        this.domainOwner = domainOwner;
+        this.domainContext = domainContext;
+        this.apiContext = apiContext;
     }
 
     @Override
@@ -44,6 +50,18 @@ public class PolicyCreated extends Event<Policy> {
 
     public String getPolicyContext() {
         return policyContext;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getApiContext() {
+        return apiContext;
     }
 
     @Override

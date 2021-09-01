@@ -37,7 +37,7 @@ public class DynamodbRepositoryFactory implements EventRepositoryFactory {
     private final DynamoDB dynamoDB;
     private final ResourceHelper helper;
     private ComponentProvider.ProviderConfigs providerConfig;
-    private final Map<Class<? extends RootEntity>, EventRepositoy<? extends RootEntity>> mapRepos = new ConcurrentHashMap<>();
+    
     
     public DynamodbRepositoryFactory(ResourceHelper helper,ComponentProvider.ProviderConfigs providerConfig) {
         this.helper = helper;

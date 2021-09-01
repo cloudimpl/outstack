@@ -41,6 +41,7 @@ public class ServiceModuleQueryService extends SpringQueryService<ServiceModule>
     
     public ServiceModuleQueryService(@Named("MemRepositoryFactory")EventRepositoryFactory factory) {
         super(factory);
+        System.out.println("----------------loading : "+factory.getClass());
     }
     
 }

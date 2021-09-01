@@ -56,8 +56,10 @@ public class CloudRouterRepository {
 
   protected void subscribe(Flux<FluxMap.Event<String, CloudService>> flux) {
     flux.filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
-        .subscribe(
-            e -> register(e.getValue().name(),
-                e.getValue().getDescriptor().getRouterDescriptor()));
+            .doOnNext(e->logger.info("router register with service {0}", e))
+            .doOnNext(e->register(e.getValue().name(),
+                e.getValue().getDescriptor().getRouterDescriptor()))
+            .doOnError(err->logger.exception(err, "error on router registration"))
+        .subscribe();
   }
 }

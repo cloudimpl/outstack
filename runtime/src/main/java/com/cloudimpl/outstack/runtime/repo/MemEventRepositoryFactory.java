@@ -20,7 +20,7 @@ public class MemEventRepositoryFactory implements EventRepositoryFactory {
 
     private final ResourceHelper helper;
     
-    private final Map<Class<? extends RootEntity>,EventRepositoy<? extends RootEntity>> mapRepos = new ConcurrentHashMap<>();
+    //private final Map<Class<? extends RootEntity>,EventRepositoy<? extends RootEntity>> mapRepos = new ConcurrentHashMap<>();
     public MemEventRepositoryFactory(ResourceHelper helper) {
         this.helper = helper;
     }

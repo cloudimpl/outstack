@@ -33,6 +33,7 @@ public class PolicyStatementService extends SpringService<PolicyStatement> {
 
     static {
         $(CreatePolicyStatement.class);
+        $$(PolicyStatement.class);
     }
 
     public PolicyStatementService(EventRepositoryFactory factory) {
