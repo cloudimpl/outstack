@@ -83,6 +83,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private Optional<SpringServiceDescriptor> getSpringDescriptor(CloudServiceDescriptor serviceDescriptor) {
         String str = serviceDescriptor.getAttr().get("serviceMeta");
         if (str != null) {
+            logger.info("service descriptor {0}", str);
             SpringServiceDescriptor serviceDesc = GsonCodec.decode(SpringServiceDescriptor.class, str);
             return Optional.of(serviceDesc);
         }
@@ -92,6 +93,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private Optional<SpringServiceDescriptor> getSpringQueryDescriptor(CloudServiceDescriptor serviceDescriptor) {
         String str = serviceDescriptor.getAttr().get("serviceQueryMeta");
         if (str != null) {
+            logger.info("service query descriptor {0}", str);
             SpringServiceDescriptor serviceDesc = GsonCodec.decode(SpringServiceDescriptor.class, str);
             return Optional.of(serviceDesc);
         }

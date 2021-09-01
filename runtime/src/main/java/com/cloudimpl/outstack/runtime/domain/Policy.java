@@ -34,6 +34,10 @@ public class Policy extends RootEntity implements ITenantOptional {
     private final String policyName;
     private final String tenantId;
 
+    private String domainOwner;
+    private String domainContext;
+    private String apiContext;
+
     public Policy(String policyName, String tenantId) {
         this.policyName = policyName;
         this.tenantId = tenantId;
@@ -59,6 +63,9 @@ public class Policy extends RootEntity implements ITenantOptional {
 
     private void applyEvent(PolicyCreated policyCreated) {
         this.policyContext = policyCreated.getPolicyContext();
+        this.domainContext = policyCreated.getDomainContext();
+        this.domainOwner = policyCreated.getDomainOwner();
+        this.apiContext = policyCreated.getApiContext();
     }
 
     @Override

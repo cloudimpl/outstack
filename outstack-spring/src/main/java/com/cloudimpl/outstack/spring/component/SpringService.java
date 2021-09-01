@@ -45,6 +45,7 @@ public class SpringService<T extends RootEntity> implements Function<CloudMessag
     private BiFunction<String, Object, Mono>  requestHandler;
     
     public SpringService(EventRepositoryFactory factory) {
+        System.out.println("service :"+this.getClass().getName() + " factory : "+factory);
         Class<T> root = Util.extractGenericParameter(this.getClass(), SpringService.class, 0);
         serviceProvider = new ServiceProvider<>(root,factory.createOrGetRepository(root),factory::createOrGetRepository,()->requestHandler,()->Cluster.autoWireInstance());
         HANDLERS.stream()

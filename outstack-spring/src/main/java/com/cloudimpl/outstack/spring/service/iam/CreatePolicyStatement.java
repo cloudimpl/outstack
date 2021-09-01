@@ -15,8 +15,10 @@
  */
 package com.cloudimpl.outstack.spring.service.iam;
 
+import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
@@ -25,6 +27,7 @@ import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.util.Collection;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  *
@@ -32,11 +35,17 @@ import java.util.stream.Collectors;
  */
 public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatement,PolicyStatementRequest,PolicyStatement>{
 
+    @Inject
+    private ResourceHelper helper;
+
+    public CreatePolicyStatement() {
+    }
+    
     @Override
     protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
         
         PolicyStatementCreated stmt = parseStatement(command);
-        PolicyStatemetParser.validate((RootEntityContext<PolicyStatement>) context, stmt);
+        PolicyStatemetParser.validate(helper,(RootEntityContext<PolicyStatement>) context, stmt);
         return context.create(stmt.getSid(), stmt);
     }
     

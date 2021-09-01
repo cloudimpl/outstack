@@ -1,13 +1,20 @@
 outstack:
     domainOwner: cloudimpl
-    domainContext: example
-    apiContext: example
+    domainContext: gateway
+    apiContext: gateway
     cluster:
-      servicePort: 12000
-      gossipPort: 14000
-  #    seedName: localhost
-      seeds:
-          - localhost:13000
+      servicePort: 11000
+      gossipPort: 13000
+    apiGateway:
+      authEndpoint:
+        domainOwner: cloudimpl
+        domainContext: example
+        version: version
+        serviceName: UserService
+    oauth:
+        token:
+            issuer: http://www.cloudimpl.com
+        errorPageUri: /login
     providers:
       com.cloudimpl.outstack.collection.CollectionProvider:
           - name : MemCollection
@@ -31,22 +38,13 @@ outstack:
                 region: US_EAST_1
                 defaultTable: commandTable
                 UserTable: userTable
+
 spring:
   main:
     web-application-type: reactive
-#  thymeleaf:
-#    cache: false  
-#    check-template: true
-#    check-template-location: true
-#    content-type: text/html
-#    enabled: true
-#    encoding: UTF-8
-#    mode: HTML
-#    prefix: classpath:/templates/
-#    suffix: .html  
-
+    
 server:
   error:
     include-message: always
-  port: 15000
-  
+  port: 20000
+    

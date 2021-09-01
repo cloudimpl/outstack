@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
+import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
@@ -61,17 +62,17 @@ public class PolicyStatemetParser {
         return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), cmdActions,queryActions, resources);
     }
 
-    public static void validate(RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
-        String rootType = validateCrossResourceUsage(context, event.getResources());
+    public static void validate(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
+        String rootType = validateCrossResourceUsage(resourceHelper,context, event.getResources());
         if (rootType == null) {
             rootType = "*";
         }
-        validateActions(context, rootType, event.getCmdActions(),event.getQueryActions());
+        validateActions(resourceHelper,context, rootType, event.getCmdActions(),event.getQueryActions());
     }
 
-    private static String validateCrossResourceUsage(RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
+    private static String validateCrossResourceUsage(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
 
-        String rootType = null;
+         String rootType = null;
         for (ResourceDescriptor desc : resources) {
             switch (desc.getResourceScope()) {
                 case ALL:
@@ -81,9 +82,9 @@ public class PolicyStatemetParser {
                 case ROOT_ID_CHILD_ID_ONLY:
                 case ROOT_ID_CHILD_TYPE_ONLY:
                 case ROOT_ID_ONLY: {
-                    ServiceModule serviceModule = context.getEntityQueryProvider(ServiceModule.class).getRoot(desc.getRootType()).orElseThrow(() -> new PolicyValidationError("resource " + desc.getRootType() + " not found"));
+                    ServiceModule serviceModule = context.getEntityQueryProvider(ServiceModule.class).getRoot(resourceHelper.getDomainOwner()+":"+resourceHelper.getDomainContext()+":"+desc.getRootType()).orElseThrow(() -> new PolicyValidationError("resource " + desc.getRootType() + " not found"));
                     if (rootType == null) {
-                        rootType = desc.getRootType();
+                        rootType = desc.getRootType(); 
 
                     } else if (!rootType.equalsIgnoreCase(desc.getRootType())) {
                         throw new PolicyValidationError("cross resources reference not allowed");
@@ -107,12 +108,12 @@ public class PolicyStatemetParser {
         return rootType;
     }
 
-    private static void validateActions(RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions) {
+    private static void validateActions(ResourceHelper helper,RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions) {
        
         List<String> cmdActionList = new LinkedList<>();
         List<String> queryActionList = new LinkedList<>();
         if (!rootType.equals("*")) {
-             ServiceModule service = context.getEntityQueryProvider(ServiceModule.class).getRoot(rootType).get();
+            ServiceModule service = context.getEntityQueryProvider(ServiceModule.class).getRoot(helper.getDomainOwner()+":"+helper.getDomainContext()+":"+rootType).get();
             context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),CommandHandlerEntity.class).forEach(a -> cmdActionList.add(a.getHandlerName()));
             context.getEntityQueryProvider(ServiceModule.class).getChildsByType(service.id(),QueryHandlerEntity.class).forEach(a -> queryActionList.add(a.getHandlerName()));
         }

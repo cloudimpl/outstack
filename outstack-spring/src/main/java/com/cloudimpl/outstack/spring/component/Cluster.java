@@ -71,13 +71,18 @@ public class Cluster {
 
     private static AutowireCapableBeanFactory beanFactoryInstance;
 
+    private  Injector injector ;
+    
+    private static Cluster instance;
     @PostConstruct
     public void init() {
+        Cluster.instance = this;
         beanFactoryInstance = beanFactory;
-        Injector injector = new Injector();
+        injector = new Injector();
         configManager.setInjector(injector);
         //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
         resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
+        autoWireInstance().accept(this);
         injector.bind(ResourceHelper.class).to(resourceHelper);
         //   EventRepositoryFactory eventRepoFactory = new MemEventRepositoryFactory(resourceHelper);
         AppConfig appConfig = AppConfig.builder().withGossipPort(configManager.getCluster().getGossipPort())
@@ -116,10 +121,16 @@ public class Cluster {
     }
 
     public static Consumer<Object> autoWireInstance() {
-        return beanFactoryInstance::autowireBean;
+        return instance::inject;
 
     }
 
+    private void inject(Object instance)
+    {
+        beanFactoryInstance.autowireBean(instance);
+        injector.inject(instance);
+    }
+    
     @PreDestroy
     public void shutdown() {
         if (node != null) {
