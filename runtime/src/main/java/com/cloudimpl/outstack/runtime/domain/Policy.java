@@ -61,6 +61,8 @@ public class Policy extends RootEntity implements ITenantOptional {
         return policyContext;
     }
 
+    
+    
     private void applyEvent(PolicyCreated policyCreated) {
         this.policyContext = policyCreated.getPolicyContext();
         this.domainContext = policyCreated.getDomainContext();
