@@ -16,7 +16,9 @@
 package com.cloudimpl.outstack.runtime;
 
 import java.util.Collection;
-
+import com.google.gson.internal.LinkedTreeMap;
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
+import java.util.stream.Collectors;
 /**
  *
  * @author nuwan
@@ -46,9 +48,18 @@ public class ResultSet<T> {
         return currentPage;
     }
 
+    @Deprecated
     public Collection<T> getItems() {
         return items;
     }
     
+    public  Collection<T> getItems(Class<T> cls) {
+        return getItems().stream().map(i -> {
+            if (i instanceof LinkedTreeMap) {
+                return GsonCodecRuntime.decodeTree(cls, (LinkedTreeMap) i);
+            }
+            return i;
+        }).collect(Collectors.toList());
+    }
     
 }
