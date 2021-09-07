@@ -49,8 +49,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     private final List<Event> events = new CopyOnWriteArrayList<>();
     private final Map<String, EntityCheckpoint> checkpoints = new HashMap<>();
 
-    public MemEventRepository(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
-        super(rootType, resourceHelper, eventStream);
+    public MemEventRepository(Class<T> rootType, ResourceHelper resourceHelper) {
+        super(rootType, resourceHelper);
         System.out.println("MemEventRepository : "+rootType.getName() + "initialized");
     }
 

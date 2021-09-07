@@ -33,18 +33,24 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
     private final Collection<ActionDescriptor> cmdActions;
     private final Collection<ActionDescriptor> queryActions;
     private final Collection<ResourceDescriptor> resources;
-
-    public PolicyStatementCreated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources) {
+    private final Collection<String> tags;
+    public PolicyStatementCreated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources,Collection<String> tags) {
         this.sid = sid;
         this.effect = effect;
         this.cmdActions = cmdActions;
         this.queryActions = queryActions;
         this.resources = resources;
+        this.tags = tags;
     }
 
     public String getSid() {
         return sid;
     }
+
+    public Collection<String> getTags() {
+        return tags;
+    }
+    
     
     public PolicyStatement.EffectType getEffect() {
         return effect;

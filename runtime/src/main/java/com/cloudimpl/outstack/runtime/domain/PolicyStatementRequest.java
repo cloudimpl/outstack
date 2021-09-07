@@ -37,6 +37,7 @@ public class PolicyStatementRequest extends Command {
     private final Collection<String> cmdActions;
     private final Collection<String> queryActions;
     private final Collection<String> resources;
+    private final Collection<String> tags;
 
     public PolicyStatementRequest(Builder builder) {
         super(builder);
@@ -48,6 +49,7 @@ public class PolicyStatementRequest extends Command {
         this.cmdActions = Collections.unmodifiableCollection(builder.cmdActions);
         this.queryActions = Collections.unmodifiableCollection(builder.queryActions);
         this.resources = Collections.unmodifiableCollection(builder.resources);
+        this.tags = Collections.unmodifiableCollection(builder.tags);
     }
 
     public Collection<String> getCmdActions() {
@@ -64,6 +66,10 @@ public class PolicyStatementRequest extends Command {
 
     public String getRootType() {
         return rootType;
+    }
+
+    public Collection<String> getTags() {
+        return tags;
     }
 
     
@@ -98,6 +104,7 @@ public class PolicyStatementRequest extends Command {
         private Collection<String> cmdActions = new LinkedList<>();
         private Collection<String> queryActions = new LinkedList<>();
         private Collection<String> resources = new LinkedList<>();
+        private Collection<String> tags = new LinkedList<>();
         
         public Builder withSid(String sid)
         {
@@ -144,6 +151,12 @@ public class PolicyStatementRequest extends Command {
         public Builder withDomainOwner(String domainOwner)
         {
             this.domainOwner = domainOwner;
+            return this;
+        }
+        
+        public Builder withTag(String tag)
+        {
+            this.tags.add(tag);
             return this;
         }
         

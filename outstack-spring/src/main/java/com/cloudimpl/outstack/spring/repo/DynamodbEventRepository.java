@@ -76,8 +76,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     private final String tableName;
     ThreadLocal<List<TransactWriteItem>> txContext = ThreadLocal.withInitial(() -> new LinkedList<>());
 
-    public DynamodbEventRepository(AmazonDynamoDB client, DynamoDB dynamodb, Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream, Provider.ProviderConfigs configs) {
-        super(rootType, resourceHelper, eventStream);
+    public DynamodbEventRepository(AmazonDynamoDB client, DynamoDB dynamodb, Class<T> rootType, ResourceHelper resourceHelper, Provider.ProviderConfigs configs) {
+        super(rootType, resourceHelper);
         this.dynamodb = dynamodb;
         this.client = client;
         //this.loadTables();

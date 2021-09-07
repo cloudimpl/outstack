@@ -15,13 +15,17 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
+import com.google.gson.internal.LinkedTreeMap;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  *
  * @author nuwan
  */
 public class ResultSet<T> {
+
     private final long totalItems;
     private final int totalPages;
     private final int currentPage;
@@ -46,9 +50,17 @@ public class ResultSet<T> {
         return currentPage;
     }
 
+    @Deprecated
     public Collection<T> getItems() {
         return items;
     }
-    
-    
+
+    public Collection<T> getItems(Class<T> cls) {
+        return items.stream().map(i -> {
+            if (i instanceof LinkedTreeMap) {
+                return GsonCodecRuntime.decodeTree(cls, (LinkedTreeMap) i);
+            }
+            return i;
+        }).collect(Collectors.toList());
+    }
 }

@@ -59,7 +59,7 @@ public class PolicyStatemetParser {
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
         }
-        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), cmdActions,queryActions, resources);
+        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), cmdActions,queryActions, resources,stmt.getTags());
     }
 
     public static void validate(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {

@@ -40,6 +40,7 @@ public class NodeIdRouter implements CloudRouter {
     @Inject
     public NodeIdRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
         this.topic = topic;
+        serviceRegistry.services().filter(e -> e.name().equals(topic)).forEach(s->nodeIdTopics.put(s.nodeId(), s));
         serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic)).doOnNext(e -> nodeIdTopics.put(e.nodeId(), e)).subscribe();
         serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)

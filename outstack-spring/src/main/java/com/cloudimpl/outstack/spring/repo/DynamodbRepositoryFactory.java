@@ -52,6 +52,6 @@ public class DynamodbRepositoryFactory implements EventRepositoryFactory {
 
     @Override
     public <T extends RootEntity> EventRepositoy<T> createOrGetRepository(Class<T> rootType) {
-        return (EventRepositoy<T>) mapRepos.computeIfAbsent(rootType, type -> new DynamodbEventRepository<>(this.client,this.dynamoDB,(Class<T>) type, this.helper, null,this.providerConfig));
+        return (EventRepositoy<T>) mapRepos.computeIfAbsent(rootType, type -> new DynamodbEventRepository<>(this.client,this.dynamoDB,(Class<T>) type, this.helper,this.providerConfig));
     }
 }

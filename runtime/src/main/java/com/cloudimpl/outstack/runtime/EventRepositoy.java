@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
+import com.cloudimpl.outstack.runtime.common.StreamProcessor;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
@@ -13,6 +14,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.repo.SimpleTransaction;
+import com.cloudimpl.outstack.runtime.repo.StreamEvent;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.Collection;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import reactor.core.publisher.Flux;
 
 /**
  *
@@ -33,27 +36,27 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     public static final String TID_PREFIX = "id-";
     protected final Class<T> rootType;
-    private final EventStream eventStream;
+    private final StreamProcessor<StreamEvent> eventStream;
     private final ResourceCache<? extends Entity> mapStableCache;
     private final ResourceCache<EntityCheckpoint> mapTxCheckpoints;
     private final ThreadLocal<Map<String, EntityCheckpoint>> mapTxDirtyCheckpoints;
     protected final ResourceHelper resourceHelper;
     protected final String version;
 
-    public EventRepositoy(Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream) {
+    public EventRepositoy(Class<T> rootType, ResourceHelper resourceHelper) {
         this.rootType = rootType;
         this.version = Entity.getVersion(rootType);
         this.mapTxDirtyCheckpoints = ThreadLocal.withInitial(()->new ConcurrentHashMap<>());
         this.resourceHelper = resourceHelper;
         this.mapStableCache = new ResourceCache<>(1000, Duration.ofHours(1));
         this.mapTxCheckpoints = new ResourceCache<>(1000, Duration.ofHours(1));
-        this.eventStream = eventStream;
+        this.eventStream = EventRepositoryFactory.eventStream;
         //this.eventStream.flux().publishOn(Schedulers.parallel()).doOnNext(this::onEvent).subscribe();
     }
 
     public void saveTx(ITransaction<T> tx) {
         List<Event> eventList = tx.getEventList();
-        if (eventList.size() == 0) {
+        if (eventList.isEmpty()) {
             return;
         }
         startTransaction();
@@ -112,6 +115,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         try {
             endTransaction();
             mapTxDirtyCheckpoints.get().entrySet().forEach(ck -> mapTxCheckpoints.put(ck.getValue().getRootTrn(), ck.getValue()));
+            publishToStream(tx);
         } catch (Exception ex) {
             throw ex;
         } finally {
@@ -119,13 +123,25 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         }
     }
 
+    
+    private void publishToStream(ITransaction<T> tx)
+    {
+        tx.getEntityList().forEach(e ->{
+           eventStream.add(new StreamEvent(StreamEvent.Action.ADD, e));
+        });
+        
+        tx.getDeletedEntities().values().forEach(e->{
+            eventStream.add(new StreamEvent(StreamEvent.Action.REMOVE, e));
+        });
+    }
+    
     public <T extends Entity> T applyEvent(Event event) {
         SimpleTransaction transaction = new SimpleTransaction(event.getRootOwner(), this);
         transaction.apply(event);
         saveTx(transaction);
         return (T) transaction.getEntityList().iterator().next();
     }
-
+    
     private long nextSeq(String rootTrn) {
         EntityCheckpoint checkpoint = getCheckpoint(rootTrn);
         long seq = checkpoint.nextSeq();

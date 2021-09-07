@@ -15,9 +15,13 @@
  */
 package com.cloudimpl.outstack.spring.security;
 
+import com.cloudimpl.outstack.common.Pair;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.security.core.GrantedAuthority;
 
 /**
@@ -26,23 +30,24 @@ import org.springframework.security.core.GrantedAuthority;
  */
 public class PlatformGrantedAuthority implements GrantedAuthority{
 
-    private final Map<String,PolicyStatement> denyPolicyStmts;
-    private final Map<String,PolicyStatement> allowPolicyStmts;
+    private final Map<String,List<PolicyStatement>> denyPolicyStmts;
+    private final Map<String,List<PolicyStatement>> allowPolicyStmts;
 
-    public PlatformGrantedAuthority(Map<String, PolicyStatement> denyPolicyStmts, Map<String, PolicyStatement> allowPolicyStmts) {
-        this.denyPolicyStmts = denyPolicyStmts;
-        this.allowPolicyStmts = allowPolicyStmts;
+    public PlatformGrantedAuthority(Collection<PolicyStatement> denyPolicyStmts, Collection<PolicyStatement> allowPolicyStmts) {
+        this.denyPolicyStmts = denyPolicyStmts.stream().flatMap(s->s.getResources().stream()
+                .map(r->new Pair<>(r.getRootType(),s)))
+                .collect(Collectors.groupingBy(s->s.getKey(), Collectors.mapping(s->s.getValue(), Collectors.toList())));
+        this.allowPolicyStmts = allowPolicyStmts.stream().flatMap(s->s.getResources().stream()
+                .map(r->new Pair<>(r.getRootType(),s)))
+                .collect(Collectors.groupingBy(s->s.getKey(), Collectors.mapping(s->s.getValue(), Collectors.toList())));
     }
 
-   
-    
-    public Optional<PolicyStatement> getDenyStatmentByResourceName(String resourceName)
-    {
-        
+    public Optional<List<PolicyStatement>> getDenyStatmentByResourceName(String resourceName)
+    {     
         return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName)));
     }
     
-    public Optional<PolicyStatement> getAllowStatmentByResourceName(String resourceName)
+    public Optional<List<PolicyStatement>> getAllowStatmentByResourceName(String resourceName)
     {
         return Optional.ofNullable(allowPolicyStmts.get("*")).or(()->Optional.ofNullable(allowPolicyStmts.get(resourceName)));
     }
