@@ -78,6 +78,8 @@ public class SpringUtil {
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(), eMeta.plural());
 
+            com.cloudimpl.outstack.runtime.handler.Handler hnd = h.getAnnotation(com.cloudimpl.outstack.runtime.handler.Handler.class) ;
+            boolean idRequired = hnd != null ? hnd.idRequired() : false;
             boolean fileUploadEnabled = false;
             Set<String> mimeTypes = Collections.emptySet();
             if (h.isAnnotationPresent(EnableFileUpload.class)) {
@@ -90,11 +92,11 @@ public class SpringUtil {
             boolean isPubliclyAccessible = h.isAnnotationPresent(EnablePublicAccess.class);
 
             if (eType == rootType) {
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),idRequired,
                         SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, isPubliclyAccessible,
                         fileUploadEnabled, mimeTypes));
             } else {
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),idRequired,
                         SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER, isPubliclyAccessible,
                         fileUploadEnabled, mimeTypes));
             }
@@ -104,11 +106,14 @@ public class SpringUtil {
             System.out.println("load: " + h.getName());
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityEventHandler.class, 0);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
+            com.cloudimpl.outstack.runtime.handler.Handler hnd = h.getAnnotation(com.cloudimpl.outstack.runtime.handler.Handler.class) ;
+            boolean idRequired = hnd != null ? hnd.idRequired() : false;
+            boolean isPubliclyAccessible = h.isAnnotationPresent(EnablePublicAccess.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(), eMeta.plural());
             if (eType == rootType) {
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),idRequired,isPubliclyAccessible, SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
             } else {
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),idRequired,isPubliclyAccessible, SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER));
             }
         });
 
@@ -116,11 +121,11 @@ public class SpringUtil {
             EntityMeta eMeta = type.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(type.getSimpleName(), eMeta.plural());
             if (type == rootType) {
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Delete" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Rename" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Delete" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Rename" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
             } else {
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Delete" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Rename" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Delete" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Rename" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER));
             }
 
         });
@@ -134,25 +139,28 @@ public class SpringUtil {
         SpringServiceDescriptor desc = new SpringServiceDescriptor(appContext,domainOwner,domainContext,domainOwner+"/"+domainContext+"/"+ entityMeta.version()+"/"+ serviceName, rootType.getSimpleName(), entityMeta.version(), entityMeta.plural(), Entity.checkTenantRequirement(rootType));
         handlers.stream().filter(h -> EntityQueryHandler.class.isAssignableFrom(h)).forEach(h -> {
             Class<? extends Entity> eType = Util.extractGenericParameter(h, EntityQueryHandler.class, 0);
+            com.cloudimpl.outstack.runtime.handler.Handler hnd = h.getAnnotation(com.cloudimpl.outstack.runtime.handler.Handler.class) ;
+            boolean idRequired = hnd != null ? hnd.idRequired() : false;
+            boolean isPubliclyAccessible = h.isAnnotationPresent(EnablePublicAccess.class);
             EntityMeta eMeta = eType.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(eType.getSimpleName(), eMeta.plural());
             if (eType == rootType) {
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),idRequired,isPubliclyAccessible, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             } else {
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor(h.getSimpleName(),idRequired,isPubliclyAccessible, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             }
         });
         SpringQueryService.queryEntities(rootType).forEach(type -> {
             EntityMeta eMeta = type.getAnnotation(EntityMeta.class);
             SpringServiceDescriptor.EntityDescriptor entityDesc = new SpringServiceDescriptor.EntityDescriptor(type.getSimpleName(), eMeta.plural());
             if (type == rootType) {
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName()+"Events", SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
-                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("List" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName()+"Events",true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putRootAction(new SpringServiceDescriptor.ActionDescriptor("List" + type.getSimpleName(),false,false, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             } else {
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName()+"Events", SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
-                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("List" + type.getSimpleName(), SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("Get" + type.getSimpleName()+"Events",true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
+                desc.putChildAction(entityDesc, new SpringServiceDescriptor.ActionDescriptor("List" + type.getSimpleName(),true,false, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER));
             }
 
         });

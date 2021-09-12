@@ -15,10 +15,12 @@
  */
 package com.cloudimpl.outstack.spring.component.swagger;
 
+import com.cloudimpl.outstack.common.Pair;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
@@ -33,6 +35,7 @@ public class ResourceTemplates {
     public static final class Path {
 
         private transient String path;
+
         private Map<String, Object> items = new HashMap<>();
 
         public Path withType(String type, Post post) {
@@ -40,9 +43,21 @@ public class ResourceTemplates {
             return this;
         }
 
+        public Path withType(String type, Get get) {
+            this.items.put(type, get);
+            return this;
+        }
+
         public Path withPath(String path) {
             this.path = path;
             return this;
+        }
+
+        public static Path merge(String path, List<Path> paths) {
+            Path p = new Path();
+            p.withPath(path);
+            p.items = paths.stream().flatMap(i -> i.items.entrySet().stream()).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+            return p;
         }
     }
 
@@ -87,6 +102,7 @@ public class ResourceTemplates {
 
         private List<String> tags = new LinkedList<>();
         private String summary;
+        private String description;
         private String operationId;
         private List<String> produces;
         private List<Parameter> parameters = new LinkedList<>();
@@ -103,6 +119,7 @@ public class ResourceTemplates {
 
         private List<String> tags = new LinkedList<>();
         private String summary;
+        private String description;
         private String operationId;
         private List<String> produces;
         private List<Parameter> parameters = new LinkedList<>();

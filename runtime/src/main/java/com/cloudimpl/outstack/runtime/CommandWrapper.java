@@ -148,6 +148,7 @@ public class CommandWrapper implements ICommand, AuthInput {
         return this.command;
     }
 
+    
     public static final class Builder {
 
         private String command;

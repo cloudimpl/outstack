@@ -15,6 +15,7 @@ import com.cloudimpl.outstack.runtime.handler.DefaultGetEventsQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultGetQueryHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultListQueryHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.internal.LinkedTreeMap;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ public class ServiceQueryProvider<T extends RootEntity, R> implements Function<O
     private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
-    private final static ObjectMapper objectMapper = new ObjectMapper();
+    private final static ObjectMapper objectMapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);;
     private Supplier<Consumer> injector;
     public ServiceQueryProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler,Supplier<Consumer> injector) {
         this.rootType = rootType;

@@ -251,14 +251,14 @@ public class PolicyStatemetParser {
         if (parts[0].equals("*")) {
             resourceScope = ResourceDescriptor.ResourceScope.GLOBAL;
             checkCount(1, parts.length, "invalid  resource pattern. {0}", resourceDesc);
-            return builder.withVersion(parts[0]).withResourceScope(resourceScope).build();
+            return builder.withVersion(parts[0]).withRootType("*").withResourceScope(resourceScope).build();
 
         }
         checkMinCount(2, parts.length, "invalid resource pattern. {0}", resourceDesc);
         validateResourceName(parts[0], "version");
         if (parts[1].equals("**")) {
             checkCount(2, parts.length, "invalid resource pattern. {0}", resourceDesc);
-            return builder.withVersion(parts[0]).withResourceScope(ResourceDescriptor.ResourceScope.VERSION_ONLY).build();
+            return builder.withVersion(parts[0]).withRootType("*").withResourceScope(ResourceDescriptor.ResourceScope.VERSION_ONLY).build();
         }
         checkMinCount(3, parts.length, "invalid resource pattern. {0}", resourceDesc);
 

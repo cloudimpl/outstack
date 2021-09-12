@@ -21,13 +21,22 @@ import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.domain.Policy;
+import com.cloudimpl.outstack.runtime.domain.PolicyCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyRef;
+import com.cloudimpl.outstack.runtime.domain.PolicyRefCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRef;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
 import com.cloudimpl.outstack.runtime.domain.Role;
+import com.cloudimpl.outstack.runtime.domain.RoleCreated;
+import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
+import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryByIdRequest;
+import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
 import com.cloudimpl.outstack.runtime.repo.RepoStreamingReq;
 import com.cloudimpl.outstack.runtime.repo.StreamEvent;
 import com.cloudimpl.outstack.spring.component.Cluster;
@@ -84,20 +93,51 @@ public class IAMCache {
     @Value("${outstack.apiGateway.roleDomainContext:#{null}}")
     private String roleDomainContext;
 
+    private PolicyStatement superStatement;
+    private Policy superPolicy;
+    private Role superRole;
+
     @PostConstruct
     private void init() {
+
         log.info("checking sync policies status ,{}", syncPolicies);
         if (!syncPolicies) {
             log.info("sync policies disabled");
             return;
         }
+
         this.streamClient = new StreamClient(cluster);
         this.entityCache = new FluxMap<>(Schedulers.newSingle("iamCache"));
-
+        createSuperIam();
         subscribeToPolicyRef();
         subscribeToPolicyStatementRef();
         syncRole();
         syncAllMicroServices();
+
+    }
+
+    private void createSuperIam() {
+        superStatement = RootEntity.create(PolicyStatement.class, "superPolicyStatement", null, "id-statement-1");
+        PolicyStatementCreated policyStmtCreated = PolicyStatemetParser.parseStatement("*", "*", PolicyStatementRequest.builder().withSid("superPolicyStatement")
+                .withCmdAction("*").withDomainContext("*").withDomainOwner("*").withEffect(PolicyStatement.EffectType.ALLOW).withQueryAction("*").withResource("*").build());
+        EntityHelper.applyEvent(superStatement, policyStmtCreated);
+
+        superPolicy = RootEntity.create(Policy.class, "superPolicy", null, "id-policy-1");
+        PolicyCreated policyCreated = new PolicyCreated("superPolicy", null, "*", "*", "*");
+        EntityHelper.applyEvent(superPolicy, policyCreated);
+
+        PolicyStatementRef stmtRef = superPolicy.createChildEntity(PolicyStatementRef.class, EntityIdHelper.idToRefId(superStatement.id()), "id-statementref-1");
+        superRole = RootEntity.create(Role.class, "superAdmin", null, "id-role-1");
+        EntityHelper.applyEvent(superRole, new RoleCreated("superAdmin", null));
+
+        PolicyRef policyRef = superRole.createChildEntity(PolicyRef.class, EntityIdHelper.idToRefId(superPolicy.id()), "id-policyref-1");
+        EntityHelper.applyEvent(policyRef, new PolicyRefCreated("*", "*", "v1", "superAdmin", EntityIdHelper.idToRefId(superPolicy.id())));
+
+        putToCache(superStatement);
+        putToCache(superPolicy);
+        putToCache(stmtRef);
+        putToCache(policyRef);
+        putToCache(superRole);
     }
 
     private void syncAllMicroServices() {
@@ -240,6 +280,7 @@ public class IAMCache {
 
     private void subscribeToPolicyRef() {
         entityCache.flux().filter(e -> Role.class.isInstance(e.getValue()))
+                .filter(r->r.getValue() != superRole)
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
                 .doOnNext(e -> log.info("starting to sync policy references for role {}:{}", e.entityId(), e.id()))
@@ -252,7 +293,7 @@ public class IAMCache {
 
         return cluster.requestReply(null, policy.getDomainOwner() + "/" + policy.getDomainContext() + "/v1/PolicyQueryService", QueryByIdRequest.builder().withQueryName("ListPolicyStatementRef")
                 .withRootId(policy.id()).withVersion("v1").withPagingReq(Query.PagingRequest.EMPTY).build())
-                .doOnNext(e -> log.info("sync policy statement references received for policy {} : {}", policy.id(),ResultSet.class.cast(e).getItems().size()))
+                .doOnNext(e -> log.info("sync policy statement references received for policy {} : {}", policy.id(), ResultSet.class.cast(e).getItems().size()))
                 .flatMapIterable(rs -> ((ResultSet) rs).getItems(PolicyStatementRef.class)).doOnNext(e -> putToCache((PolicyStatementRef) e))
                 .doOnError(err -> log.error("error on list PolicyStatmentRef.{}", err))
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60)))).then();
@@ -261,6 +302,7 @@ public class IAMCache {
     private void subscribeToPolicyStatementRef() {
         entityCache.flux()
                 .filter(e -> Policy.class.isInstance(e.getValue()))
+                .filter(e->e.getValue() != superPolicy)
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
                 .doOnNext(e -> log.info("starting to sync policy statement references for policy {}:{}", e.entityId(), e.id()))

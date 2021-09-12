@@ -158,8 +158,8 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private Object encode(ICommand cmd, Object reply) {
         if (CommandWrapper.class.isInstance(cmd)) {
             //return objectMapper.writeValueAsString(reply);
-            return objectMapper.convertValue(reply, LinkedHashMap.class);
-
+            Object ret =  objectMapper.convertValue(reply, LinkedHashMap.class);
+            return ret;
         } else {
             return reply;
         }

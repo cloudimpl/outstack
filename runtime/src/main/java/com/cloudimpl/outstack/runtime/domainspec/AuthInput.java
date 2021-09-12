@@ -22,11 +22,11 @@ package com.cloudimpl.outstack.runtime.domainspec;
 public interface AuthInput {
 
     String getAction();
-    
+
     String getDomainContext();
-    
+
     String getDomainOwner();
-    
+
     String getRootType();
 
     String getChildType();
@@ -34,4 +34,8 @@ public interface AuthInput {
     String getRootId();
 
     String getId();
+
+    public static String verbose(AuthInput input) {
+        return "action = " + input.getAction() + " domainContext = " + input.getDomainContext() + " domainOwner = " + input.getDomainOwner() + "rootType = " + input.getRootType() + " childType = " + input.getChildType() + " rootId = " + input.getRootId() + " id = " + input.getId();
+    }
 }

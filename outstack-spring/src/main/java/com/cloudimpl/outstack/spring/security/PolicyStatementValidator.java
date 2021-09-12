@@ -17,13 +17,18 @@ package com.cloudimpl.outstack.spring.security;
 
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domainspec.AuthInput;
+import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
+import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  *
  * @author nuwan
  */
+@Slf4j
 public class PolicyStatementValidator {
 
     public static PlatformGrantedAuthority processPolicyStatementsForCommand(AuthInput input, PlatformAuthenticationToken token) {
@@ -34,12 +39,12 @@ public class PolicyStatementValidator {
             denyStmts.get().stream().map(denyStmt -> {
                 denyStmt.getCmdActions().stream().filter(a -> a.isActionMatched(input.getAction()))
                         .findAny().ifPresent(a -> {
-                            throw new PlatformAuthenticationException(null, "command action {0} is denied from policy statement {1}", input.getAction(), a);
+                            throw new PlatformAuthenticationException(null, "command action {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                         });
                 return denyStmt;
             }).forEachOrdered(denyStmt -> {
-                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
-                    throw new PlatformAuthenticationException(null, "command resource {0} is denied from policy statement {1}", input.getAction(), a);
+                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input, token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
+                    throw new PlatformAuthenticationException(null, "command resource {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                 });
             });
 
@@ -47,15 +52,29 @@ public class PolicyStatementValidator {
         Optional<List<PolicyStatement>> allowStmts = grant.getAllowStatmentByResourceName(input.getRootType());
         if (allowStmts.isPresent()) {
             for (PolicyStatement allowStmt : allowStmts.get()) {
-                allowStmt.getCmdActions().stream().filter(a -> a.isActionMatched(input.getAction()))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "command action {0} not define in the policy statement", input.getAction()));
-                allowStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims()))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "command resource {0} not define in the policy statement", input.getRootType()));
+                ActionDescriptor actionDesc = allowStmt.getCmdActions().stream().filter(a -> a.isActionMatched(input.getAction()))
+                        .findAny().orElse(null);
+                if (actionDesc == null) {
+                    log.info("command action false -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                    continue;
+                }
+                log.info("command action true -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                //.orElseThrow(() -> new PlatformAuthenticationException(null, "command action {0} not define in the policy statement", input.getAction()));
+                ResourceDescriptor resourceDesc = allowStmt.getResources().stream().filter(a -> a.isResourceMatched(input, token.getJwtToken().getClaims()))
+                        .findAny().orElse(null);
+                if (resourceDesc == null) {
+                    log.info("command resource false -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                    continue;
+                }
+                log.info("command resource true -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                return grant;
+                //.orElseThrow(() -> new PlatformAuthenticationException(null, "command resource {0} not define in the policy statement", input.getRootType()));
             }
+            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
         } else {
-            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
+            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
         }
-        return grant;
+        //  return grant;
     }
 
     public static PlatformGrantedAuthority processPolicyStatementsForQuery(AuthInput input, PlatformAuthenticationToken token) {
@@ -65,12 +84,12 @@ public class PolicyStatementValidator {
             denyStmts.get().stream().map(denyStmt -> {
                 denyStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
                         .findAny().ifPresent(a -> {
-                            throw new PlatformAuthenticationException(null, "query action {0} is denied from policy statement {1}", input.getAction(), a);
+                            throw new PlatformAuthenticationException(null, "query action {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                         });
                 return denyStmt;
             }).forEachOrdered(denyStmt -> {
-                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
-                    throw new PlatformAuthenticationException(null, "query resource {0} is denied from policy statement {1}", input.getAction(), a);
+                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input, token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
+                    throw new PlatformAuthenticationException(null, "query resource {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                 });
             });
 
@@ -78,15 +97,29 @@ public class PolicyStatementValidator {
         Optional<List<PolicyStatement>> allowStmts = grant.getAllowStatmentByResourceName(input.getRootType());
         if (allowStmts.isPresent()) {
             for (PolicyStatement allowStmt : allowStmts.get()) {
-                allowStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "query action {0} not define in the policy statement", input.getAction()));
-                allowStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims()))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "query resource {0} not define in the policy statement", input.getRootType()));
+                ActionDescriptor actionDesc = allowStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
+                        .findAny().orElse(null);
+                if (actionDesc == null) {
+                    log.info("query action false -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                    continue;
+                }
+                log.info("query action true -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                //.orElseThrow(() -> new PlatformAuthenticationException(null, "query action {0} not define in the policy statement", input.getAction()));
+                ResourceDescriptor resourceDesc = allowStmt.getResources().stream().filter(a -> a.isResourceMatched(input, token.getJwtToken().getClaims()))
+                        .findAny().orElse(null);
+                if (resourceDesc == null) {
+                    log.info("query resource false -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                    continue;
+                }
+                log.info("query resource true -> {} -> {}", AuthInput.verbose(input), allowStmt);
+                return grant;
+                //.orElseThrow(() -> new PlatformAuthenticationException(null, "query resource {0} not define in the policy statement", input.getRootType()));
             }
+            throw new PlatformAuthenticationException(null, "query resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
         } else {
             throw new PlatformAuthenticationException(null, "query resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
         }
-        return grant;
+    //    return grant;
     }
 
 }

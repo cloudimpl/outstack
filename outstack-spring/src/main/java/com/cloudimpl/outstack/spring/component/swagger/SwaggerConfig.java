@@ -51,6 +51,8 @@ public class SwaggerConfig {
 
         return new Docket(DocumentationType.SWAGGER_2)
                 .select()
+                .apis(h->false)
+                .paths(s->false)
                 .build();
     }
 
@@ -65,7 +67,7 @@ public class SwaggerConfig {
     private SwaggerResource createResource(String domainContext) {
         SwaggerResource swaggerResource = new SwaggerResource();
         swaggerResource.setName(domainContext);
-        swaggerResource.setLocation("/" + domainContext + "/v2/api-docs");
+        swaggerResource.setLocation("/public/" + domainContext + "/v2/api-docs");
         swaggerResource.setSwaggerVersion("2.0");
         return swaggerResource;
     }

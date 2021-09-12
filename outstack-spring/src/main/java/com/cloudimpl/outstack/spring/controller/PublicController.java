@@ -192,11 +192,11 @@ public class PublicController extends AbstractController {
                 reqParam);
     }
 
-    @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
+    @GetMapping(value = "{context}/{version}/{rootEntity}")
     @SuppressWarnings("unused")
     protected Mono<Object> listRootEntity(ServerHttpRequest request, @PathVariable String context,
                                           @PathVariable String version, @PathVariable String rootEntity,
-                                          @RequestHeader("Content-Type") String contentType,
+                                          @RequestHeader(name = "Content-Type",required = false) String contentType,
                                           @RequestHeader(name = "X-TenantId", required = false) String tenantId,
                                           Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.listRootEntity(request, context, version, rootEntity, contentType, tenantId, pageable, reqParam);
