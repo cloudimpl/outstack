@@ -44,18 +44,9 @@ public class UpdatePolicyStatement extends EntityCommandHandler<PolicyStatement,
         return context.update(stmt.getSid(), stmt);
     }
     
-    private static PolicyStatementCreated parseStatement(PolicyStatementRequest req)
+    private  PolicyStatementCreated parseStatement(PolicyStatementRequest req)
     {
-        return PolicyStatemetParser.parseStatement(req);
-    }
-    
-    private static void checkResourceConstrains(Collection<ResourceDescriptor> resources)
-    {
-        
-        if(resources.stream().collect(Collectors.groupingBy(r->r.getTenantScope())).keySet().size() > 1)
-        {
-            
-        }
+        return PolicyStatemetParser.parseStatement(helper.getDomainOwner(),helper.getDomainContext(),req);
     }
     
     

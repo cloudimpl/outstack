@@ -155,7 +155,7 @@ public class IAMCache {
 
     private void subscribeToPolicyUpdate(String domainOwner, String domainContext) {
         streamClient.subscribeToMicroService("policy sync", domainOwner, domainContext, new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", null)),
-                Arrays.asList(new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", null))))
+                Arrays.asList(new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", null), new RepoStreamingReq.ResourceInfo(PolicyStatementRef.class.getName(), "*", null))))
                 .doOnNext(e -> updateCache(e))
                 .subscribe();
 //        cluster.requestReply(null, domainOwner + "/" + domainContext + "/v1/PolicyQueryService", QueryByIdRequest.builder().withQueryName("ListPolicy").withVersion("v1").withPagingReq(Query.PagingRequest.EMPTY).build())
@@ -205,7 +205,7 @@ public class IAMCache {
 
     private void putToCache(Entity entity) {
         Entity old = entityCache.get(entity.id());
-        log.info("{} synced {} : {}", entity, old);
+        log.info("synced {} : {}", entity, old);
         if (old == null) {
             this.entityCache.put(entity.id(), entity).subscribe();
         } else if (old.getMeta().getLastSeq() < entity.getMeta().getLastSeq()) {
@@ -239,26 +239,31 @@ public class IAMCache {
     }
 
     private void subscribeToPolicyRef() {
-        entityCache.flux().filter(e -> Role.class.isInstance(e))
+        entityCache.flux().filter(e -> Role.class.isInstance(e.getValue()))
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
+                .doOnNext(e -> log.info("starting to sync policy references for role {}:{}", e.entityId(), e.id()))
                 .flatMap(r -> syncPolicyReference((Role) r))
                 .doOnError(err -> log.error("error on sync  policyRef stream.{}", err))
                 .subscribe();
     }
 
     private Mono syncPolicyStatementReference(Policy policy) {
+
         return cluster.requestReply(null, policy.getDomainOwner() + "/" + policy.getDomainContext() + "/v1/PolicyQueryService", QueryByIdRequest.builder().withQueryName("ListPolicyStatementRef")
                 .withRootId(policy.id()).withVersion("v1").withPagingReq(Query.PagingRequest.EMPTY).build())
+                .doOnNext(e -> log.info("sync policy statement references received for policy {} : {}", policy.id(),ResultSet.class.cast(e).getItems().size()))
                 .flatMapIterable(rs -> ((ResultSet) rs).getItems(PolicyStatementRef.class)).doOnNext(e -> putToCache((PolicyStatementRef) e))
                 .doOnError(err -> log.error("error on list PolicyStatmentRef.{}", err))
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60)))).then();
     }
 
     private void subscribeToPolicyStatementRef() {
-        entityCache.flux().filter(e -> Policy.class.isInstance(e))
+        entityCache.flux()
+                .filter(e -> Policy.class.isInstance(e.getValue()))
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
+                .doOnNext(e -> log.info("starting to sync policy statement references for policy {}:{}", e.entityId(), e.id()))
                 .flatMap(r -> syncPolicyStatementReference((Policy) r))
                 .doOnError(err -> log.error("error on sync  PolicyStatmentRef stream.{}", err))
                 .subscribe();

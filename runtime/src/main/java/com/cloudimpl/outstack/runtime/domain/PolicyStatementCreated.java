@@ -29,13 +29,17 @@ import java.util.Collection;
 public class PolicyStatementCreated extends Event<PolicyStatement> {
 
     private final String sid;
+    private final String domainOwner;
+    private final String domainContext;
     private final PolicyStatement.EffectType effect;
     private final Collection<ActionDescriptor> cmdActions;
     private final Collection<ActionDescriptor> queryActions;
     private final Collection<ResourceDescriptor> resources;
     private final Collection<String> tags;
-    public PolicyStatementCreated(String sid,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources,Collection<String> tags) {
+    public PolicyStatementCreated(String sid,String domainOwner,String domainContext,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources,Collection<String> tags) {
         this.sid = sid;
+        this.domainOwner = domainOwner;
+        this.domainContext = domainContext;
         this.effect = effect;
         this.cmdActions = cmdActions;
         this.queryActions = queryActions;
@@ -45,6 +49,14 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
 
     public String getSid() {
         return sid;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    public String getDomainContext() {
+        return domainContext;
     }
 
     public Collection<String> getTags() {

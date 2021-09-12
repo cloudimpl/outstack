@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
+import com.cloudimpl.outstack.runtime.domainspec.AuthInput;
 import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.IQuery;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
@@ -19,23 +20,27 @@ import java.util.Optional;
  *
  * @author nuwan
  */
-public class QueryWrapper implements IQuery {
+public class QueryWrapper implements IQuery,AuthInput {
 
     private final String query;
     private final String rootId;
     private final String rootType;
+    private final String childType;
     private final String id;
     private final String version;
     private final String payload;
     private Object grant;
     private String tenantId;
     private String context;
+    private String domainOwner;
+    private String domainContext;
     private Map<String, String> mapAttr;
     private final Query.PagingRequest pagingRequest;
 
     public QueryWrapper(Builder builder) {
         this.query = builder.query;
         this.rootType = builder.rootType;
+        this.childType = builder.childType;
         this.rootId = builder.rootId;
         this.id = builder.id;
         this.version = builder.version;
@@ -44,6 +49,8 @@ public class QueryWrapper implements IQuery {
         this.pagingRequest = builder.pageRequest;
         this.mapAttr = builder.mapAttr;
         this.context = builder.context;
+        this.domainOwner = builder.domainOwner;
+        this.domainContext = builder.domainContext;
     }
 
     protected void setMapAttr(Map<String, String> mapAttr) {
@@ -80,14 +87,17 @@ public class QueryWrapper implements IQuery {
         return this.version;
     }
 
-    public Optional<String> getRootId() {
-        return Optional.ofNullable(rootId);
+    @Override
+    public String getRootId() {
+        return rootId;
     }
 
-    public Optional<String> getId() {
-        return Optional.ofNullable(id);
+    @Override
+    public String getId() {
+        return id;
     }
 
+    @Override
     public String getRootType() {
         return rootType;
     }
@@ -104,16 +114,39 @@ public class QueryWrapper implements IQuery {
         return new Builder();
     }
 
+    @Override
+    public String getChildType() {
+        return this.childType;
+    }
+
+    @Override
+    public String getAction() {
+        return this.query;
+    }
+
+    @Override
+    public String getDomainContext() {
+        return this.domainContext;
+    }
+
+    @Override
+    public String getDomainOwner() {
+        return this.domainOwner;
+    }
+
     public static final class Builder {
 
         private String query;
         private String rootType;
+        private String childType;
         private String rootId;
         private String id;
         private String tenantId;
         private String version;
         private String payload;
         private String context;
+        private String domainOwner;
+        private String domainContext;
         private Map<String, String> mapAttr;
         private Query.PagingRequest pageRequest;
 
@@ -147,6 +180,11 @@ public class QueryWrapper implements IQuery {
             return this;
         }
 
+        public Builder withChildType(String childType){
+             this.childType = childType;
+             return this;
+        }
+        
         public Builder withPayload(String payload) {
             this.payload = payload;
             return this;

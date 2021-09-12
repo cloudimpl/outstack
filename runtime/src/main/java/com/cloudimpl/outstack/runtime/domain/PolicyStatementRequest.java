@@ -175,7 +175,7 @@ public class PolicyStatementRequest extends Command {
                 + "resources:[\"v1/**\"]"
                 + "}";
         PolicyStatementRequest stmt = GsonCodecRuntime.decode(PolicyStatementRequest.class, json);
-        PolicyStatementCreated pd = PolicyStatemetParser.parseStatement(stmt);
+       // PolicyStatementCreated pd = PolicyStatemetParser.parseStatement(stmt);
         System.out.println("");
     }
 }

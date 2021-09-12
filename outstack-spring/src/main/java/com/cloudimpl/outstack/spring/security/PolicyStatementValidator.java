@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.spring.security;
 
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
+import com.cloudimpl.outstack.runtime.domainspec.AuthInput;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,65 +26,65 @@ import java.util.Optional;
  */
 public class PolicyStatementValidator {
 
-    public static PlatformGrantedAuthority processPolicyStatementsForCommand(String action, String rootType, PlatformAuthenticationToken token) {
+    public static PlatformGrantedAuthority processPolicyStatementsForCommand(AuthInput input, PlatformAuthenticationToken token) {
         PlatformGrantedAuthority grant = token.getAuthorities().stream().map(g -> PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(() -> new PlatformAuthenticationException("no grant found to authenticate", null));
-        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(rootType);
+        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType());
 
         if (denyStmts.isPresent()) {
             denyStmts.get().stream().map(denyStmt -> {
-                denyStmt.getCmdActions().stream().filter(a -> a.isActionMatched(action))
+                denyStmt.getCmdActions().stream().filter(a -> a.isActionMatched(input.getAction()))
                         .findAny().ifPresent(a -> {
-                            throw new PlatformAuthenticationException(null, "command action {0} is denied from policy statement {1}", action, a);
+                            throw new PlatformAuthenticationException(null, "command action {0} is denied from policy statement {1}", input.getAction(), a);
                         });
                 return denyStmt;
             }).forEachOrdered(denyStmt -> {
-                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(rootType)).findAny().ifPresent(a -> {
-                    throw new PlatformAuthenticationException(null, "command resource {0} is denied from policy statement {1}", action, a);
+                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
+                    throw new PlatformAuthenticationException(null, "command resource {0} is denied from policy statement {1}", input.getAction(), a);
                 });
             });
 
         }
-        Optional<List<PolicyStatement>> allowStmts = grant.getAllowStatmentByResourceName(rootType);
+        Optional<List<PolicyStatement>> allowStmts = grant.getAllowStatmentByResourceName(input.getRootType());
         if (allowStmts.isPresent()) {
             for (PolicyStatement allowStmt : allowStmts.get()) {
-                allowStmt.getCmdActions().stream().filter(a -> a.isActionMatched(action))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "command action {0} not define in the policy statement", action));
-                allowStmt.getResources().stream().filter(a -> a.isResourceMatched(rootType))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "command resource {0} not define in the policy statement", rootType));
+                allowStmt.getCmdActions().stream().filter(a -> a.isActionMatched(input.getAction()))
+                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "command action {0} not define in the policy statement", input.getAction()));
+                allowStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims()))
+                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "command resource {0} not define in the policy statement", input.getRootType()));
             }
         } else {
-            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1}", rootType, action);
+            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
         }
         return grant;
     }
 
-    public static PlatformGrantedAuthority processPolicyStatementsForQuery(String action, String rootType, PlatformAuthenticationToken token) {
+    public static PlatformGrantedAuthority processPolicyStatementsForQuery(AuthInput input, PlatformAuthenticationToken token) {
         PlatformGrantedAuthority grant = token.getAuthorities().stream().map(g -> PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(() -> new PlatformAuthenticationException("no grant found to authenticate", null));
-        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(rootType);
+        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType());
         if (denyStmts.isPresent()) {
             denyStmts.get().stream().map(denyStmt -> {
-                denyStmt.getQueryActions().stream().filter(a -> a.isActionMatched(action))
+                denyStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
                         .findAny().ifPresent(a -> {
-                            throw new PlatformAuthenticationException(null, "query action {0} is denied from policy statement {1}", action, a);
+                            throw new PlatformAuthenticationException(null, "query action {0} is denied from policy statement {1}", input.getAction(), a);
                         });
                 return denyStmt;
             }).forEachOrdered(denyStmt -> {
-                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(rootType)).findAny().ifPresent(a -> {
-                    throw new PlatformAuthenticationException(null, "query resource {0} is denied from policy statement {1}", action, a);
+                denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
+                    throw new PlatformAuthenticationException(null, "query resource {0} is denied from policy statement {1}", input.getAction(), a);
                 });
             });
 
         }
-        Optional<List<PolicyStatement>> allowStmts = grant.getAllowStatmentByResourceName(rootType);
+        Optional<List<PolicyStatement>> allowStmts = grant.getAllowStatmentByResourceName(input.getRootType());
         if (allowStmts.isPresent()) {
             for (PolicyStatement allowStmt : allowStmts.get()) {
-                allowStmt.getQueryActions().stream().filter(a -> a.isActionMatched(action))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "query action {0} not define in the policy statement", action));
-                allowStmt.getResources().stream().filter(a -> a.isResourceMatched(rootType))
-                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "query resource {0} not define in the policy statement", rootType));
+                allowStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
+                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "query action {0} not define in the policy statement", input.getAction()));
+                allowStmt.getResources().stream().filter(a -> a.isResourceMatched(input,token.getJwtToken().getClaims()))
+                        .findAny().orElseThrow(() -> new PlatformAuthenticationException(null, "query resource {0} not define in the policy statement", input.getRootType()));
             }
         } else {
-            throw new PlatformAuthenticationException(null, "query resource {0} access not allowed for action {1}", rootType, action);
+            throw new PlatformAuthenticationException(null, "query resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
         }
         return grant;
     }

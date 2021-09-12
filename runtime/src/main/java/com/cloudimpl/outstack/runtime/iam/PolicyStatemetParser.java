@@ -41,7 +41,7 @@ public class PolicyStatemetParser {
     public static Pattern RESOURCE_NAME_PATTERN = Pattern.compile("[a-zA-Z_$][a-zA-Z\\d_$]*"); //("[a-zA-Z]+[_[a-zA-Z0-9]]+");
     public static Pattern RESOURCE_ID_PATTERN = Pattern.compile("[a-zA-Z0-9_$][a-zA-Z0-9_-]*|\\{[a-zA-Z0-9_$][a-zA-Z0-9._-]*\\}");
 
-    public static PolicyStatementCreated parseStatement(PolicyStatementRequest stmt) {
+    public static PolicyStatementCreated parseStatement(String domainOwner,String domainContext,PolicyStatementRequest stmt) {
         if (stmt.getEffect() == null) {
             throw new PolicyStatementException("policy statement effectType is null");
         }
@@ -59,7 +59,7 @@ public class PolicyStatemetParser {
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
         }
-        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), cmdActions,queryActions, resources,stmt.getTags());
+        return new PolicyStatementCreated(stmt.getSid(),domainOwner,domainContext, stmt.getEffect(), cmdActions,queryActions, resources,stmt.getTags());
     }
 
     public static void validate(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {

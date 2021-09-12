@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.runtime;
 
 import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
+import com.cloudimpl.outstack.runtime.domainspec.AuthInput;
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 import com.cloudimpl.outstack.runtime.domainspec.CommandHelper;
 import com.cloudimpl.outstack.runtime.domainspec.ICommand;
@@ -19,7 +20,7 @@ import java.util.Optional;
  *
  * @author nuwan
  */
-public class CommandWrapper implements ICommand {
+public class CommandWrapper implements ICommand, AuthInput {
 
     private final String command;
     private final String rootId;
@@ -28,6 +29,8 @@ public class CommandWrapper implements ICommand {
     private final String version;
     private final String rootType;
     private final String childType;
+    private final String domainOwner;
+    private final String domainContext;
     private final List<Object> files;
     private Object grant;
     private String tenantId;
@@ -46,6 +49,8 @@ public class CommandWrapper implements ICommand {
         this.files = builder.files;
         this.mapAttr = builder.mapAttr;
         this.context = builder.context;
+        this.domainOwner = builder.domainOwner;
+        this.domainContext = builder.domainContext;
     }
 
     protected void setMapAttr(Map<String, String> mapAttr) {
@@ -60,7 +65,17 @@ public class CommandWrapper implements ICommand {
         this.context = context;
     }
 
+    @Override
+    public String getDomainOwner() {
+        return this.domainOwner;
+    }
 
+    @Override
+    public String getDomainContext() {
+        return this.domainContext;
+    }
+
+    
     @Override
     public final <T extends Command> T unwrap(Class<T> type) {
         T cmd = GsonCodecRuntime.decode(type, payload);
@@ -84,18 +99,19 @@ public class CommandWrapper implements ICommand {
         return version;
     }
 
+    @Override
     public String getRootType() {
         return rootType;
     }
 
+    @Override
     public String getChildType() {
         return childType;
     }
 
-    public final Optional<String> getRootId() {
-        return Optional.ofNullable(rootId);
-    }
-
+//    public final Optional<String> getRootId() {
+//        return Optional.ofNullable(rootId);
+//    }
     public void setGrant(Object grant) {
         this.grant = grant;
     }
@@ -108,12 +124,28 @@ public class CommandWrapper implements ICommand {
         return context;
     }
 
+    @Override
     public Map<String, String> getMapAttr() {
         return mapAttr;
     }
-    
+
     public static Builder builder() {
         return new Builder();
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public String getRootId() {
+        return rootId;
+    }
+
+    @Override
+    public String getAction() {
+        return this.command;
     }
 
     public static final class Builder {
@@ -127,6 +159,8 @@ public class CommandWrapper implements ICommand {
         private String rootType;
         private String childType;
         private String context;
+        private String domainOwner;
+        private String domainContext;
         private List<Object> files;
         private Map<String, String> mapAttr = new HashMap<>();
 
@@ -160,6 +194,17 @@ public class CommandWrapper implements ICommand {
             return this;
         }
 
+        public Builder withDomainOwner(String domainOwner)
+        {
+            this.domainOwner = domainOwner;
+            return this;
+        }
+        
+        public Builder withDomainContext(String domainContext)
+        {
+            this.domainContext = domainContext;
+            return this;
+        }
         public Builder withTenantId(String tenantId) {
             this.tenantId = tenantId;
             return this;
@@ -186,7 +231,7 @@ public class CommandWrapper implements ICommand {
         }
 
         public Builder withMapAttr(String key, String value) {
-            if(mapAttr == null) {
+            if (mapAttr == null) {
                 this.mapAttr = new HashMap<>();
             }
             this.mapAttr.put(key, value);

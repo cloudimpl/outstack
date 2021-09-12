@@ -23,6 +23,25 @@ import org.springframework.web.server.ServerWebExchange;
 @EnableConfigurationProperties(SecurityProperties.class)
 public class SecurityConfig {
 
+    private static final String[] AUTH_WHITELIST = {
+        // -- Swagger UI v2
+        "/v2/api-docs",
+        "/favicon.ico",
+        "/swagger-resources",
+        "/swagger-resources/**",
+        "/configuration/ui",
+        "/configuration/**",
+        "/configuration/security",
+        "/swagger-ui.html",
+        "/webjars/**",
+        // -- Swagger UI v3 (OpenAPI)
+        "/v3/api-docs/**",
+        "/swagger-ui/**",
+        "/platform-service/v2/api-docs",
+        "/swagger-ui/",
+        "/swagger-ui"
+    };
+
     @Autowired
     AuthenticationManagerResolver authenticationManagerResolver;
 
@@ -45,8 +64,7 @@ public class SecurityConfig {
 //    BearerTokenAuthenticationManager authenticationManager(RSAPublicKey publicKey) {
 //        return new BearerTokenAuthenticationManager(new NimbusReactiveJwtDecoder(publicKey));
 //    }
-
-    public AuthenticationWebFilter authenticationFilter(ReactiveAuthenticationManager authManager,ServerAuthenticationConverter convertor, String... urls) {
+    public AuthenticationWebFilter authenticationFilter(ReactiveAuthenticationManager authManager, ServerAuthenticationConverter convertor, String... urls) {
         AuthenticationWebFilter authenticationFilter = new AuthenticationWebFilter(authManager);
         authenticationFilter.setRequiresAuthenticationMatcher(ServerWebExchangeMatchers.pathMatchers(HttpMethod.POST, urls));
         // authenticationFilter.setAuthenticationFailureHandler(new RedirectServerAuthenticationFailureHandler("/login"));
@@ -67,6 +85,7 @@ public class SecurityConfig {
                 .authorizeExchange()
                 .pathMatchers(HttpMethod.OPTIONS).permitAll()
                 .pathMatchers("/public/**").permitAll()
+                .pathMatchers(AUTH_WHITELIST).permitAll()
                 .pathMatchers("/login/**", "/authorize").permitAll()
                 .anyExchange().authenticated()
                 .and()
@@ -77,10 +96,10 @@ public class SecurityConfig {
                 //   .loginPage("/login")
                 //   .and()
                 .addFilterAt(authenticationFilter(authenticationManagerResolver.getBasicTokenAuthentication(), new ServerFormLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.FORM_LOGIN)
-                .addFilterAt(authenticationFilter(authenticationManagerResolver.getBasicTokenAuthentication(),new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
+                .addFilterAt(authenticationFilter(authenticationManagerResolver.getBasicTokenAuthentication(), new BasicLoginAuthenticationConverterEx(), "/login", "/token"), SecurityWebFiltersOrder.HTTP_BASIC)
                 .oauth2ResourceServer(o -> o.authenticationManagerResolver(this.authenticationManagerResolver)
                 .bearerTokenConverter(new ServerBearerTokenAuthenticationConverterEx(false)))
-                .addFilterBefore(authenticationFilter(authenticationManagerResolver.getBearerTokenAuthentication(),new ServerBearerTokenAuthenticationConverterEx(true), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
+                .addFilterBefore(authenticationFilter(authenticationManagerResolver.getBearerTokenAuthentication(), new ServerBearerTokenAuthenticationConverterEx(true), "/token"), SecurityWebFiltersOrder.AUTHENTICATION);
         // .jwt()
         ///  .authenticationManager(new BasicTokenAuthenticationManager());
         return http.build();

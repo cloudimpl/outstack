@@ -39,6 +39,8 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     @Id
     private final String sid;
     private  EffectType effect;
+    private String domainContext;
+    private String domainOwner;
     private  Collection<ActionDescriptor> cmdActions;
     private  Collection<ActionDescriptor> queryActions;
     private  Collection<ResourceDescriptor> resources;
