@@ -57,10 +57,12 @@ public class ResultSet<T> {
 
     public Collection<T> getItems(Class<T> cls) {
         return items.stream().map(i -> {
+
             if (i instanceof LinkedTreeMap) {
                 return GsonCodecRuntime.decodeTree(cls, (LinkedTreeMap) i);
             }
             return i;
         }).collect(Collectors.toList());
     }
+
 }
