@@ -77,6 +77,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource  {0} update not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(rootType)
                 .withVersion(version)
@@ -110,6 +112,8 @@ public abstract class AbstractController {
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(rootType)
                 .withVersion(version)
@@ -133,6 +137,8 @@ public abstract class AbstractController {
                 child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -157,6 +163,8 @@ public abstract class AbstractController {
                 child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -194,6 +202,8 @@ public abstract class AbstractController {
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -222,6 +232,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withVersion(version)
                 .withQuery(action.getName())
                 .withRootType(serviceDesc.getRootType())
@@ -247,6 +259,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource  {0} get events not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withVersion(version)
                 .withRootType(serviceDesc.getRootType())
                 .withQuery(action.getName())
@@ -274,6 +288,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withQuery(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -303,6 +319,8 @@ public abstract class AbstractController {
                 child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withQuery(action.getName())
                 .withVersion(version)
                 .withRootType(serviceDesc.getRootType())
@@ -332,6 +350,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource  {0} list not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withQuery(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -351,11 +371,13 @@ public abstract class AbstractController {
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
-        String query = contentType != null ? DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + rootType): "List" + rootType;
+        String query = contentType != null ? DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + rootType) : "List" + rootType;
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} list not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withQuery(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -376,6 +398,8 @@ public abstract class AbstractController {
                 child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -392,6 +416,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource {0} deletion not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
@@ -408,6 +434,8 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource  {0} get stream not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
                 .withVersion(version)
                 .withRootType(serviceDesc.getRootType())
                 .withQuery(action.getName())

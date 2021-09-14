@@ -94,11 +94,22 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
         return sid;
     }
 
+    public String getDomainContext() {
+        return domainContext;
+    }
+
+    public String getDomainOwner() {
+        return domainOwner;
+    }
+
+    
     private void applyEvent(PolicyStatementCreated stmtCreated)
     {
         this.effect = stmtCreated.getEffect();
         this.cmdActions = stmtCreated.getCmdActions();
         this.queryActions = stmtCreated.getQueryActions();
+        this.domainOwner = stmtCreated.getDomainOwner();
+        this.domainContext = stmtCreated.getDomainContext();
         this.resources = stmtCreated.getResources();
     }
     

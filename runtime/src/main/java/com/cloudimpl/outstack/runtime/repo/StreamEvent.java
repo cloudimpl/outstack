@@ -15,20 +15,28 @@
  */
 package com.cloudimpl.outstack.runtime.repo;
 
+import com.cloudimpl.outstack.runtime.common.GsonCodecRuntime;
+import com.cloudimpl.outstack.runtime.util.Util;
+import com.google.gson.internal.LinkedTreeMap;
+
 /**
  *
  * @author nuwan
  */
 public class StreamEvent {
-    
-    public enum Action { ADD ,REMOVE}
-    
+
+    public enum Action {
+        ADD, REMOVE
+    }
+
+    private final String eventType;
     private final Action action;
     private final Object event;
-    
-    public StreamEvent(Action action,Object event) {
+
+    public StreamEvent(Action action, Object event) {
         this.action = action;
         this.event = event;
+        this.eventType = event.getClass().getName();
     }
 
     public Action getAction() {
@@ -36,7 +44,10 @@ public class StreamEvent {
     }
 
     public Object getEvent() {
+        if (event instanceof LinkedTreeMap) {
+            return GsonCodecRuntime.decodeTree(Util.classForName(eventType), LinkedTreeMap.class.cast(event));
+        }
         return event;
     }
-      
+
 }

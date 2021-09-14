@@ -208,6 +208,18 @@ public class QueryWrapper implements IQuery,AuthInput {
             return this;
         }
 
+        public Builder withDomainOwner(String domainOwner)
+        {
+            this.domainOwner = domainOwner;
+            return this;
+        }
+        
+        public Builder withDomainContext(String domainContext)
+        {
+            this.domainContext = domainContext;
+            return this;
+        }
+        
         public QueryWrapper build() {
             return new QueryWrapper(this);
         }
