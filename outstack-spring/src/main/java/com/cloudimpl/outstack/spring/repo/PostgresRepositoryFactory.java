@@ -124,19 +124,21 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected int insertEntity(Connection conn, String tableName, String tenantId, String brn, String entityType, String entityId, String json, long lastSeq) {
+    protected int insertEntity(Connection conn, String tableName, String tenantId, String rootEntityType, String rootId, String brn, String entityType, String entityId, String json, long lastSeq) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?)")) {
+        try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,rootEntityType,rootId,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?,?,?)")) {
             stmt.setString(1, tenantId);
-            stmt.setString(2, brn);
-            stmt.setString(3, entityType);
-            stmt.setString(4, entityId);
+            stmt.setString(2, rootEntityType);
+            stmt.setString(3, rootId);
+            stmt.setString(4, brn);
+            stmt.setString(5, entityType);
+            stmt.setString(6, entityId);
             PGobject pGobject = new PGobject();
             pGobject.setType("json");
             pGobject.setValue(json);
-            stmt.setObject(5, pGobject);
-            stmt.setLong(6, lastSeq);
-            stmt.setLong(7, System.currentTimeMillis());
+            stmt.setObject(7, pGobject);
+            stmt.setLong(8, lastSeq);
+            stmt.setLong(9, System.currentTimeMillis());
             return stmt.executeUpdate();
         } catch (SQLException ex) {
             throw new PostgresException(ex);
@@ -195,9 +197,8 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             stmt.setString(4, eventOwnerId);
             stmt.setLong(5, eventSeq);
 
-            
             try ( ResultSet rs = stmt.executeQuery()) {
-                System.out.println("fetch size : "+rs.getFetchSize());
+                System.out.println("fetch size : " + rs.getFetchSize());
                 List<String> list = new LinkedList<>();
                 while (rs.next()) {
                     list.add(rs.getString("json"));
@@ -279,11 +280,31 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected Collection<String> getEntityByType(Connection conn, String tableName, String entityType, String tenantId) {
+    protected Collection<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where entityType = ?  and tenantId = ?")) {
-            stmt.setString(1, entityType);
+        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where rootEntityType = ?  and tenantId = ?")) {
+            stmt.setString(1, rootEntityType);
             stmt.setString(2, tenantId);
+            try ( ResultSet rs = stmt.executeQuery()) {
+                List<String> list = new LinkedList<>();
+                while (rs.next()) {
+                    list.add(rs.getString("json"));
+                }
+                return list;
+            }
+
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    protected Collection<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId) {
+        createTenantIfNotExist(tableName, tenantId);
+        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ?")) {
+            stmt.setString(1, rootEntityType);
+            stmt.setString(2, rootId);
+            stmt.setString(3, entityType);
+            stmt.setString(4, tenantId);
             try ( ResultSet rs = stmt.executeQuery()) {
                 List<String> list = new LinkedList<>();
                 while (rs.next()) {

@@ -98,7 +98,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(e.getBRN());
-        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn, e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
+        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn,e.getClass().getSimpleName(), e.id(), e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
         txContext.get().add(func);
 
     }
@@ -128,7 +128,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(e.getBRN());
-        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn, e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
+        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn,e.rootType().getSimpleName(),e.rootId(), e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
         txContext.get().add(func);
 
     }
@@ -247,7 +247,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     @Override
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String t = tenantId != null ? tenantId : "nonTenant";
-        Function<Connection, Collection<String>> fn = conn -> factory.getEntityByType(conn, tableName, rootType.getSimpleName(), t);
+        Function<Connection, Collection<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t);
 
         List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(rootType, s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
@@ -290,8 +290,9 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
     @Override
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
+        EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
-        Function<Connection, Collection<String>> fn = conn -> factory.getEntityByType(conn, tableName, childType.getSimpleName(), t);
+        Function<Connection, Collection<String>> fn = conn -> factory.getChildEntityByType(conn, tableName,rootType.getSimpleName(),id, childType.getSimpleName(), t);
 
         List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(childType,s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
