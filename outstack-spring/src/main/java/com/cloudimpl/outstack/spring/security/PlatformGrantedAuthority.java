@@ -42,9 +42,30 @@ public class PlatformGrantedAuthority implements GrantedAuthority{
                 .collect(Collectors.groupingBy(s->s.getKey(), Collectors.mapping(s->s.getValue(), Collectors.toList())));
     }
 
-    public Optional<List<PolicyStatement>> getDenyStatmentByResourceName(String resourceName)
+    public Optional<List<PolicyStatement>> getDenyStatmentByResourceName(String resourceName,String domainOwner,String domainContext)
     {     
-        return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName)));
+        return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName).stream().filter(s->validate(s, domainOwner, domainContext)).collect(Collectors.toList())));
+    }
+    
+
+    private boolean validate(PolicyStatement stmt,String domainOwner,String domainContext)
+    {
+        if(stmt.getDomainOwner().equals("*") && stmt.getDomainContext().equals("*"))
+        {
+            return true;
+        }
+        
+        if(stmt.getDomainOwner().equals("*") && stmt.getDomainContext().equalsIgnoreCase(domainContext))
+        {
+            return true;
+        }
+        
+        if(stmt.getDomainContext().equals("*") && stmt.getDomainOwner().equalsIgnoreCase(domainOwner))
+        {
+            return true;
+        }
+        
+        return stmt.getDomainOwner().equalsIgnoreCase(domainOwner) && stmt.getDomainContext().equalsIgnoreCase(domainContext);
     }
     
     public Optional<List<PolicyStatement>> getAllowStatmentByResourceName(String resourceName)
