@@ -14,6 +14,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.handler.DefaultDeleteCommandHandler;
 import com.cloudimpl.outstack.runtime.handler.DefaultRenameCommandHandler;
 import com.cloudimpl.outstack.runtime.util.Util;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,7 +47,7 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private final Class<T> rootType;
     private final EventRepositoy<T> eventRepository;
     private final EntityContextProvider<T> contextProvider;
-    private final static ObjectMapper objectMapper = new ObjectMapper();
+    private final static ObjectMapper objectMapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
     private final Supplier<Consumer> injector;
     public ServiceProvider(Class<T> rootType, EventRepositoy<T> eventRepository, Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector,Supplier<BiFunction<String, Object, Mono>> requestHandler,Supplier<Consumer> injector) {
         this.rootType = rootType;
@@ -157,8 +158,8 @@ public class ServiceProvider<T extends RootEntity, R> implements Function<Object
     private Object encode(ICommand cmd, Object reply) {
         if (CommandWrapper.class.isInstance(cmd)) {
             //return objectMapper.writeValueAsString(reply);
-            return objectMapper.convertValue(reply, LinkedHashMap.class);
-
+            Object ret =  objectMapper.convertValue(reply, LinkedHashMap.class);
+            return ret;
         } else {
             return reply;
         }

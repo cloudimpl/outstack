@@ -6,6 +6,7 @@
 package com.cloudimpl.outstack.spring.service;
 
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,5 +26,10 @@ public class ServiceDescriptorManager {
     public Optional<SpringServiceDescriptor> getServiceDescriptorByPlural(String rootTypePlural)
     {
         return Optional.ofNullable(map.get(rootTypePlural.toLowerCase()));
+    }
+    
+    public Collection<SpringServiceDescriptor> getDescriptors()
+    {
+        return map.values();
     }
 }

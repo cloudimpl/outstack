@@ -31,6 +31,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.MediaType;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
@@ -40,8 +41,9 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
  * @author nuwan
  */
 @RestController
-@CrossOrigin(origins = "*", allowedHeaders = "*",methods = {RequestMethod.DELETE,RequestMethod.GET,RequestMethod.POST})
-@RequestMapping("/")
+
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.DELETE, RequestMethod.GET, RequestMethod.POST})
+@RequestMapping(path = "/")
 public class Controller extends AbstractController {
 
     public Controller(Cluster cluster) {
@@ -52,21 +54,21 @@ public class Controller extends AbstractController {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
     protected Mono<ResponseEntity<Object>> createRootEntity(ServerHttpRequest request, @PathVariable String context,
-                                                            @PathVariable String version,
-                                                            @PathVariable String rootEntity,
-                                                            @RequestHeader("Content-Type") String contentType,
-                                                            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                            @RequestBody String body) {
+            @PathVariable String version,
+            @PathVariable String rootEntity,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestBody String body) {
         return super.createRootEntity(request, context, version, rootEntity, contentType, tenantId, body);
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> updateRootEntity(ServerHttpRequest request, @PathVariable String context, @PathVariable String version,
-                                            @PathVariable String rootEntity, @PathVariable String rootId,
-                                            @RequestHeader("Content-Type") String contentType,
-                                            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                            @RequestBody String body) {
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestBody String body) {
         return super.updateRootEntity(request, context, version, rootEntity, rootId, contentType, tenantId, body);
     }
 
@@ -74,12 +76,12 @@ public class Controller extends AbstractController {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.OK)
     protected Mono<Object> uploadRootEntityFiles(ServerHttpRequest request, @PathVariable String context,
-                                                 @PathVariable String version,
-                                                 @PathVariable String rootEntity,
-                                                 @PathVariable String rootId,
-                                                 @RequestHeader("Content-Type") String contentType,
-                                                 @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                 @RequestPart("files") List<FilePart> files) {
+            @PathVariable String version,
+            @PathVariable String rootEntity,
+            @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestPart("files") List<FilePart> files) {
         return super.uploadRootEntityFiles(request, context, version, rootEntity, rootId, contentType, tenantId, files);
     }
 
@@ -87,24 +89,24 @@ public class Controller extends AbstractController {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
     protected Mono<ResponseEntity<Object>> createChildEntity(ServerHttpRequest request, @PathVariable String context,
-                                                             @PathVariable String version,
-                                                             @PathVariable String rootEntity, @PathVariable String rootId,
-                                                             @PathVariable String childEntity,
-                                                             @RequestHeader("Content-Type") String contentType,
-                                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                             @RequestBody String body) {
-        return super.createChildEntity(request, context, version, rootEntity,  rootId, childEntity, contentType, tenantId, body);
+            @PathVariable String version,
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @PathVariable String childEntity,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestBody String body) {
+        return super.createChildEntity(request, context, version, rootEntity, rootId, childEntity, contentType, tenantId, body);
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}/{childId}",
             consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> updateChildEntity(ServerHttpRequest request, @PathVariable String context, @PathVariable String version,
-                                             @PathVariable String rootEntity, @PathVariable String rootId,
-                                             @PathVariable String childEntity, @PathVariable String childId,
-                                             @RequestHeader("Content-Type") String contentType,
-                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                             @RequestBody String body) {
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @PathVariable String childEntity, @PathVariable String childId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestBody String body) {
         return super.updateChildEntity(request, context, version, rootEntity, rootId, childEntity, childId, contentType,
                 tenantId, body);
     }
@@ -114,14 +116,14 @@ public class Controller extends AbstractController {
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.OK)
     protected Mono<ResponseEntity<Object>> uploadChildEntityFiles(ServerHttpRequest request, @PathVariable String context,
-                                                                @PathVariable String version,
-                                                                @PathVariable String rootEntity,
-                                                                @PathVariable String rootId,
-                                                                @PathVariable String childEntity,
-                                                                @PathVariable String childId,
-                                                                @RequestHeader("Content-Type") String contentType,
-                                                                @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                                @RequestPart("files") List<FilePart> files) {
+            @PathVariable String version,
+            @PathVariable String rootEntity,
+            @PathVariable String rootId,
+            @PathVariable String childEntity,
+            @PathVariable String childId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            @RequestPart("files") List<FilePart> files) {
         return super.uploadChildEntityFiles(request, context, version, rootEntity, rootId, childEntity, childId, contentType,
                 tenantId, files);
     }
@@ -129,20 +131,20 @@ public class Controller extends AbstractController {
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> getRootEntity(ServerHttpRequest request, @PathVariable String context, @PathVariable String version,
-                                         @PathVariable String rootEntity, @PathVariable String rootId,
-                                         @RequestHeader("Content-Type") String contentType,
-                                         @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                         Pageable pageable, @RequestParam Map<String, String> reqParam) {
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.getRootEntity(request, context, version, rootEntity, rootId, contentType, tenantId, pageable, reqParam);
     }
 
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/events", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> getRootEntityEvents(ServerHttpRequest request, @PathVariable String context, @PathVariable String version,
-                                               @PathVariable String rootEntity, @PathVariable String rootId,
-                                               @RequestHeader("Content-Type") String contentType,
-                                               @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                              Pageable pageable, @RequestParam Map<String, String> reqParam) {
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.getRootEntityEvents(request, context, version, rootEntity, rootId, contentType, tenantId, pageable,
                 reqParam);
     }
@@ -151,11 +153,11 @@ public class Controller extends AbstractController {
             consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> getChildEntity(ServerHttpRequest request, @PathVariable String context, @PathVariable String version,
-                                          @PathVariable String rootEntity, @PathVariable String rootId,
-                                          @PathVariable String childEntity, @PathVariable String childId,
-                                          @RequestHeader("Content-Type") String contentType,
-                                          @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                          Pageable pageable, @RequestParam Map<String, String> reqParam) {
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @PathVariable String childEntity, @PathVariable String childId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.getChildEntity(request, context, version, rootEntity, rootId, childEntity, childId, contentType, tenantId, pageable, reqParam);
     }
 
@@ -163,11 +165,11 @@ public class Controller extends AbstractController {
             consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> getChildEntityEvents(ServerHttpRequest request, @PathVariable String context,
-                                                @PathVariable String version, @PathVariable String rootEntity,
-                                                @PathVariable String rootId, @PathVariable String childEntity,
-                                                @PathVariable String childId, @RequestHeader("Content-Type") String contentType,
-                                                @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                Pageable pageable, @RequestParam Map<String, String> reqParam) {
+            @PathVariable String version, @PathVariable String rootEntity,
+            @PathVariable String rootId, @PathVariable String childEntity,
+            @PathVariable String childId, @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.getChildEntityEvents(request, context, version, rootEntity, rootId, childEntity, childId, contentType,
                 tenantId, pageable, reqParam);
     }
@@ -175,21 +177,21 @@ public class Controller extends AbstractController {
     @GetMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> listChildEntity(ServerHttpRequest request, @PathVariable String context, @PathVariable String version,
-                                           @PathVariable String rootEntity, @PathVariable String rootId,
-                                           @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType,
-                                           @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                           Pageable pageable, @RequestParam Map<String, String> reqParam) {
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @PathVariable String childEntity, @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.listChildEntity(request, context, version, rootEntity, rootId, childEntity, contentType, tenantId, pageable,
                 reqParam);
     }
 
-    @GetMapping(value = "{context}/{version}/{rootEntity}", consumes = {APPLICATION_JSON_VALUE})
+    @GetMapping(value = "{context}/{version}/{rootEntity}")
     @SuppressWarnings("unused")
     protected Mono<Object> listRootEntity(ServerHttpRequest request, @PathVariable String context,
-                                          @PathVariable String version, @PathVariable String rootEntity,
-                                          @RequestHeader("Content-Type") String contentType,
-                                          @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                          Pageable pageable, @RequestParam Map<String, String> reqParam) {
+            @PathVariable String version, @PathVariable String rootEntity,
+            @RequestHeader(name = "Content-Type",required = false) String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+            Pageable pageable, @RequestParam Map<String, String> reqParam) {
         return super.listRootEntity(request, context, version, rootEntity, contentType, tenantId, pageable, reqParam);
     }
 
@@ -197,11 +199,11 @@ public class Controller extends AbstractController {
             consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> deleteChildEntity(ServerHttpRequest request, @PathVariable String context,
-                                             @PathVariable String version,
-                                             @PathVariable String rootEntity, @PathVariable String rootId,
-                                             @PathVariable String childEntity, @PathVariable String childId,
-                                             @RequestHeader("Content-Type") String contentType,
-                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
+            @PathVariable String version,
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @PathVariable String childEntity, @PathVariable String childId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
         return super.deleteChildEntity(request, context, version, rootEntity, rootId, childEntity, childId, contentType,
                 tenantId);
     }
@@ -209,10 +211,10 @@ public class Controller extends AbstractController {
     @DeleteMapping(value = "{context}/{version}/{rootEntity}/{rootId}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     protected Mono<Object> deleteRootEntity(ServerHttpRequest request, @PathVariable String context,
-                                            @PathVariable String version,
-                                            @PathVariable String rootEntity, @PathVariable String rootId,
-                                            @RequestHeader("Content-Type") String contentType,
-                                            @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
+            @PathVariable String version,
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
         return super.deleteRootEntity(request, context, version, rootEntity, rootId, contentType, tenantId);
     }
 
@@ -225,26 +227,69 @@ public class Controller extends AbstractController {
     @GetMapping(value = "/streams/{context}/{version}/{rootEntity}/{rootId}")
     @SuppressWarnings("unused")
     protected Flux<String> getRootEntityStream(ServerHttpRequest request, @PathVariable String context,
-                                               @PathVariable String version,
-                                             @PathVariable String rootEntity, @PathVariable String rootId,
-                                             @RequestHeader("Content-Type") String contentType,
-                                             @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
+            @PathVariable String version,
+            @PathVariable String rootEntity, @PathVariable String rootId,
+            @RequestHeader("Content-Type") String contentType,
+            @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
         return super.getRootEntityStream(context, version, rootEntity, rootId, contentType, tenantId);
     }
 
     @GetMapping("/doAuth")
     private Mono<AbstractAuthenticationToken> doAuth() {
         return ReactiveSecurityContextHolder
-                .getContext() 
+                .getContext()
                 .map(c -> (AbstractAuthenticationToken) c.getAuthentication())
                 .doOnError(Throwable::printStackTrace);
     }
-    
+
     @GetMapping("/hello")
     private Mono<String> hello() {
         return ReactiveSecurityContextHolder
                 .getContext()
                 .map(c -> (AbstractAuthenticationToken) c.getAuthentication())
-                .doOnError(Throwable::printStackTrace).map(t->"hello "+t.getName());
+                .doOnError(Throwable::printStackTrace).map(t -> "hello " + t.getName());
     }
+
+//    @GetMapping(path = "/v2/outstack-api-docs",consumes = {MediaType.ALL_VALUE})
+//    public Mono<String> apiDoc() {
+//        return Mono.just("{\n"
+//                + "   \"swagger\":\"2.0\",\n"
+//                + "   \"info\":{\n"
+//                + "      \"description\":\"swagger documentation  for no-code rest point in outstack microservice engine\",\n"
+//                + "      \"version\":\"1.0\",\n"
+//                + "      \"title\":\"Swagger By CloudImpl COM\",\n"
+//                + "      \"contact\":{\n"
+//                + "         \"name\":\"CloudImpl COM\",\n"
+//                + "         \"url\":\"http://www.cloudimpl.com\",\n"
+//                + "         \"email\":\"info@cloudimpl.com\"\n"
+//                + "      },\n"
+//                + "      \"license\":{\n"
+//                + "         \"name\":\"Apache License Version 2.0\"\n"
+//                + "      }\n"
+//                + "   },\n"
+//                + "   \"host\":\"localhost:9098\",\n"
+//                + "   \"basePath\":\"/\",\n"
+//                + "   \"tags\":[\n"
+//                + "      {\n"
+//                + "         \"name\":\"abc\",\n"
+//                + "         \"description\":\"sample dtag\"\n"
+//                + "      },\n"
+//                + "      {\n"
+//                + "         \"name\":\"auth-controller\",\n"
+//                + "         \"description\":\"Auth Controller\"\n"
+//                + "      },\n"
+//                + "      {\n"
+//                + "         \"name\":\"controller\",\n"
+//                + "         \"description\":\"Controller\"\n"
+//                + "      },\n"
+//                + "      {\n"
+//                + "         \"name\":\"login-form-controller\",\n"
+//                + "         \"description\":\"Login Form Controller\"\n"
+//                + "      },\n"
+//                + "      {\n"
+//                + "         \"name\":\"public-controller\",\n"
+//                + "         \"description\":\"Public Controller\"\n"
+//                + "      }\n"
+//                + "   ]}");
+//    }
 }

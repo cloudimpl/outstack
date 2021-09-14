@@ -5,10 +5,13 @@
  */
 package com.cloudimpl.outstack.spring.service;
 
+import com.cloudimpl.outstack.common.Pair;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 /**
@@ -17,30 +20,30 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ServiceDescriptorContextManager {
-    private final Map<String,ServiceDescriptorVersionManager> appContexts;
+
+    private final Map<String, ServiceDescriptorVersionManager> appContexts;
 
     public ServiceDescriptorContextManager() {
         this.appContexts = new ConcurrentHashMap<>();
     }
-    
-    public void putCmdContext(String context,String version,SpringServiceDescriptor serviceDescriptor)
-    {
-        appContexts.computeIfAbsent(context, ctx->new ServiceDescriptorVersionManager()).putCmd(serviceDescriptor);
+
+    public void putCmdContext(String context, String version, SpringServiceDescriptor serviceDescriptor) {
+        appContexts.computeIfAbsent(context, ctx -> new ServiceDescriptorVersionManager()).putCmd(serviceDescriptor);
     }
-    
-    
-    public void putQueryContext(String context,String version,SpringServiceDescriptor serviceDescriptor)
-    {
-        appContexts.computeIfAbsent(context, ctx->new ServiceDescriptorVersionManager()).putQuery(serviceDescriptor);
+
+    public void putQueryContext(String context, String version, SpringServiceDescriptor serviceDescriptor) {
+        appContexts.computeIfAbsent(context, ctx -> new ServiceDescriptorVersionManager()).putQuery(serviceDescriptor);
     }
-    
-    public  Optional<ServiceDescriptorManager> getCmdServiceDescriptorManager(String context,String version)
-    {
-        return Optional.ofNullable(appContexts.get(context)).flatMap(ctx->ctx.getVersionForCmd(version));
+
+    public Optional<ServiceDescriptorManager> getCmdServiceDescriptorManager(String context, String version) {
+        return Optional.ofNullable(appContexts.get(context)).flatMap(ctx -> ctx.getVersionForCmd(version));
     }
-    
-    public  Optional<ServiceDescriptorManager> getQueryServiceDescriptorManager(String context,String version)
-    {
-        return Optional.ofNullable(appContexts.get(context)).flatMap(ctx->ctx.getVersionForQuery(version));
+
+    public Optional<ServiceDescriptorManager> getQueryServiceDescriptorManager(String context, String version) {
+        return Optional.ofNullable(appContexts.get(context)).flatMap(ctx -> ctx.getVersionForQuery(version));
+    }
+
+    public ServiceDescriptorVersionManager getByContext(String context) {
+        return appContexts.get(context);
     }
 }

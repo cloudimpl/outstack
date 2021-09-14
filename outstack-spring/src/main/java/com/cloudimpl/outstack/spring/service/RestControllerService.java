@@ -51,10 +51,10 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
     private Flux<FluxMap.Event<String, CloudService>> serviceFlux;
     private ServiceDescriptorContextManager serviceManager;
-    private ServiceDescriptorVersionManager serviceQieryManager;
     private ILogger logger;
     private EventRepositoryFactory eventRepoFactory;
     private Map<String,DomainContext> domainContexts = new ConcurrentHashMap<>();
+    public static FluxMap<String,DomainContext> domainContextsFlux = new FluxMap<>();
     
     @Inject
     public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
@@ -204,7 +204,9 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             event.setAction(Event.Action.CREATE);
             EntityHelper.setVersion(event, Entity.getVersion(DomainContext.class));
             EntityHelper.setCreatedDate(event, System.currentTimeMillis());
-            return eventRepoFactory.createOrGetRepository(DomainContext.class).applyEvent(event);
+            DomainContext ctx =  eventRepoFactory.createOrGetRepository(DomainContext.class).applyEvent(event);
+            domainContextsFlux.put(id, ctx);
+            return ctx;
         });
     }
 }

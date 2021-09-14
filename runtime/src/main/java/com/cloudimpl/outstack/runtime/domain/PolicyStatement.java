@@ -39,9 +39,12 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
     @Id
     private final String sid;
     private  EffectType effect;
+    private String domainContext;
+    private String domainOwner;
     private  Collection<ActionDescriptor> cmdActions;
     private  Collection<ActionDescriptor> queryActions;
     private  Collection<ResourceDescriptor> resources;
+    private Collection<String> tags;
     private final String tenantId;
     public PolicyStatement(String sid,String tenantId) {
         this.sid = sid;
@@ -49,6 +52,7 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
         this.cmdActions = Collections.EMPTY_LIST;
         this.queryActions = Collections.EMPTY_LIST;
         this.resources = Collections.EMPTY_LIST;
+        this.tags = Collections.EMPTY_SET;
     }
 
     public Collection<ActionDescriptor> getCmdActions() {
@@ -134,8 +138,7 @@ public class PolicyStatement extends RootEntity implements ITenantOptional{
 
     @Override
     public String toString() {
-        return "PolicyStatement{" + "sid=" + sid + ", effect=" + effect + ", actions=[" + cmdActions+","+ queryActions+ "], resources=" + resources + ", tenantId=" + tenantId + '}';
+        return "PolicyStatement{" + "sid=" + sid + ", effect=" + effect + ", cmdActions=" + cmdActions + ", queryActions=" + queryActions + ", resources=" + resources + ", tenantId=" + tenantId + '}';
     }
-
-    
+  
 }

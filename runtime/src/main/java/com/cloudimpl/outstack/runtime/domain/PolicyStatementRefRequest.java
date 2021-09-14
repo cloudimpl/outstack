@@ -23,16 +23,10 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  */
 public class PolicyStatementRefRequest extends Command {
 
-    private final String policyName;
     private final String policyStmtName;
     public PolicyStatementRefRequest(Builder builder) {
         super(builder);
-        this.policyName = builder.policyName;
         this.policyStmtName = builder.policyStmtName;
-    }
-
-    public String getPolicyName() {
-        return policyName;
     }
 
     public String getPolicyStmtName() {
@@ -45,16 +39,9 @@ public class PolicyStatementRefRequest extends Command {
     }
     
     public static final class Builder extends Command.Builder {
-
-        private String policyName; 
+        
         private String policyStmtName;
-        
-        public Builder withPolicyName(String policyName)
-        {
-            this.policyName = policyName;
-            return this;
-        }
-        
+       
         public Builder withPolicyStmtName(String stmtName)
         {
             this.policyStmtName = stmtName;

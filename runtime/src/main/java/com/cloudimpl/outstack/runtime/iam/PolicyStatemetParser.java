@@ -41,7 +41,7 @@ public class PolicyStatemetParser {
     public static Pattern RESOURCE_NAME_PATTERN = Pattern.compile("[a-zA-Z_$][a-zA-Z\\d_$]*"); //("[a-zA-Z]+[_[a-zA-Z0-9]]+");
     public static Pattern RESOURCE_ID_PATTERN = Pattern.compile("[a-zA-Z0-9_$][a-zA-Z0-9_-]*|\\{[a-zA-Z0-9_$][a-zA-Z0-9._-]*\\}");
 
-    public static PolicyStatementCreated parseStatement(PolicyStatementRequest stmt) {
+    public static PolicyStatementCreated parseStatement(String domainOwner,String domainContext,PolicyStatementRequest stmt) {
         if (stmt.getEffect() == null) {
             throw new PolicyStatementException("policy statement effectType is null");
         }
@@ -59,7 +59,7 @@ public class PolicyStatemetParser {
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
         }
-        return new PolicyStatementCreated(stmt.getSid(), stmt.getEffect(), cmdActions,queryActions, resources);
+        return new PolicyStatementCreated(stmt.getSid(),domainOwner,domainContext, stmt.getEffect(), cmdActions,queryActions, resources,stmt.getTags());
     }
 
     public static void validate(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
@@ -251,14 +251,14 @@ public class PolicyStatemetParser {
         if (parts[0].equals("*")) {
             resourceScope = ResourceDescriptor.ResourceScope.GLOBAL;
             checkCount(1, parts.length, "invalid  resource pattern. {0}", resourceDesc);
-            return builder.withVersion(parts[0]).withResourceScope(resourceScope).build();
+            return builder.withVersion(parts[0]).withRootType("*").withResourceScope(resourceScope).build();
 
         }
         checkMinCount(2, parts.length, "invalid resource pattern. {0}", resourceDesc);
         validateResourceName(parts[0], "version");
         if (parts[1].equals("**")) {
             checkCount(2, parts.length, "invalid resource pattern. {0}", resourceDesc);
-            return builder.withVersion(parts[0]).withResourceScope(ResourceDescriptor.ResourceScope.VERSION_ONLY).build();
+            return builder.withVersion(parts[0]).withRootType("*").withResourceScope(ResourceDescriptor.ResourceScope.VERSION_ONLY).build();
         }
         checkMinCount(3, parts.length, "invalid resource pattern. {0}", resourceDesc);
 

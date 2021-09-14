@@ -38,7 +38,8 @@ import java.util.stream.Collectors;
  * Abstract controller
  *
  * @author roshanmadhushanka
- **/
+ *
+ */
 public abstract class AbstractController {
 
     protected final Cluster cluster;
@@ -48,8 +49,8 @@ public abstract class AbstractController {
     }
 
     protected Mono<ResponseEntity<Object>> createRootEntity(ServerHttpRequest httpRequest, String context, String version,
-                                                            String rootEntity, String contentType, String tenantId,
-                                                            String body) {
+            String rootEntity, String contentType, String tenantId,
+            String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
@@ -58,6 +59,7 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName()).withPayload(body)
+                .withRootType(rootType)
                 .withVersion(version)
                 .withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request)
@@ -66,8 +68,8 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> updateRootEntity(ServerHttpRequest httpRequest, String context, String version,
-                                            String rootEntity, String rootId, String contentType, String tenantId,
-                                            String body) {
+            String rootEntity, String rootId, String contentType, String tenantId,
+            String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + rootType);
@@ -76,6 +78,7 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(rootType)
                 .withVersion(version)
                 .withPayload(body)
                 .withId(rootId)
@@ -84,8 +87,8 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> uploadRootEntityFiles(ServerHttpRequest httpRequest, String context, String version,
-                                                 String rootEntity, String rootId, String contentType, String tenantId,
-                                                 List<FilePart> files) {
+            String rootEntity, String rootId, String contentType, String tenantId,
+            List<FilePart> files) {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -108,6 +111,7 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(rootType)
                 .withVersion(version)
                 .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(rootId)
@@ -116,20 +120,21 @@ public abstract class AbstractController {
     }
 
     protected Mono<ResponseEntity<Object>> createChildEntity(ServerHttpRequest httpRequest, String context,
-                                                             String version, String rootEntity,
-                                                             String rootId, String childEntity, String contentType,
-                                                             String tenantId, String body) {
+            String version, String rootEntity,
+            String rootId, String childEntity, String contentType,
+            String tenantId, String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} creation not implemented",
-                        child.getName()));
+                child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withPayload(body)
                 .withRootId(rootId)
@@ -140,19 +145,20 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> updateChildEntity(ServerHttpRequest httpRequest, String context, String version,
-                                             String rootEntity, String rootId, String childEntity, String childId,
-                                             String contentType, String tenantId, String body) {
+            String rootEntity, String rootId, String childEntity, String childId,
+            String contentType, String tenantId, String body) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Update" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} update not implemented",
-                        child.getName()));
+                child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withPayload(body)
                 .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
@@ -160,15 +166,15 @@ public abstract class AbstractController {
     }
 
     protected Mono<ResponseEntity<Object>> uploadChildEntityFiles(ServerHttpRequest httpRequest, String context,
-                                                                  String version, String rootEntity,
-                                                                  String rootId, String childEntity, String childId,
-                                                                  String contentType, String tenantId,
-                                                                  List<FilePart> files) {
+            String version, String rootEntity,
+            String rootId, String childEntity, String childId,
+            String contentType, String tenantId,
+            List<FilePart> files) {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType)
                 .orElseThrow(() -> new BadRequestException("domain model is not defined"));
 
@@ -179,7 +185,7 @@ public abstract class AbstractController {
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
                 .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented",
-                        child.getName()));
+                child.getName()));
 
         List<FileData> fileDataList = files.stream()
                 .map(FileUtil::getFileData)
@@ -189,6 +195,7 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(childId)
@@ -201,12 +208,12 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> getRootEntity(ServerHttpRequest httpRequest, String context, String version,
-                                         String rootEntity, String rootId, String contentType, String tenantId, Pageable pageable,
-                                         Map<String, String> reqParam) {
+            String rootEntity, String rootId, String contentType, String tenantId, Pageable pageable,
+            Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
-                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                        ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
                 removePagingParam(reqParam));
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -217,20 +224,21 @@ public abstract class AbstractController {
         QueryWrapper request = QueryWrapper.builder()
                 .withVersion(version)
                 .withQuery(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withId(rootId).withRootId(rootId)
                 .withPageRequest(pagingReq)
                 .withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
-    protected Mono<Object> getRootEntityEvents(ServerHttpRequest httpRequest, String context,  String version,
-                                               String rootEntity, String rootId, String contentType, String tenantId,
-                                               Pageable pageable,
-                                             Map<String, String> reqParam) {
+    protected Mono<Object> getRootEntityEvents(ServerHttpRequest httpRequest, String context, String version,
+            String rootEntity, String rootId, String contentType, String tenantId,
+            Pageable pageable,
+            Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
-                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                        ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
                 removePagingParam(reqParam));
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -240,6 +248,7 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
                 .withVersion(version)
+                .withRootType(serviceDesc.getRootType())
                 .withQuery(action.getName())
                 .withId(rootId).withRootId(rootId)
                 .withTenantId(tenantId)
@@ -248,24 +257,25 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> getChildEntity(ServerHttpRequest httpRequest, String context, String version,
-                                          String rootEntity, String rootId, String childEntity, String childId,
-                                          String contentType, String tenantId, Pageable pageable,
-                                          Map<String, String> reqParam) {
+            String rootEntity, String rootId, String childEntity, String childId,
+            String contentType, String tenantId, Pageable pageable,
+            Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
-                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                        ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
                 removePagingParam(reqParam));
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} get not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
                 .withQuery(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withPageRequest(pagingReq)
                 .withRootId(rootId)
@@ -274,27 +284,28 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> getChildEntityEvents(ServerHttpRequest httpRequest, String context, String version,
-                                                String rootEntity, String rootId, String childEntity, String childId,
-                                                String contentType, String tenantId, Pageable pageable,
-                                                Map<String, String> reqParam) {
+            String rootEntity, String rootId, String childEntity, String childId,
+            String contentType, String tenantId, Pageable pageable,
+            Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
-                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                        ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
                 removePagingParam(reqParam));
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + child.getName() + "Events");
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} get events not implemented",
-                        child.getName()));
+                child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
                 .withQuery(action.getName())
                 .withVersion(version)
+                .withRootType(serviceDesc.getRootType())
                 .withRootId(rootId)
                 .withId(childId)
                 .withTenantId(tenantId)
@@ -304,24 +315,25 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> listChildEntity(ServerHttpRequest httpRequest, String context, String version,
-                                           String rootEntity, String rootId, String childEntity, String contentType,
-                                           String tenantId, Pageable pageable, Map<String, String> reqParam) {
+            String rootEntity, String rootId, String childEntity, String contentType,
+            String tenantId, Pageable pageable, Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
-                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                        ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
                 removePagingParam(reqParam));
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} list not implemented", child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
                 .withQuery(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withRootId(rootId)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
@@ -329,48 +341,50 @@ public abstract class AbstractController {
     }
 
     protected Mono<Object> listRootEntity(ServerHttpRequest httpRequest, String context, String version,
-                                          String rootEntity, String contentType, String tenantId, Pageable pageable,
-                                          Map<String, String> reqParam) {
+            String rootEntity, String contentType, String tenantId, Pageable pageable,
+            Map<String, String> reqParam) {
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
-                                ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
+                        ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
                 removePagingParam(reqParam));
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
-        String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + rootType);
+        String query = contentType != null ? DomainModelDecoder.decode(contentType).orElseGet(() -> "List" + rootType): "List" + rootType;
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(query)
                 .orElseThrow(() -> new NotImplementedException("resource  {0} list not implemented", rootType));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
                 .withQuery(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     protected Mono<Object> deleteChildEntity(ServerHttpRequest httpRequest, String context, String version,
-                                             String rootEntity, String rootId, String childEntity, String childId,
-                                             String contentType, String tenantId) {
+            String rootEntity, String rootId, String childEntity, String childId,
+            String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
-                        rootEntity, rootId, childEntity));
+                rootEntity, rootId, childEntity));
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + child.getName());
         SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getChildAction(child.getName(), cmd)
                 .orElseThrow(() -> new NotImplementedException("resource {0} deletion not implemented",
-                        child.getName()));
+                child.getName()));
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     protected Mono<Object> deleteRootEntity(ServerHttpRequest httpRequest, String context, String version,
-                                            String rootEntity, String rootId, String contentType, String tenantId) {
+            String rootEntity, String rootId, String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Delete" + rootType);
@@ -379,13 +393,14 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withCommand(action.getName())
+                .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
     }
 
     protected Flux<String> getRootEntityStream(String context, String version,
-                                               String rootEntity, String rootId, String contentType, String tenantId) {
+            String rootEntity, String rootId, String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
@@ -394,6 +409,7 @@ public abstract class AbstractController {
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER);
         QueryWrapper request = QueryWrapper.builder()
                 .withVersion(version)
+                .withRootType(serviceDesc.getRootType())
                 .withQuery(action.getName())
                 .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
         return cluster.requestStream(serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s))
@@ -415,7 +431,7 @@ public abstract class AbstractController {
     }
 
     protected void validateAction(SpringServiceDescriptor.ActionDescriptor action,
-                                  SpringServiceDescriptor.ActionDescriptor.ActionType type) {
+            SpringServiceDescriptor.ActionDescriptor.ActionType type) {
         if (action.getActionType() != type) {
             throw new BadRequestException("bad request {0}. expect {1} , found {2}", action.getName(), type,
                     action.getActionType());
@@ -423,7 +439,7 @@ public abstract class AbstractController {
     }
 
     protected ResponseEntity<Object> onRootEntityCreation(String context, String version, String rootEntity,
-                                                          Object resource) {
+            Object resource) {
         if (resource instanceof LinkedHashMap) {
             LinkedHashMap<?, ?> response = (LinkedHashMap<?, ?>) resource;
             if (response.containsKey("_id")) {
@@ -440,7 +456,7 @@ public abstract class AbstractController {
     }
 
     protected ResponseEntity<Object> onChildEntityCreation(String context, String version, String rootEntity,
-                                                           String rootId, String childType, Object resource) {
+            String rootId, String childType, Object resource) {
         if (resource instanceof LinkedHashMap) {
             LinkedHashMap<?, ?> response = (LinkedHashMap<?, ?>) resource;
             if (response.containsKey("_id")) {

@@ -44,14 +44,14 @@ public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatement,
     @Override
     protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
         
-        PolicyStatementCreated stmt = parseStatement(command);
+        PolicyStatementCreated stmt = parseStatement(helper,command);
         PolicyStatemetParser.validate(helper,(RootEntityContext<PolicyStatement>) context, stmt);
         return context.create(stmt.getSid(), stmt);
     }
     
-    private static PolicyStatementCreated parseStatement(PolicyStatementRequest req)
+    private static PolicyStatementCreated parseStatement(ResourceHelper helper,PolicyStatementRequest req)
     {
-        return PolicyStatemetParser.parseStatement(req);
+        return PolicyStatemetParser.parseStatement(helper.getDomainOwner(),helper.getApiContext(),req);
     }
     
     private static void checkResourceConstrains(Collection<ResourceDescriptor> resources)

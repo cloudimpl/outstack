@@ -76,8 +76,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     private final String tableName;
     ThreadLocal<List<TransactWriteItem>> txContext = ThreadLocal.withInitial(() -> new LinkedList<>());
 
-    public DynamodbEventRepository(AmazonDynamoDB client, DynamoDB dynamodb, Class<T> rootType, ResourceHelper resourceHelper, EventStream eventStream, Provider.ProviderConfigs configs) {
-        super(rootType, resourceHelper, eventStream);
+    public DynamodbEventRepository(AmazonDynamoDB client, DynamoDB dynamodb, Class<T> rootType, ResourceHelper resourceHelper, Provider.ProviderConfigs configs) {
+        super(rootType, resourceHelper);
         this.dynamodb = dynamodb;
         this.client = client;
         //this.loadTables();
@@ -276,8 +276,8 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void deleteRootEntityBrnById(Class<T> rootType, String id, String tenantId) {
-        String rn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId));
+    protected void deleteRootEntityBrnById(RootEntity e) {
+        String rn = resourceHelper.getFQBrn(RootEntity.makeRN(e.getClass(), version, e.entityId(), e.getTenantId()));
         String prefix = rn.substring(0, rn.lastIndexOf("/"));
         HashMap<String, AttributeValue> item = new HashMap<>();
         item.put(this.partitionKeyColumn, new AttributeValue(prefix));
@@ -294,9 +294,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
-        String partitionKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
-        String rangeKey = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, id, childType, childId, tenantId));
+    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e) {
+        String partitionKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, e.id(),e.getTenantId()));
+        String rangeKey = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, e.rootId(), e.getClass(), e.id(), e.getTenantId()));
         HashMap<String, AttributeValue> item = new HashMap<>();
         item.put(this.partitionKeyColumn, new AttributeValue(partitionKey));
         item.put(this.rangeKeyColumn, new AttributeValue(rangeKey));

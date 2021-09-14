@@ -34,7 +34,7 @@ public class CreatePolicyStatementRef extends EntityCommandHandler<PolicyStateme
     @Override
     protected PolicyStatementRef execute(EntityContext<PolicyStatementRef> context, PolicyStatementRefRequest command) {
         PolicyStatement stmt = context.getEntityQueryProvider(PolicyStatement.class).getRoot(command.getPolicyStmtName()).orElseThrow(()->new PolicyValidationError("policy statement "+command.getPolicyStmtName()+" not found"));
-        return context.<Policy,PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()),new PolicyStatementRefCreated(command.getPolicyName(),EntityIdHelper.idToRefId(stmt.id())));
+        return context.<Policy,PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()),new PolicyStatementRefCreated(context.asChildContext().getRoot().entityId(),EntityIdHelper.idToRefId(stmt.id())));
     }
 
    

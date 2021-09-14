@@ -5,6 +5,7 @@
  */
 package com.cloudimpl.outstack.spring.component;
 
+import com.cloudimpl.outstack.common.Pair;
 import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -52,10 +54,19 @@ public class SpringServiceDescriptor {
         return childActions.getOrDefault(childEntity, Collections.EMPTY_MAP).values();
     }
 
+    public Collection<Pair<String,ActionDescriptor>> getChildActions(){
+        return childActions.entrySet().stream().flatMap(e->e.getValue().values().stream().map(v->new Pair<>(e.getKey(),v))).collect(Collectors.toList());
+    }
+    
     public Collection<EntityDescriptor> entityDescriptors() {
         return mapDescriptors.values();
     }
 
+    public EntityDescriptor getEntityDescByName(String type)
+    {
+        return mapDescriptors.values().stream().filter(d->d.getName().equals(type)).findFirst().get();
+    }
+    
     public void putRootAction(ActionDescriptor action) {
         this.rootActions.put(action.getName(), action);
     }
@@ -121,20 +132,23 @@ public class SpringServiceDescriptor {
         }
         private final String name;
         private final ActionType actionType;
+        private final boolean idRequired;
         private final boolean publiclyAccessible;
         private final boolean fileUploadEnabled;
         private final Set<String> mimeTypes;
 
-        public ActionDescriptor(String name, ActionType actionType) {
+        public ActionDescriptor(String name,boolean idRequired,boolean publiclyAccessible, ActionType actionType) {
             this.name = name;
             this.actionType = actionType;
-            this.publiclyAccessible = false;
+            this.idRequired = idRequired;
+            this.publiclyAccessible = publiclyAccessible;
             this.fileUploadEnabled = false;
             this.mimeTypes = Collections.emptySet();
         }
 
-        public ActionDescriptor(String name, ActionType actionType, boolean publiclyAccessible, boolean fileUploadEnabled, Set<String> mimeTypes) {
+        public ActionDescriptor(String name, boolean idRequired, ActionType actionType, boolean publiclyAccessible, boolean fileUploadEnabled, Set<String> mimeTypes) {
             this.name = name;
+            this.idRequired = idRequired;
             this.actionType = actionType;
             this.publiclyAccessible = publiclyAccessible;
             this.fileUploadEnabled = fileUploadEnabled;
@@ -145,6 +159,11 @@ public class SpringServiceDescriptor {
             return name;
         }
 
+        public boolean isIdRequired() {
+            return idRequired;
+        }
+
+        
         public ActionType getActionType() {
             return actionType;
         }

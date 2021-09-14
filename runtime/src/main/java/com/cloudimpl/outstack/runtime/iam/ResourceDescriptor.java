@@ -15,6 +15,9 @@
  */
 package com.cloudimpl.outstack.runtime.iam;
 
+import com.cloudimpl.outstack.runtime.domainspec.AuthInput;
+import java.util.Map;
+
 /**
  *
  * @author nuwan
@@ -60,25 +63,46 @@ public class ResourceDescriptor {
         this.tenantScope = builder.tenantScope;
     }
 
-    public boolean isResourceMatched(String resource)
-    {
-        switch(resourceScope)
-        {
-            case GLOBAL:
-            {
+    public boolean isResourceMatched(AuthInput input, Map<String, Object> attr) {
+        if (!validateTenantScope(attr)) {
+            return false;
+        }
+        switch (resourceScope) {
+            case GLOBAL: {
                 return true;
             }
-            case ALL:
-            {
-                return rootType.toLowerCase().equals(resource.toLowerCase());
+            case ALL: {
+                return rootType.toLowerCase().equals(input.getRootType().toLowerCase());
             }
-            default:
-            {
+            default: {
                 return false;
             }
         }
     }
-    
+
+    private boolean validateTenantScope(Map<String, Object> attr) {
+        switch (tenantScope) {
+            case ALL: {
+                String tid = (String) attr.get("tenantId");
+                if (tid == null) {
+                    return false;
+                }
+                return true;
+            }
+            case TENANT_ID: {
+                String tid = (String) attr.get("tenantId");
+                if (tid == null) {
+                    return false;
+                }
+                return tid.equals(this.tenantId);
+            }
+            case NONE: {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String getTenantId() {
         return tenantId;
     }
@@ -115,17 +139,15 @@ public class ResourceDescriptor {
         return new Builder();
     }
 
-    public boolean isTenantResource()
-    {
+    public boolean isTenantResource() {
         return tenantScope != TenantScope.NONE;
     }
-    
+
     @Override
     public String toString() {
         return "ResourceDescriptor{" + "resourceScope=" + resourceScope + ", tenantScope=" + tenantScope + ", version=" + version + ", tenantId=" + tenantId + ", rootType=" + rootType + ", rootId=" + rootId + ", childType=" + childType + ", childId=" + childId + '}';
     }
 
-    
 //    public static void main(String[] args) {
 //        String line = "_1231";
 //        //Pattern r = RESOURCE_NAME_PATTERN.compile("[a-zA-Z]+[_[a-zA-Z0-9]]+");
@@ -141,7 +163,6 @@ public class ResourceDescriptor {
 //        ret = RESOURCE_ID_PATTERN.matcher(line).matches();
 //        System.out.println("r2: " + ret);
 //    }
-
     public static final class Builder {
 
         private String version;
@@ -188,11 +209,11 @@ public class ResourceDescriptor {
             return this;
         }
 
-        public Builder withTenantScope(TenantScope scope){
+        public Builder withTenantScope(TenantScope scope) {
             this.tenantScope = scope;
             return this;
         }
-        
+
         public ResourceDescriptor build() {
             return new ResourceDescriptor(this);
         }
