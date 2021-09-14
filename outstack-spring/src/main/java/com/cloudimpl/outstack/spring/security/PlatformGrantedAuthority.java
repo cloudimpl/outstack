@@ -44,7 +44,7 @@ public class PlatformGrantedAuthority implements GrantedAuthority{
 
     public Optional<List<PolicyStatement>> getDenyStatmentByResourceName(String resourceName,String domainOwner,String domainContext)
     {     
-        return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName).stream().filter(s->validate(s, domainOwner, domainContext)).collect(Collectors.toList())));
+        return Optional.ofNullable(denyPolicyStmts.get("*")).or(()->Optional.ofNullable(denyPolicyStmts.get(resourceName))).map(l->l.stream().filter(s->validate(s, domainOwner, domainContext)).collect(Collectors.toList()));
     }
     
 

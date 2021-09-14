@@ -79,7 +79,7 @@ public class PolicyStatementValidator {
 
     public static PlatformGrantedAuthority processPolicyStatementsForQuery(AuthInput input, PlatformAuthenticationToken token) {
         PlatformGrantedAuthority grant = token.getAuthorities().stream().map(g -> PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(() -> new PlatformAuthenticationException("no grant found to authenticate", null));
-        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType());
+        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType(),input.getDomainOwner(),input.getDomainContext());
         if (denyStmts.isPresent()) {
             denyStmts.get().stream().map(denyStmt -> {
                 denyStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
