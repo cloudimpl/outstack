@@ -82,6 +82,11 @@ public class EntityHelper {
         }
     }
     
+    public static Class<? extends RootEntity> getRootType(Class<? extends ChildEntity> childType)
+    {
+        return Util.extractGenericParameter(childType, Entity.class, 0);
+    }
+    
     public static void setVersion(Event e,String version)
     {
         e.getMeta().setVersion(version);

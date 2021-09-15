@@ -12,6 +12,7 @@ import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
+import com.cloudimpl.outstack.spring.security.PolicyEvaluationException;
 import com.cloudimpl.outstack.spring.util.FileUtil;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -517,7 +518,11 @@ public abstract class AbstractController {
                     return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
                 }
             }
-        } else if (thr instanceof AuthenticationException) {
+        }else if(thr instanceof PolicyEvaluationException)
+        {
+            return new ResponseStatusException(HttpStatus.FORBIDDEN, thr.getMessage());
+        }
+        else if (thr instanceof AuthenticationException) {
             return new ResponseStatusException(HttpStatus.UNAUTHORIZED, thr.getMessage());
         }
         return new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, thr.getMessage());
