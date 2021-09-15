@@ -270,9 +270,10 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected Collection<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where rootEntityType = ?  and tenantId = ?")) {
+        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where rootEntityType = ?  and entityType = ? and tenantId = ?")) {
             stmt.setString(1, rootEntityType);
-            stmt.setString(2, tenantId);
+            stmt.setString(2, rootEntityType);
+            stmt.setString(3, tenantId);
             try ( ResultSet rs = stmt.executeQuery()) {
                 List<String> list = new LinkedList<>();
                 while (rs.next()) {

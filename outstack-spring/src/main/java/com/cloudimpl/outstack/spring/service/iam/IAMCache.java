@@ -74,7 +74,7 @@ public class IAMCache {
     @Autowired
     private Cluster cluster;
 
-    @Autowired
+    @Autowired(required = false)
     private TenantProvider tenantProvider;
 
     private StreamClient streamClient;
@@ -270,7 +270,7 @@ public class IAMCache {
 
         return cluster.requestReply(null, policy.getDomainOwner() + "/" + policy.getDomainContext() + "/v1/PolicyQueryService", QueryByIdRequest.builder().withQueryName("ListPolicyStatementRef")
                 .withRootId(policy.id()).withVersion("v1").withPagingReq(Query.PagingRequest.EMPTY).build())
-                .doOnNext(e -> log.info("sync policy statement references received for policy {} : {}", policy.id(), ResultSet.class.cast(e).getItems().size()))
+                .doOnNext(e -> log.info("sync policy statement references received for policy {} : {}", policy.id(), ResultSet.class.cast(e).getItems(PolicyStatementRef.class).size()))
                 .flatMapIterable(rs -> ((ResultSet) rs).getItems(PolicyStatementRef.class)).doOnNext(e -> putToCache((PolicyStatementRef) e))
                 .doOnError(err -> log.error("error on list PolicyStatmentRef.{}", err))
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60)))).then();
