@@ -47,14 +47,14 @@ public class PolicyStatemetParser {
         }
         validateResourceName(stmt.getSid(), "statmentID");
         Collection<ActionDescriptor> cmdActions = stmt.getCmdActions().stream().map(action -> parseAction(action)).collect(Collectors.toList());
-        if (cmdActions.isEmpty()) {
-            throw new PolicyStatementException("policy statement command actions are empty");
-        }
+//        if (cmdActions.isEmpty()) {
+//            throw new PolicyStatementException("policy statement command actions are empty");
+//        }
         
         Collection<ActionDescriptor> queryActions = stmt.getQueryActions().stream().map(action -> parseAction(action)).collect(Collectors.toList());
-        if (cmdActions.isEmpty()) {
-            throw new PolicyStatementException("policy statement command actions are empty");
-        }
+//        if (cmdActions.isEmpty()) {
+//            throw new PolicyStatementException("policy statement command actions are empty");
+//        }
         Collection<ResourceDescriptor> resources = stmt.getResources().stream().map(resource -> parse(resource)).collect(Collectors.toList());
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
