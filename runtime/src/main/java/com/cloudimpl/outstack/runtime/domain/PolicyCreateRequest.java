@@ -21,7 +21,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
  *
  * @author nuwan
  */
-public class PolicyCreateRequest extends Command {
+ public class PolicyCreateRequest extends Command {
 
     private final String domainOwner;
     private final String domainContext;

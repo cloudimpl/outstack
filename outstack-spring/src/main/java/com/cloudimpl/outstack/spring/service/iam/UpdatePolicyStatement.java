@@ -23,7 +23,7 @@ import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatementParser;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -40,13 +40,13 @@ public class UpdatePolicyStatement extends EntityCommandHandler<PolicyStatement,
     protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
         
         PolicyStatementCreated stmt = parseStatement(command);
-        PolicyStatemetParser.validate(helper,(RootEntityContext<PolicyStatement>) context, stmt);
+        PolicyStatementParser.validate(helper,(RootEntityContext<PolicyStatement>) context, stmt);
         return context.update(stmt.getSid(), stmt);
     }
     
     private  PolicyStatementCreated parseStatement(PolicyStatementRequest req)
     {
-        return PolicyStatemetParser.parseStatement(helper.getDomainOwner(),helper.getDomainContext(),req);
+        return PolicyStatementParser.parseStatement(helper.getDomainOwner(),helper.getDomainContext(),req);
     }
     
     

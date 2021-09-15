@@ -19,7 +19,6 @@ import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domainspec.AuthInput;
 import com.cloudimpl.outstack.runtime.iam.ActionDescriptor;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
-import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
@@ -39,12 +38,12 @@ public class PolicyStatementValidator {
             denyStmts.get().stream().map(denyStmt -> {
                 denyStmt.getCmdActions().stream().filter(a -> a.isActionMatched(input.getAction()))
                         .findAny().ifPresent(a -> {
-                            throw new PlatformAuthenticationException(null, "command action {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
+                            throw new PolicyEvaluationException("command action {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                         });
                 return denyStmt;
             }).forEachOrdered(denyStmt -> {
                 denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input, token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
-                    throw new PlatformAuthenticationException(null, "command resource {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
+                    throw new PolicyEvaluationException("command resource {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                 });
             });
 
@@ -70,9 +69,9 @@ public class PolicyStatementValidator {
                 return grant;
                 //.orElseThrow(() -> new PlatformAuthenticationException(null, "command resource {0} not define in the policy statement", input.getRootType()));
             }
-            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
+            throw new PolicyEvaluationException("command resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
         } else {
-            throw new PlatformAuthenticationException(null, "command resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
+            throw new PolicyEvaluationException("command resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
         }
         //  return grant;
     }
@@ -84,12 +83,12 @@ public class PolicyStatementValidator {
             denyStmts.get().stream().map(denyStmt -> {
                 denyStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
                         .findAny().ifPresent(a -> {
-                            throw new PlatformAuthenticationException(null, "query action {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
+                            throw new PolicyEvaluationException("query action {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                         });
                 return denyStmt;
             }).forEachOrdered(denyStmt -> {
                 denyStmt.getResources().stream().filter(a -> a.isResourceMatched(input, token.getJwtToken().getClaims())).findAny().ifPresent(a -> {
-                    throw new PlatformAuthenticationException(null, "query resource {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
+                    throw new PolicyEvaluationException("query resource {0} is denied from policy statement {1}", AuthInput.verbose(input), a);
                 });
             });
 
@@ -115,9 +114,9 @@ public class PolicyStatementValidator {
                 return grant;
                 //.orElseThrow(() -> new PlatformAuthenticationException(null, "query resource {0} not define in the policy statement", input.getRootType()));
             }
-            throw new PlatformAuthenticationException(null, "query resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
+            throw new PolicyEvaluationException("query resource {0} access not allowed for action {1} , {2}", input.getRootType(), input.getAction(), AuthInput.verbose(input));
         } else {
-            throw new PlatformAuthenticationException(null, "query resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
+            throw new PolicyEvaluationException("query resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
         }
     //    return grant;
     }

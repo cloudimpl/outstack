@@ -23,7 +23,7 @@ import com.cloudimpl.outstack.runtime.RootEntityContext;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRequest;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatementParser;
 import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -45,13 +45,13 @@ public class CreatePolicyStatement extends EntityCommandHandler<PolicyStatement,
     protected PolicyStatement execute(EntityContext<PolicyStatement> context, PolicyStatementRequest command) {
         
         PolicyStatementCreated stmt = parseStatement(helper,command);
-        PolicyStatemetParser.validate(helper,(RootEntityContext<PolicyStatement>) context, stmt);
+        PolicyStatementParser.validate(helper,(RootEntityContext<PolicyStatement>) context, stmt);
         return context.create(stmt.getSid(), stmt);
     }
     
     private static PolicyStatementCreated parseStatement(ResourceHelper helper,PolicyStatementRequest req)
     {
-        return PolicyStatemetParser.parseStatement(helper.getDomainOwner(),helper.getApiContext(),req);
+        return PolicyStatementParser.parseStatement(helper.getDomainOwner(),helper.getApiContext(),req);
     }
     
     private static void checkResourceConstrains(Collection<ResourceDescriptor> resources)

@@ -71,8 +71,39 @@ public class ResourceDescriptor {
             case GLOBAL: {
                 return true;
             }
-            case ALL: {
+            case ALL:
+            case ALL_ROOT_ID_ONLY: {
                 return rootType.toLowerCase().equals(input.getRootType().toLowerCase());
+            }
+            case ALL_ROOT_ID_CHILD_TYPE_ONLY: {
+                if (input.getRootId() == null || input.getChildType() == null) {
+                    return false;
+                }
+                return input.getChildType().equals(this.childType);
+            }
+            case ROOT_ID_CHILD_TYPE_ONLY: {
+                if (input.getRootId() == null || input.getChildType() == null) {
+                    return false;
+                }
+                return input.getRootId().equals(rootId) && input.getChildType().equals(this.childType);
+            }
+            case ROOT_ID_ONLY: {
+                if (input.getRootId() == null) {
+                    return false;
+                }
+                return input.getRootId().equals(this.rootId);
+            }
+            case ROOT_ID_CHILD_ID_ONLY: {
+                if (input.getRootId() == null || input.getChildType() == null || input.getId() == null) {
+                    return false;
+                }
+                return input.getRootId().equals(rootId) && input.getChildType().equals(this.childType) && input.getId().equals(this.childId);
+            }
+            case ALL_ROOT_ID_CHILD_ID_ONLY: {
+                if (input.getRootId() == null || input.getChildType() == null || input.getId() == null) {
+                    return false;
+                }
+                return input.getChildType().equals(this.childType) && input.getId().equals(this.childId);
             }
             default: {
                 return false;

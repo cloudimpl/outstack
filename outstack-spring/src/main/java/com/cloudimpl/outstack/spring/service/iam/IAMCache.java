@@ -36,7 +36,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityHelper;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.QueryByIdRequest;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import com.cloudimpl.outstack.runtime.iam.PolicyStatemetParser;
+import com.cloudimpl.outstack.runtime.iam.PolicyStatementParser;
 import com.cloudimpl.outstack.runtime.repo.RepoStreamingReq;
 import com.cloudimpl.outstack.runtime.repo.StreamEvent;
 import com.cloudimpl.outstack.spring.component.Cluster;
@@ -108,7 +108,6 @@ public class IAMCache {
 
         this.streamClient = new StreamClient(cluster);
         this.entityCache = new FluxMap<>(Schedulers.newSingle("iamCache"));
-        createSuperIam();
         subscribeToPolicyRef();
         subscribeToPolicyStatementRef();
         syncRole();
@@ -116,29 +115,7 @@ public class IAMCache {
 
     }
 
-    private void createSuperIam() {
-        superStatement = RootEntity.create(PolicyStatement.class, "superPolicyStatement", null, "id-statement-1");
-        PolicyStatementCreated policyStmtCreated = PolicyStatemetParser.parseStatement("*", "*", PolicyStatementRequest.builder().withSid("superPolicyStatement")
-                .withCmdAction("*").withDomainContext("*").withDomainOwner("*").withEffect(PolicyStatement.EffectType.ALLOW).withQueryAction("*").withResource("*").build());
-        EntityHelper.applyEvent(superStatement, policyStmtCreated);
-
-        superPolicy = RootEntity.create(Policy.class, "superPolicy", null, "id-policy-1");
-        PolicyCreated policyCreated = new PolicyCreated("superPolicy", null, "*", "*", "*");
-        EntityHelper.applyEvent(superPolicy, policyCreated);
-
-        PolicyStatementRef stmtRef = superPolicy.createChildEntity(PolicyStatementRef.class, EntityIdHelper.idToRefId(superStatement.id()), "id-statementref-1");
-        superRole = RootEntity.create(Role.class, "superAdmin", null, "id-role-1");
-        EntityHelper.applyEvent(superRole, new RoleCreated("superAdmin", null));
-
-        PolicyRef policyRef = superRole.createChildEntity(PolicyRef.class, EntityIdHelper.idToRefId(superPolicy.id()), "id-policyref-1");
-        EntityHelper.applyEvent(policyRef, new PolicyRefCreated("*", "*", "v1", "superAdmin", EntityIdHelper.idToRefId(superPolicy.id())));
-
-        putToCache(superStatement);
-        putToCache(superPolicy);
-        putToCache(stmtRef);
-        putToCache(policyRef);
-        putToCache(superRole);
-    }
+    
 
     private void syncAllMicroServices() {
 
@@ -243,7 +220,7 @@ public class IAMCache {
                 .collect(Collectors.toList());
     }
 
-    private void putToCache(Entity entity) {
+    public void putToCache(Entity entity) {
         Entity old = entityCache.get(entity.id());
         log.info("synced {} : {}", entity, old);
         if (old == null) {

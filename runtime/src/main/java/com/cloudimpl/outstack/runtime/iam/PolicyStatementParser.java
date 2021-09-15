@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  *
  * @author nuwan
  */
-public class PolicyStatemetParser {
+public class PolicyStatementParser {
 
     public static Pattern RESOURCE_NAME_PATTERN = Pattern.compile("[a-zA-Z_$][a-zA-Z\\d_$]*"); //("[a-zA-Z]+[_[a-zA-Z0-9]]+");
     public static Pattern RESOURCE_ID_PATTERN = Pattern.compile("[a-zA-Z0-9_$][a-zA-Z0-9_-]*|\\{[a-zA-Z0-9_$][a-zA-Z0-9._-]*\\}");
@@ -340,40 +340,40 @@ public class PolicyStatemetParser {
     }
 
     public static void main(String[] args) {
-        ResourceDescriptor desc = PolicyStatemetParser.parse("tenant/id-1234/v_1/Organization/id_2142423");
+        ResourceDescriptor desc = PolicyStatementParser.parse("tenant/id-1234/v_1/Organization/id_2142423");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("tenant/id_1234/v_1/Organization/*");
+        desc = PolicyStatementParser.parse("tenant/id_1234/v_1/Organization/*");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("tenant/id_1234/v_1/Organization/**");
+        desc = PolicyStatementParser.parse("tenant/id_1234/v_1/Organization/**");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("tenant/id_1234/v_1/Organization/*/Tenant/*");
+        desc = PolicyStatementParser.parse("tenant/id_1234/v_1/Organization/*/Tenant/*");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("tenant/id-1234/v_1/Organization/*/Tenant/id_3522");
+        desc = PolicyStatementParser.parse("tenant/id-1234/v_1/Organization/*/Tenant/id_3522");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("tenant/id_1234/v_1/Organization/id_6764374/Tenant/id_3522");
-        System.out.println(desc);
-
-        desc = PolicyStatemetParser.parse("tenant/{token.id}/v_1/Organization/id_6764374/Tenant/id_3522");
+        desc = PolicyStatementParser.parse("tenant/id_1234/v_1/Organization/id_6764374/Tenant/id_3522");
         System.out.println(desc);
 
-        desc = PolicyStatemetParser.parse("tenant/{token.id}/**");
+        desc = PolicyStatementParser.parse("tenant/{token.id}/v_1/Organization/id_6764374/Tenant/id_3522");
         System.out.println(desc);
 
-        desc = PolicyStatemetParser.parse("tenant/{token.id}/v1/**");
+        desc = PolicyStatementParser.parse("tenant/{token.id}/**");
+        System.out.println(desc);
+
+        desc = PolicyStatementParser.parse("tenant/{token.id}/v1/**");
         System.out.println(desc);
         System.out.println("------------------------------------");
 
-        desc = PolicyStatemetParser.parse("v_1/Organization/id_2142423");
+        desc = PolicyStatementParser.parse("v_1/Organization/id_2142423");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("v_1/Organization/*");
+        desc = PolicyStatementParser.parse("v_1/Organization/*");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("v_1/Organization/**");
+        desc = PolicyStatementParser.parse("v_1/Organization/**");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("v_1/Organization/*/Tenant/*");
+        desc = PolicyStatementParser.parse("v_1/Organization/*/Tenant/*");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("v_1/Organization/*/Tenant/id_3522");
+        desc = PolicyStatementParser.parse("v_1/Organization/*/Tenant/id_3522");
         System.out.println(desc);
-        desc = PolicyStatemetParser.parse("v_1/Organization/id_6764374/Tenant/id_3522");
+        desc = PolicyStatementParser.parse("v_1/Organization/id_6764374/Tenant/id_3522");
         System.out.println(desc);
     }
 }

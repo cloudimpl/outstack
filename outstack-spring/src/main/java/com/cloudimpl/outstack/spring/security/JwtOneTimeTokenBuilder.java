@@ -16,6 +16,7 @@
 package com.cloudimpl.outstack.spring.security;
 
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
@@ -26,39 +27,43 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
  */
 public class JwtOneTimeTokenBuilder extends JwtTokenBuilder {
 
-    public JwtOneTimeTokenBuilder withAction(String actionName) {
-        this.withClaim("@action", actionName);
-        return this;
-    }
+//    public JwtOneTimeTokenBuilder withAction(String actionName) {
+//        this.withClaim("@action", actionName);
+//        return this;
+//    }
+//
+//    public JwtOneTimeTokenBuilder withRootId(String rootId) {
+//        this.withClaim("@rootId", rootId);
+//        return this;
+//    }
+//
+//    public JwtOneTimeTokenBuilder withChildId(String childId) {
+//        this.withClaim("@childId", childId);
+//        return this;
+//    }
+//
+//    public JwtOneTimeTokenBuilder withActionInput(Object req) {
+//        this.withClaim("@input", GsonCodec.encode(req));
+//        return this;
+//    }
 
-    public JwtOneTimeTokenBuilder withRootId(String rootId) {
-        this.withClaim("@rootId", rootId);
-        return this;
-    }
+//    public JwtOneTimeTokenBuilder withVersion(String version) {
+//        this.withClaim("@version", version);
+//        return this;
+//    }
 
-    public JwtOneTimeTokenBuilder withChildId(String childId) {
-        this.withClaim("@childId", childId);
+    public JwtOneTimeTokenBuilder withStmt(PolicyStatement stmt){
+        this.withClaim("@policyStmt", GsonCodec.encode(stmt));
         return this;
     }
-
-    public JwtOneTimeTokenBuilder withActionInput(Object req) {
-        this.withClaim("@input", GsonCodec.encode(req));
-        return this;
-    }
-
-    public JwtOneTimeTokenBuilder withVersion(String version) {
-        this.withClaim("@version", version);
-        return this;
-    }
-
-    
-    public JwtOneTimeTokenBuilder withRootEntityType(Class<? extends RootEntity> rootType) {
-        this.withClaim("@rootType", rootType.getSimpleName());
-        return this;
-    }
-    
-     public JwtOneTimeTokenBuilder withChildEntityType(Class<? extends ChildEntity> childType) {
-        this.withClaim("@childType", childType.getSimpleName());
-        return this;
-    }
+//    
+//    public JwtOneTimeTokenBuilder withRootEntityType(Class<? extends RootEntity> rootType) {
+//        this.withClaim("@rootType", rootType.getSimpleName());
+//        return this;
+//    }
+//    
+//     public JwtOneTimeTokenBuilder withChildEntityType(Class<? extends ChildEntity> childType) {
+//        this.withClaim("@childType", childType.getSimpleName());
+//        return this;
+//    }
 }
