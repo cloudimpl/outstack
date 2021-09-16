@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -92,10 +93,8 @@ public class IAMCache {
 
     @Value("${outstack.apiGateway.roleDomainContext:#{null}}")
     private String roleDomainContext;
-
-    private PolicyStatement superStatement;
-    private Policy superPolicy;
-    private Role superRole;
+    
+    private Set<Object> inMemoryEntities = new ConcurrentSkipListSet<>();
 
     @PostConstruct
     private void init() {
@@ -114,8 +113,6 @@ public class IAMCache {
         syncAllMicroServices();
 
     }
-
-    
 
     private void syncAllMicroServices() {
 
@@ -220,7 +217,12 @@ public class IAMCache {
                 .collect(Collectors.toList());
     }
 
-    public void putToCache(Entity entity) {
+    public void putToInMemoryCache(Entity entity) {
+        inMemoryEntities.add(entity);
+        putToCache(entity);
+    }
+
+    private void putToCache(Entity entity) {
         Entity old = entityCache.get(entity.id());
         log.info("synced {} : {}", entity, old);
         if (old == null) {
@@ -257,9 +259,9 @@ public class IAMCache {
 
     private void subscribeToPolicyRef() {
         entityCache.flux().filter(e -> Role.class.isInstance(e.getValue()))
-                .filter(r->r.getValue() != superRole)
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
+                .filter(e -> !inMemoryEntities.contains(e))
                 .doOnNext(e -> log.info("starting to sync policy references for role {}:{}", e.entityId(), e.id()))
                 .flatMap(r -> syncPolicyReference((Role) r))
                 .doOnError(err -> log.error("error on sync  policyRef stream.{}", err))
@@ -279,9 +281,9 @@ public class IAMCache {
     private void subscribeToPolicyStatementRef() {
         entityCache.flux()
                 .filter(e -> Policy.class.isInstance(e.getValue()))
-                .filter(e->e.getValue() != superPolicy)
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
+                .filter(e -> !inMemoryEntities.contains(e))
                 .doOnNext(e -> log.info("starting to sync policy statement references for policy {}:{}", e.entityId(), e.id()))
                 .flatMap(r -> syncPolicyStatementReference((Policy) r))
                 .doOnError(err -> log.error("error on sync  PolicyStatmentRef stream.{}", err))
