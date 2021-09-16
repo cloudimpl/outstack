@@ -64,6 +64,9 @@ public class Cluster {
     @Autowired
     private AutowireCapableBeanFactory beanFactory;
 
+    @Autowired
+    private PolicyStatementValidator policyValidator;
+    
     private ResourceHelper resourceHelper;
 
     public Cluster() {
@@ -155,7 +158,7 @@ public class Cluster {
                     .cast(PlatformAuthenticationToken.class)
                     .doOnNext(c -> validateTenantId(c, httpRequest))
                     .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
-                    .map(t -> PolicyStatementValidator.processPolicyStatementsForCommand(wrapper, t))
+                    .map(t -> policyValidator.processPolicyStatementsForCommand(wrapper, t))
                     .doOnNext(g -> wrapper.setGrant(g))
                     .flatMap(g -> this.node.requestReply(serviceName, msg))
                     .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
@@ -167,7 +170,7 @@ public class Cluster {
                     .cast(PlatformAuthenticationToken.class)
                     .doOnNext(c -> validateTenantId(c, httpRequest))
                     .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
-                    .map(t -> PolicyStatementValidator.processPolicyStatementsForQuery(wrapper, t))
+                    .map(t -> policyValidator.processPolicyStatementsForQuery(wrapper, t))
                     .doOnNext(g -> wrapper.setGrant(g))
                     .flatMap(g -> this.node.requestReply(serviceName, msg))
                     .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
