@@ -142,6 +142,7 @@ public abstract class AbstractController {
                 .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withVersion(version)
                 .withPayload(body)
                 .withRootId(rootId)
@@ -168,6 +169,7 @@ public abstract class AbstractController {
                 .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withVersion(version)
                 .withPayload(body)
                 .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
@@ -207,6 +209,7 @@ public abstract class AbstractController {
                 .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withVersion(version)
                 .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(childId)
@@ -293,6 +296,7 @@ public abstract class AbstractController {
                 .withDomainContext(serviceDesc.getDomainContext())
                 .withQuery(action.getName())
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withVersion(version)
                 .withPageRequest(pagingReq)
                 .withRootId(rootId)
@@ -325,6 +329,7 @@ public abstract class AbstractController {
                 .withQuery(action.getName())
                 .withVersion(version)
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withRootId(rootId)
                 .withId(childId)
                 .withTenantId(tenantId)
@@ -355,6 +360,7 @@ public abstract class AbstractController {
                 .withDomainContext(serviceDesc.getDomainContext())
                 .withQuery(action.getName())
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withVersion(version)
                 .withRootId(rootId)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
@@ -403,6 +409,7 @@ public abstract class AbstractController {
                 .withDomainContext(serviceDesc.getDomainContext())
                 .withCommand(action.getName())
                 .withRootType(serviceDesc.getRootType())
+                .withChildType(child.getName())
                 .withVersion(version)
                 .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
