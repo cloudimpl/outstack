@@ -316,9 +316,9 @@ public class PolicyStatementParser {
 
     private static void validateResourceId(String resource, String section) {
         Objects.requireNonNull(resource);
-        if (!RESOURCE_ID_PATTERN.matcher(resource).matches()) {
-            throw new PolicyStatementException("invalid characters in the {0} : {1}", section, resource);
-        }
+//        if (!RESOURCE_ID_PATTERN.matcher(resource).matches()) {
+//            throw new PolicyStatementException("invalid characters in the {0} : {1}", section, resource);
+//        }
     }
 
     private static void checkMinCount(int count, int given, String format, Object... args) {
