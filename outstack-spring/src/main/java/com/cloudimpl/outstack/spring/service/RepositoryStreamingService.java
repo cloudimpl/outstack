@@ -53,7 +53,7 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
 
         StreamProcessor<StreamEvent> eventStream = EventRepositoryFactory.<StreamEvent>getEventStream();
         Flux<StreamEvent> eventsFlux = eventStream.flux().filter(e -> {
-            log.info("repo stream event {}", e.getEvent());
+       //     log.info("repo stream event {}", e.getEvent());
             Entity entity = (Entity) e.getEvent();
             Optional<List<RepoStreamingReq.ResourceInfo>> listOptional = req.getResources(e.getEvent().getClass().getName());
             if (listOptional.isPresent()) {

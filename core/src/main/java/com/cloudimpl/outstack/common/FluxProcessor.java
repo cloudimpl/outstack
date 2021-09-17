@@ -52,7 +52,7 @@ public class FluxProcessor<T> {
         list.forEach(sink -> {
             try {
                 sink.next(t);
-            } catch (Exception ex) {
+            } catch (Throwable ex) {
                 System.out.println("xxxxxxxx: " + ex.getMessage());
             }
 
@@ -87,7 +87,7 @@ public class FluxProcessor<T> {
         }
 
         public XFluxSink<T> next(T msg) {
-            System.out.println("send to: " + name + ":" + msg);
+          //  System.out.println("send to: " + name + ":" + msg);
             this.sink.next(msg);
             return this;
         }
