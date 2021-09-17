@@ -26,8 +26,8 @@ import reactor.core.publisher.Flux;
  * @author nuwan
  */
 public interface ServiceRegistryReadOnly {
-    Flux<FluxMap.Event<String, CloudService>> flux();
-    Flux<FluxMap.Event<String, LocalCloudService>> localFlux();
+    Flux<FluxMap.Event<String, CloudService>> flux(String subscriberName);
+    Flux<FluxMap.Event<String, LocalCloudService>> localFlux(String subscriberName);
     Stream<CloudService> services();
     Optional<CloudService>findLocalByName(String name);
     CloudService findLocal(String id);

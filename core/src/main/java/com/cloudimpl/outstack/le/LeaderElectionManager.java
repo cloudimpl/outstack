@@ -21,7 +21,7 @@ import reactor.core.publisher.Flux;
 public class LeaderElectionManager {
 
     private final Map<String, LeaderElection> leaders = new ConcurrentHashMap<>();
-    private final FluxMap<String, LeaderElection.LeaderInfo> leaderMap = new FluxMap<>();
+    private final FluxMap<String, LeaderElection.LeaderInfo> leaderMap = new FluxMap<>("LeaderElectionManager");
 
     private final CollectionProvider collectionProvider;
     @Inject
@@ -37,7 +37,7 @@ public class LeaderElectionManager {
                         logger));
     }
 
-    public Flux<FluxMap.Event<String, LeaderElection.LeaderInfo>> flux() {
-        return leaderMap.flux();
+    public Flux<FluxMap.Event<String, LeaderElection.LeaderInfo>> flux(String subscriber) {
+        return leaderMap.flux(subscriber);
     }
 }

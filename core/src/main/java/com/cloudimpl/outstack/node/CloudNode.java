@@ -177,7 +177,7 @@ public class CloudNode implements MetadataCodec {
     private void publishServices() {
 
         // listen to service addition and updates
-        engine.getServiceRegistry().localFlux()
+        engine.getServiceRegistry().localFlux("localserviceListener-1")
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue().getDescriptor())
                 .doOnNext(desc -> logger.info("local service update : {0}", desc))
@@ -191,7 +191,7 @@ public class CloudNode implements MetadataCodec {
                 .doOnError(err -> logger.exception(err, "error updating membership service"))
                 .subscribe();
         // listen to service removal
-        engine.getServiceRegistry().localFlux()
+        engine.getServiceRegistry().localFlux("localserviceListener-1")
                 .filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
                 .doOnNext(e -> serviceCache.remove("srv_" + e.getValue().id()))
                 .doOnNext(e -> logger.info("local service removed : {0}", e.getValue().getDescriptor()))

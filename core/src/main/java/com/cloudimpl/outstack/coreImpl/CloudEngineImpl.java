@@ -47,14 +47,14 @@ public class CloudEngineImpl implements CloudEngine {
         this.elMan = injector.inject(LeaderElectionManager.class);
         this.serviceRegistry = new CloudServiceRegistry(rootLogger);
         injector.bind(ServiceRegistryReadOnly.class).to(serviceRegistry);
-        injector.nameBind("@serviceFlux",this.serviceRegistry.flux());
+        injector.nameBind("@serviceFlux",this.serviceRegistry.flux("serviceFlux"));
         injector.bind(Logger.class).to(rootLogger);
         injector.bind(ILogger.class).to(rootLogger);
         injector.bind(Injector.class).to(injector);
         injector.bind(CloudEngine.class).to(this);
         injector.bind(LeaderElectionManager.class).to(this.elMan);
         this.routerRepository = injector.inject(CloudRouterRepository.class);
-        this.routerRepository.subscribe(serviceRegistry.flux());
+        this.routerRepository.subscribe(serviceRegistry.flux("routerRepository"));
 //        try {
 //            HTTPServer server = new HTTPServer(1234);
 //        } catch (IOException ex) {

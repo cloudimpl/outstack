@@ -41,7 +41,7 @@ public class StreamClient {
     }
 
     public Flux<StreamEvent> subscribeToMicroService(String name,String domainOwner,String domainContext, RepoStreamingReq req) {
-        return this.cluster.getServiceRegistry().flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD)
+        return this.cluster.getServiceRegistry().flux("StreamClient:"+name).filter(e -> e.getType() == FluxMap.Event.Type.ADD)
                 .filter(e -> e.getValue().name().equals(domainOwner+"/"+domainContext+"/v1/PolicyService"))
                 .map(e -> e.getValue())
                 .flatMap(service -> {
@@ -53,6 +53,7 @@ public class StreamClient {
                             .retryWhen(RetryUtil.wrap(Retry.onlyIf(ctx -> this.cluster.getServiceRegistry().findService(srv.id()) != null)
                                     .exponentialBackoffWithJitter(Duration.ofSeconds(1), Duration.ofSeconds(60))))
                             .doOnError(thr->log.error("service {}:{} not found .terminating the stream",srv.name(),srv.id()))
+                            .doOnTerminate(()->log.error("service {}:{} not found .closing the stream",srv.name(),srv.id()))      
                             .onErrorResume(thr -> Flux.empty())).publishOn(Schedulers.parallel());
                 }).cast(StreamEvent.class);
     }

@@ -28,8 +28,8 @@ public class CloudServiceRegistry implements ServiceRegistryReadOnly{
 
     public CloudServiceRegistry(ILogger logger) {
         this.schedular = Schedulers.newSingle("serviceRegistry");
-        this.services = new FluxMap<>(this.schedular);
-        this.localServices = new FluxMap<>(this.schedular);
+        this.services = new FluxMap<>("CloudServiceRegistry",this.schedular);
+        this.localServices = new FluxMap<>("CloudServiceRegistryLocal",this.schedular);
         this.logger = logger.createSubLogger(CloudServiceRegistry.class);
     }
 
@@ -68,13 +68,13 @@ public class CloudServiceRegistry implements ServiceRegistryReadOnly{
     }
 
     @Override
-    public Flux<FluxMap.Event<String, CloudService>> flux() {
-        return services.flux();
+    public Flux<FluxMap.Event<String, CloudService>> flux(String subscriberName) {
+        return services.flux(subscriberName);
     }
 
     @Override
-    public Flux<FluxMap.Event<String, LocalCloudService>> localFlux() {
-        return localServices.flux();
+    public Flux<FluxMap.Event<String, LocalCloudService>> localFlux(String subscriberName) {
+        return localServices.flux(subscriberName);
     }
 
     @Override

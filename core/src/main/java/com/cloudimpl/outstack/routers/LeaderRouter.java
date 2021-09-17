@@ -57,10 +57,10 @@ public class LeaderRouter implements CloudRouter {
             ServiceRegistryReadOnly serviceRegistry, LeaderElectionManager leaderManager) {
         this.registry = serviceRegistry;
         this.logger = logger.createSubLogger("LeaderRouter",topic);
-        serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD).map(e -> e.getValue())
+        serviceRegistry.flux("LeaderRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD).map(e -> e.getValue())
                 .filter(c -> c.name().equals(topic))
                 .doOnNext(cs -> update(cs.nodeId(), false)).subscribe();
-        serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.REMOVE).map(e -> e.getValue())
+        serviceRegistry.flux("LeaderRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE).map(e -> e.getValue())
                 .filter(c -> c.name().equals(topic))
                 .doOnNext(cs -> update(cs.nodeId(), true)).subscribe();
         Mono.fromSupplier(() -> getNodeId()).flatMapMany(nodeId -> rsHnd.apply("LeaderInfoService",

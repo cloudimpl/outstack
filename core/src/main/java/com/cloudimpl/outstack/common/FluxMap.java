@@ -29,22 +29,22 @@ public class FluxMap<K, V> {
     private final FluxProcessor<Event<K, V>> publisher;
     public static final Scheduler defaultSched = Schedulers.newSingle("fluxmap",true);
     public final Scheduler sched;
-    public FluxMap(){
-        this(defaultSched);
+    public FluxMap(String name){
+        this(name,defaultSched);
     }
     
-    public FluxMap(Scheduler scheduler) {
+    public FluxMap(String name,Scheduler scheduler) {
         this.sched = scheduler;
         map = new ConcurrentHashMap<>();
         itemProcessor = new SingleFluxProcessor<>(this::onEmitter);
         itemProcessor.flux().subscribeOn(scheduler).doOnNext(this::onItem).subscribe();
-        publisher = new FluxProcessor<>(sink->map.entrySet().forEach(e->{
+        publisher = new FluxProcessor<>(name,sink->map.entrySet().forEach(e->{
             sink.next(new Event<>(Event.Type.ADD, e.getKey(), e.getValue()));} ));
        // flux = Flux.fromIterable(map.entrySet()).subscribeOn(scheduler).map(e -> new Event<>(Event.Type.ADD, e.getKey(), e.getValue())).concatWith(publisher.flux().publishOn(Schedulers.parallel()));
     }
 
-    public Flux<Event<K, V>> flux() {
-        return publisher.flux().subscribeOn(sched);
+    public Flux<Event<K, V>> flux(String subscriber) {
+        return publisher.flux(subscriber).subscribeOn(sched);
     }
 
     public Collection<V> values() {
@@ -114,18 +114,23 @@ public class FluxMap<K, V> {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        FluxMap<String, String> map = new FluxMap<>(Schedulers.newSingle("xxxx"));
+        FluxMap<String, String> map = new FluxMap<>("fluxmap",Schedulers.newSingle("xxxx"));
         map.put("key1", "value1");
-        map.put("key2", "value1");
-        map.put("key3", "value1");
-        Disposable hnd1 = map.flux().doOnNext(e -> System.out.println(Thread.currentThread().getName() + ":" + e)).subscribe();
-        Disposable hnd2 = map.flux().doOnNext(e -> System.out.println(Thread.currentThread().getName() + "->" + e)).subscribe();
-        Disposable hnd3 = Flux.interval(Duration.ofSeconds(1)).flatMap(i->map.put("bar"+i, "i"+i).switchIfEmpty(Mono.just("emptydddd").doOnNext(e->System.out.println(e)))).subscribe();
+        map.put("key2", "value2");
+//        map.put("key3", "value1");
+        Disposable hnd1 = map.flux("test1").doOnNext(e -> {
+            System.out.println(Thread.currentThread().getName() + ":" + e);
+            throw new RuntimeException("xxx");
+        }).subscribe();
+        Disposable hnd2 = map.flux("test2").doOnNext(e -> System.out.println(Thread.currentThread().getName() + "->" + e)).subscribe();
+        Thread.sleep(3000);
+        map.put("key3", "value3");
+        //Disposable hnd3 = Flux.interval(Duration.ofSeconds(1)).flatMap(i->map.put("bar"+i, "i"+i).switchIfEmpty(Mono.just("emptydddd").doOnNext(e->System.out.println(e)))).subscribe();
         Thread.sleep(10000);
         map.remove("key1");
         hnd1.dispose();
         hnd2.dispose();
-        hnd3.dispose();
+    //    hnd3.dispose();
         Thread.sleep(10000);
     }
 

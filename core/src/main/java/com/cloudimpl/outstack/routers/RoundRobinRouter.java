@@ -32,12 +32,12 @@ public class RoundRobinRouter implements CloudRouter {
   public RoundRobinRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
     this.topic = topic;
     serviceRegistry.services().filter(s->s.name().equals(topic)).forEach(s->services.add(s));
-    serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD)
+    serviceRegistry.flux("RoundRobinRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD)
         .map(e -> e.getValue())
         .filter(srv -> srv.name().equals(topic))
         .doOnNext(srv -> services.add(srv))
         .subscribe();
-    serviceRegistry.flux().filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
+    serviceRegistry.flux("RoundRobinRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
         .map(e -> e.getValue())
         .filter(srv -> srv.name().equals(topic))
         .doOnNext(srv -> services.remove(srv))
