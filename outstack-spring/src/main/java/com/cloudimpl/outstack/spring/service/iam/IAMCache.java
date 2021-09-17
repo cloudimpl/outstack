@@ -106,7 +106,7 @@ public class IAMCache {
         }
 
         this.streamClient = new StreamClient(cluster);
-        this.entityCache = new FluxMap<>(Schedulers.newSingle("iamCache"));
+        this.entityCache = new FluxMap<>("entityCache",Schedulers.newSingle("iamCache"));
         subscribeToPolicyRef();
         subscribeToPolicyStatementRef();
         syncRole();
@@ -116,7 +116,7 @@ public class IAMCache {
 
     private void syncAllMicroServices() {
 
-        RestControllerService.domainContextsFlux.flux()
+        RestControllerService.domainContextsFlux.flux("IAMCache:domainContext")
                 .doOnNext(d -> log.info("subscribe to microservice {}/{}", d.getValue().getDomainOwner(), d.getValue().getDomainContext()))
                 .doOnNext(d -> subscribeToMicroService(d.getValue().getDomainOwner(), d.getValue().getDomainContext()))
                 .doOnError(err -> log.error("error subscribing to domain context", err))
@@ -134,7 +134,7 @@ public class IAMCache {
                     .doOnError(err -> log.error("error syncing roles ", err))
                     .subscribe();
 
-            tenantProvider.subscribeToTenants().flatMap(tid -> streamClient.subscribeToMicroService("tenant " + tid + " role sync", roleDomainOwner, roleDomainContext,
+            tenantProvider.subscribeToTenants("IAMCache").flatMap(tid -> streamClient.subscribeToMicroService("tenant " + tid + " role sync", roleDomainOwner, roleDomainContext,
                     new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", tid)), Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", tid)))))
                     .doOnNext(e -> updateCache(e))
                     .doOnError(err -> log.error("error syncing roles ", err))
@@ -260,7 +260,7 @@ public class IAMCache {
     }
 
     private void subscribeToPolicyRef() {
-        entityCache.flux().filter(e -> Role.class.isInstance(e.getValue()))
+        entityCache.flux("IAMCache:PolicyRef").filter(e -> Role.class.isInstance(e.getValue()))
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
                 .filter(e -> !inMemoryEntities.contains(e))
@@ -281,7 +281,7 @@ public class IAMCache {
     }
 
     private void subscribeToPolicyStatementRef() {
-        entityCache.flux()
+        entityCache.flux("IAMCache:PolicyStatementRef")
                 .filter(e -> Policy.class.isInstance(e.getValue()))
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())

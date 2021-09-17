@@ -27,37 +27,71 @@ import reactor.core.publisher.FluxSink;
  * @param <T>
  */
 public class FluxProcessor<T> {
-    private final List<FluxSink<T>> list;
+
+    private final List<XFluxSink<T>> list;
     private final Flux<T> flux;
-    public FluxProcessor() {
-       this(t->{});
-    }
-    
-    public FluxProcessor(Consumer<FluxSink<T>> consumer) {
-        list = new CopyOnWriteArrayList<>();
-        flux = Flux.<T>create(emitter->{
-            System.out.println("subscription added:"+Thread.currentThread().getName());
-            consumer.accept(emitter);
-            list.add(emitter);
-            emitter.onCancel(()->this.remove(emitter));
-            emitter.onDispose(()->this.remove(emitter));
+
+    public FluxProcessor(String name) {
+        this(name, t -> {
         });
     }
-    
-    public void add(T t)
-    {
-        list.forEach(sink->sink.next(t));
+
+    public FluxProcessor(String name, Consumer<FluxSink<T>> consumer) {
+        list = new CopyOnWriteArrayList<>();
+        flux = Flux.<T>create(emitter -> {
+            System.out.println("subscription added:" + Thread.currentThread().getName() + "subscriber : " + name + ":" + emitter.currentContext().get("subscriber"));
+            consumer.accept(emitter);
+            XFluxSink s = new XFluxSink<>(emitter.currentContext().get("subscriber"), emitter);
+            list.add(s);
+            emitter.onCancel(() -> this.remove(s));
+            emitter.onDispose(() -> this.remove(s));
+        });
     }
-    
-    public Flux<T> flux()
-    {
-        return flux;
+
+    public void add(T t) {
+        list.forEach(sink -> {
+            try {
+                sink.next(t);
+            } catch (Throwable ex) {
+                System.out.println("xxxxxxxx: " + ex.getMessage());
+            }
+
+        });
     }
-    
-    
-    private void remove(FluxSink sink)
-    {
-        System.out.println("remove from :"+Thread.currentThread().getName());
+
+    public Flux<T> flux(String subscriber) {
+        return flux.contextWrite(ctx -> ctx.put("subscriber", subscriber));
+    }
+
+    private void remove(XFluxSink sink) {
+        System.out.println("remove from :" + Thread.currentThread().getName());
         list.remove(sink);
     }
+
+    public static final class XFluxSink<T> {
+
+        private String name;
+        private FluxSink<T> sink;
+
+        public XFluxSink(String name, FluxSink<T> sink) {
+            this.name = name;
+            this.sink = sink;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public FluxSink<T> getSink() {
+            return sink;
+        }
+
+        public XFluxSink<T> next(T msg) {
+          //  System.out.println("send to: " + name + ":" + msg);
+            this.sink.next(msg);
+            return this;
+        }
+
+    }
+
 }

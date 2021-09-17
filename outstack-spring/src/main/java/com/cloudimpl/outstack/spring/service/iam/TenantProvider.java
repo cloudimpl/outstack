@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.spring.service.iam;
 
+import java.util.Collection;
 import reactor.core.publisher.Flux;
 
 /**
@@ -23,6 +24,7 @@ import reactor.core.publisher.Flux;
  */
 public interface TenantProvider {
 
-    Flux<String> subscribeToTenants();
+    Flux<String> subscribeToTenants(String subscriber);
 
+    Collection<String> isResourceSubscribed(String domainOwner,String domainContext,String tenantId);
 }

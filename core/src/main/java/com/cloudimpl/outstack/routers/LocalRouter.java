@@ -37,9 +37,9 @@ public class LocalRouter implements CloudRouter {
     @Inject
     public LocalRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
         this.topic = topic;
-        serviceRegistry.localFlux().filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
+        serviceRegistry.localFlux("LocalRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic)).doOnNext(this::setService).subscribe();
-        serviceRegistry.localFlux().filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
+        serviceRegistry.localFlux("LocalRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic)).doOnNext(e->setService(null)).subscribe();
     }
 

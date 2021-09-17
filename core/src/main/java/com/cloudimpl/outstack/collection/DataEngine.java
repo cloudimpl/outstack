@@ -28,7 +28,7 @@ public class DataEngine {
     this.serviceRegistry = serviceRegistry;
     this.leaderManager = leaderManager;
     this.logger = logger;
-    this.serviceRegistry.localFlux().filter(p -> p.getValue().name().equals(MapService.class.getName()))
+    this.serviceRegistry.localFlux("DataEngine").filter(p -> p.getValue().name().equals(MapService.class.getName()))
         .subscribe(s -> serviceRef.set(s.getValue().id()));
   }
 

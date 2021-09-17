@@ -54,7 +54,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private ILogger logger;
     private EventRepositoryFactory eventRepoFactory;
     private Map<String,DomainContext> domainContexts = new ConcurrentHashMap<>();
-    public static FluxMap<String,DomainContext> domainContextsFlux = new FluxMap<>();
+    public static FluxMap<String,DomainContext> domainContextsFlux = new FluxMap<>("DomainContext");
     
     @Inject
     public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,

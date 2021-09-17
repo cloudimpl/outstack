@@ -72,16 +72,16 @@ public class LeaderLocalCloudService extends LocalCloudService {
     }
 
     private void watchOthers() {
-        reg.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD | e.getType() == FluxMap.Event.Type.UPDATE)
+        reg.flux("LeaderLocalCloudService:"+this.name+":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD | e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue())
                 .filter(s -> s.name().equals(this.name))
                 .filter(s -> s != this).doOnNext(s -> this.el.addMember(s.id())).subscribe();
-        reg.flux().filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
+        reg.flux("LeaderLocalCloudService:"+this.name+":2").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
                 .map(e -> e.getValue())
                 .filter(s -> s.name().equals(this.name))
                 .filter(s -> s != this).doOnNext(s -> this.el.removeMember(s.id())).subscribe();
 
-        reg.flux().filter(e -> e.getType() == FluxMap.Event.Type.ADD)
+        reg.flux("LeaderLocalCloudService:"+this.name+":3").filter(e -> e.getType() == FluxMap.Event.Type.ADD)
                 .map(e -> e.getValue())
                 .filter(s -> s.name().equals(this.name))
                 .filter(s -> s != this).flatMap(s -> connectToInfoEndpoint(s))
