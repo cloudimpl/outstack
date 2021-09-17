@@ -22,6 +22,7 @@ import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 import java.util.List;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
@@ -32,9 +33,17 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class PolicyStatementValidator {
 
-    public  PlatformGrantedAuthority processPolicyStatementsForCommand(AuthInput input, PlatformAuthenticationToken token) {
+    @Value("${outstack.apiGateway.validatePolicy:true}")
+    private boolean validatePolicy;
+
+    public PlatformGrantedAuthority processPolicyStatementsForCommand(AuthInput input, PlatformAuthenticationToken token) {
+
         PlatformGrantedAuthority grant = token.getAuthorities().stream().map(g -> PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(() -> new PlatformAuthenticationException("no grant found to authenticate", null));
-        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType(),input.getDomainOwner(),input.getDomainContext());
+        if (!validatePolicy) {
+            log.warn("policy validation has turned off, skipping");
+            return grant;
+        }
+        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType(), input.getDomainOwner(), input.getDomainContext());
 
         if (denyStmts.isPresent()) {
             denyStmts.get().stream().map(denyStmt -> {
@@ -78,9 +87,13 @@ public class PolicyStatementValidator {
         //  return grant;
     }
 
-    public  PlatformGrantedAuthority processPolicyStatementsForQuery(AuthInput input, PlatformAuthenticationToken token) {
+    public PlatformGrantedAuthority processPolicyStatementsForQuery(AuthInput input, PlatformAuthenticationToken token) {
         PlatformGrantedAuthority grant = token.getAuthorities().stream().map(g -> PlatformGrantedAuthority.class.cast(g)).findAny().orElseThrow(() -> new PlatformAuthenticationException("no grant found to authenticate", null));
-        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType(),input.getDomainOwner(),input.getDomainContext());
+        if (!validatePolicy) {
+            log.warn("policy validation has turned off, skipping");
+            return grant;
+        }
+        Optional<List<PolicyStatement>> denyStmts = grant.getDenyStatmentByResourceName(input.getRootType(), input.getDomainOwner(), input.getDomainContext());
         if (denyStmts.isPresent()) {
             denyStmts.get().stream().map(denyStmt -> {
                 denyStmt.getQueryActions().stream().filter(a -> a.isActionMatched(input.getAction()))
@@ -120,7 +133,7 @@ public class PolicyStatementValidator {
         } else {
             throw new PolicyEvaluationException("query resource {0} access not allowed for action {1}", input.getRootType(), input.getAction());
         }
-    //    return grant;
+        //    return grant;
     }
 
 }
