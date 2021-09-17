@@ -127,7 +127,9 @@ public class IAMCache {
         log.info("sync roles . {}/{}/{}", roleDomainOwner, roleDomainContext, roleServiceName);
         if (roleServiceName != null) {
             streamClient.subscribeToMicroService("non tenant role sync ", roleDomainOwner, roleDomainContext,
-                    new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null)), Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null))))
+                    new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null)),
+                            Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null),
+                            new RepoStreamingReq.ResourceInfo(PolicyRef.class.getName(), "*", null))))
                     .doOnNext(e -> updateCache(e))
                     .doOnError(err -> log.error("error syncing roles ", err))
                     .subscribe();

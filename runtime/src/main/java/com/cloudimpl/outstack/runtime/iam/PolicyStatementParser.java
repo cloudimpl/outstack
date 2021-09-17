@@ -284,7 +284,7 @@ public class PolicyStatementParser {
         if (resourceScope == ResourceDescriptor.ResourceScope.ALL) {
             throw new PolicyStatementException("invalid resource pattern. {0}", resourceDesc);
         }
-        checkCount(5, parts.length, "invalid tenant resource pattern. {0}", resourceDesc);
+        checkCount(5, parts.length, "invalid non-tenant resource pattern. {0}", resourceDesc);
         validateResourceName(parts[3], "ChildType");
         builder.withChildType(parts[3]);
 
