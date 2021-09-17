@@ -92,6 +92,29 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
+    public int createEntityTable(Connection conn, String tableName) {
+        try ( PreparedStatement stmt = conn.prepareStatement("create table if not exists "+tableName+" (tenantId varchar,brn varchar ,rootEntityType varchar ,rootId varchar , entityType varchar,entityId varchar,json json,lastseq bigint,timestamp bigint,primary key(tenantId,brn)) partition by LIST(tenantId)")) {
+            boolean ok = stmt.execute();
+            conn.commit();
+            log.info("creating entity table {} executed , ret {}", tableName, ok);
+            return 1;
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+    
+    public int createEventTable(Connection conn, String tableName) {
+        tableName = tableName+"Events";
+        try ( PreparedStatement stmt = conn.prepareStatement("create table if not exists "+tableName+" (tenantId varchar,trn varchar,eventOwner varchar,eventOwnerId varchar,eventType varchar,eventSeq bigint,json json,timestamp bigint,primary key(tenantId,trn,eventSeq)) partition by LIST(tenantId)")) {
+            boolean ok = stmt.execute();
+            conn.commit();
+            log.info("creating events table {} executed , ret {}", tableName, ok);
+            return 1;
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
     public <T> T executeQuery(Function<Connection, T> queryHandler) {
         try ( Connection conn = getConnection()) {
             return queryHandler.apply(conn);

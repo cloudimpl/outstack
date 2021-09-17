@@ -78,6 +78,10 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         this.configs = configs;
         this.tableName = this.configs.getOption(rootType.getSimpleName() + "Table").or(() -> this.configs.getOption("defaultTable")).get();
         System.out.println("table name " + this.tableName + " pick for root type: " + rootType.getSimpleName());
+        Function<Connection, Integer> createEntityTable = conn -> factory.createEntityTable(conn, tableName);
+        factory.execute(Collections.singletonList(createEntityTable));
+        Function<Connection, Integer> createEventTable = conn -> factory.createEventTable(conn, tableName);
+        factory.execute(Collections.singletonList(createEventTable));
         //this.partitionCount = Integer.valueOf(configs.getOption("partitionCount").get());
     }
 
@@ -98,7 +102,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(e.getBRN());
-        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn,e.getClass().getSimpleName(), e.id(), e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
+        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn, e.getClass().getSimpleName(), e.id(), e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
         txContext.get().add(func);
 
     }
@@ -128,7 +132,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(e.getBRN());
-        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn,e.rootType().getSimpleName(),e.rootId(), e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
+        Function<Connection, Integer> func = conn -> factory.insertEntity(conn, tableName, tenantId, rn, e.rootType().getSimpleName(), e.rootId(), e.getClass().getSimpleName(), e.id(), GsonCodec.encode(e), e.getMeta().getLastSeq());
         txContext.get().add(func);
 
     }
@@ -186,7 +190,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     @Override
     protected Optional<EntityCheckpoint> _getCheckpoint(String rootTrn) {
 
-        String partitionKey = resourceHelper.getFQTrn(rootTrn)+":checkpoint";
+        String partitionKey = resourceHelper.getFQTrn(rootTrn) + ":checkpoint";
 
         Function<Connection, Optional<String>> fn = conn -> factory.getEntityByBrn(conn, tableName, partitionKey, "nonTenant");
         Optional<String> out = factory.executeQuery(fn);
@@ -197,7 +201,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     protected void addEvent(Event event) {
 
         String trn = resourceHelper.getFQTrn(event.getRootEntityTRN());
-        Function<Connection, Integer> func = conn -> factory.insertEvent(conn, tableName+"Events", event.tenantId() == null?"nonTenant": event.tenantId(), trn, event.getOwner().getSimpleName(),event.id(), event.getClass().getSimpleName(), event.getSeqNum(), GsonCodec.encodeWithType(event));
+        Function<Connection, Integer> func = conn -> factory.insertEvent(conn, tableName + "Events", event.tenantId() == null ? "nonTenant" : event.tenantId(), trn, event.getOwner().getSimpleName(), event.id(), event.getClass().getSimpleName(), event.getSeqNum(), GsonCodec.encodeWithType(event));
         txContext.get().add(func);
     }
 
@@ -292,9 +296,9 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
-        Function<Connection, Collection<String>> fn = conn -> factory.getChildEntityByType(conn, tableName,rootType.getSimpleName(),id, childType.getSimpleName(), t);
+        Function<Connection, Collection<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t);
 
-        List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(childType,s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+        List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(childType, s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
     }
 
@@ -303,7 +307,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String t = tenantId != null ? tenantId : "nonTenant";
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, rootId, tenantId));
 
-        Function<Connection, Collection<String>> fn = conn -> factory.getEvents(conn, tableName+"Events", t, trn, this.rootType.getSimpleName(), rootId, Long.MAX_VALUE);
+        Function<Connection, Collection<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, this.rootType.getSimpleName(), rootId, Long.MAX_VALUE);
 
         List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
@@ -320,7 +324,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
 
         String childTid = childId;
-        Function<Connection, Collection<String>> fn = conn -> factory.getEvents(conn, tableName+"Events", t, trn, childType.getSimpleName(), childTid, Long.MAX_VALUE);
+        Function<Connection, Collection<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, childType.getSimpleName(), childTid, Long.MAX_VALUE);
 
         List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return EventRepoUtil.onPageable(items, paging);
@@ -329,7 +333,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     @Override
     protected void updateCheckpoint(EntityCheckpoint checkpoint) {
 
-        String partitionKey = resourceHelper.getFQTrn(checkpoint.getRootTrn())+":checkpoint";
+        String partitionKey = resourceHelper.getFQTrn(checkpoint.getRootTrn()) + ":checkpoint";
 
         Function<Connection, Integer> func = conn -> factory.insertCheckpoint(conn, tableName, "nonTenant", partitionKey, EntityCheckpoint.class.getSimpleName(), "-", GsonCodec.encode(checkpoint), checkpoint.getSeq());
         txContext.get().add(func);
