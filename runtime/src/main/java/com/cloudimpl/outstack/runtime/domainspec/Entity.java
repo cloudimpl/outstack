@@ -16,11 +16,12 @@ import com.google.gson.JsonObject;
  *
  * @author nuwan
  */
-public abstract class Entity implements IResource {
+public abstract class Entity implements IResource, Comparable<Entity> {
 
     @JsonProperty
     private String _id;
     protected final Meta _meta = new Meta();
+
     public Entity() {
         EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getClass());
         this._meta.setVersion(meta.getVersion());
@@ -34,7 +35,7 @@ public abstract class Entity implements IResource {
 
     public String persistedId() {
         EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.getClass());
-        return meta.isIdIgnoreCase()?entityId().toLowerCase():entityId();
+        return meta.isIdIgnoreCase() ? entityId().toLowerCase() : entityId();
     }
 
     public final String id() {
@@ -114,6 +115,12 @@ public abstract class Entity implements IResource {
     }
 
     @Override
+    public int compareTo(Entity o) {
+        return id().compareTo(o.id());
+    }
+
+    @Override
+
     public String toString() {
         return GsonCodecRuntime.encode(this);
     }
@@ -156,7 +163,7 @@ public abstract class Entity implements IResource {
         protected void setRootIdIgnoreCase(boolean rootIdIgnoreCase) {
             this.rootIdIgnoreCase = rootIdIgnoreCase;
         }
-        
+
         public String getVersion() {
             return version;
         }
@@ -169,7 +176,6 @@ public abstract class Entity implements IResource {
             this.lastSeq = lastSeq;
         }
 
-        
         public long createdDate() {
             return this.createdDate;
         }
