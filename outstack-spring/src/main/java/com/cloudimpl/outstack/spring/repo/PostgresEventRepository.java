@@ -340,4 +340,11 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
     }
 
+    @Override
+    public boolean isIdExist(String id, String tenantId) {
+        EntityIdHelper.validateTechnicalId(id);
+        Function<Connection, Boolean> func = conn -> factory.isIdExist(conn, tableName, id, tenantId == null ? "nonTenant" : tenantId);
+        return factory.executeQuery(func);
+    }
+
 }

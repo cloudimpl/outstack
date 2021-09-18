@@ -298,7 +298,7 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
     public String generateTid() {
         return TID_PREFIX + UUID.randomUUID().toString();
     }
-
+    
 //    public <K extends Entity> K loadEntityWithClone(String resourceName) {
 //         return (K) loadEntity(resourceName).map(e->e.cloneEntity()).orElse(null);
 //    }

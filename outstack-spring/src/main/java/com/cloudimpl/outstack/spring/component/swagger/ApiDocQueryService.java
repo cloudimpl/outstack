@@ -20,7 +20,6 @@ import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.spring.component.SpringQueryService;
-import static com.cloudimpl.outstack.spring.component.SpringQueryService.$$;
 
 /**
  *
@@ -32,6 +31,7 @@ public class ApiDocQueryService extends SpringQueryService<ApiDoc> {
 
     static {
         $(ListApiDoc.class);
+        
     }
 
     public ApiDocQueryService(EventRepositoryFactory factory) {

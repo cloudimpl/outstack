@@ -302,4 +302,9 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         }
         this._id = id;
     }
+
+    @Override
+    public boolean isIdExist(String id, String tenantId) {
+        return getQueryOperations().isIdExist(id, tenantId);
+    }
 }

@@ -111,5 +111,10 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
         return requestHandler.apply(MessageFormat.format("{0}/{1}/{2}/{3}", domainOwner, domainContext, version, serviceName), req);
     }
 
+    @Override
+    public boolean isIdExist(String id, String tenantId) {
+        return inst.isIdExist(id, tenantId);
+    }
+
 
 }
