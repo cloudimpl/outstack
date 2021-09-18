@@ -147,4 +147,9 @@ private EntityContextProvider entityContextProvider;
         EntityContext entityContext = (EntityContext) ((EntityContextProvider.UnboundedTransaction)getTx()).getTransaction(rootId).getContext(getEntityMeta().getType());
         return entityContext.asRootContext().getAllChildEntitiesByType(childType, pageable);
     }
+
+    @Override
+    public boolean isIdExist(String id, String tenantId) {
+        return getQueryOperations().isIdExist(id, tenantId);
+    }
 }

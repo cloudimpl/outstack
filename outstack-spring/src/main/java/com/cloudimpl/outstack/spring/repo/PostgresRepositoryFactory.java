@@ -309,7 +309,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             throw new PostgresException(ex);
         }
     }
-
+    
     protected Collection<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
         try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ?")) {
@@ -330,6 +330,20 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
+    protected boolean isIdExist(Connection conn,String tableName,String id,String tenantId){
+        createTenantIfNotExist(tableName, tenantId);
+        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where entityId = ? and tenantId = ? limit 1")) {
+            stmt.setString(1, id);
+            stmt.setString(2, tenantId);
+            try ( ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+    
     @Override
     public <T extends RootEntity> EventRepositoy<T> createOrGetRepository(Class<T> rootType) {
         return (EventRepositoy<T>) mapRepos.computeIfAbsent(rootType, type -> new PostgresEventRepository<>(this, (Class<T>) type, this.helper, this.providerConfig));

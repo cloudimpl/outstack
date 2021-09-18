@@ -452,5 +452,10 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         public void rename(Entity oldEntity, Entity newEntity) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean isIdExist(String id, String tenantId) {
+            return this.queryOperation.isIdExist(id, tenantId);
+        }
     }
 }

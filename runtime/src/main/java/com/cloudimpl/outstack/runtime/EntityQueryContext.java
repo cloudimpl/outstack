@@ -21,6 +21,8 @@ public interface EntityQueryContext<T extends Entity> {
 
     Optional<T> getEntityById(String id);
 
+    boolean isIdExist(String id,String tenantId);
+    
     String getTenantId();
 
     <R extends RootEntity> RootEntityQueryContext<R> asRootQueryContext();

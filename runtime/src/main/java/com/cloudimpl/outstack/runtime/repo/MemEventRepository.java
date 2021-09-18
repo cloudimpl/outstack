@@ -51,7 +51,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     public MemEventRepository(Class<T> rootType, ResourceHelper resourceHelper) {
         super(rootType, resourceHelper);
-        System.out.println("MemEventRepository : "+rootType.getName() + "initialized");
+        System.out.println("MemEventRepository : " + rootType.getName() + "initialized");
     }
 
     @Override
@@ -284,8 +284,8 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
 
     @Override
     protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e) {
-       // EntityIdHelper.validateTechnicalId(id);
-       // EntityIdHelper.validateEntityId(childId);
+        // EntityIdHelper.validateTechnicalId(id);
+        // EntityIdHelper.validateEntityId(childId);
         String brn = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, e.rootId(), e.getClass(), e.id(), e.getTenantId()));
         mapEntites.remove(brn);
     }
@@ -306,6 +306,12 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     @Override
     protected void updateCheckpoint(EntityCheckpoint checkpoint) {
         checkpoints.put(checkpoint.getRootTrn(), checkpoint);
+    }
+
+    @Override
+    public boolean isIdExist(String id,String tenantId) {
+        EntityIdHelper.validateTechnicalId(id);
+        return mapEntites.values().stream().filter(e->(tenantId == null ? e.getTenantId() == null: e.getTenantId().equals(tenantId))).filter(e -> e.id().equals(id)).findAny().isPresent();
     }
 
 }

@@ -572,4 +572,9 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         txContext.get().add(new TransactWriteItem().withPut(createEntity));
     }
 
+    @Override
+    public boolean isIdExist(String id,String tenantId) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

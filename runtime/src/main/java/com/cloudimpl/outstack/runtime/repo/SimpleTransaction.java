@@ -206,4 +206,9 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
+    public boolean isIdExist(String id, String tenantId) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

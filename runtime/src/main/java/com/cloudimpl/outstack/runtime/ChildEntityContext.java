@@ -228,5 +228,10 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     public <R extends RootEntity> AsyncRootEntityQueryContext<R> asAsyncQueryContext() {
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public boolean isIdExist(String id, String tenantId) {
+        return getQueryOperations().isIdExist(id, tenantId);
+    }
     
 }
