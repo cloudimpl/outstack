@@ -18,25 +18,32 @@ package com.cloudimpl.outstack.spring.service.iam;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
+import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import com.cloudimpl.outstack.runtime.domain.Policy;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatement;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRef;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRefCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyStatementRefRequest;
 import com.cloudimpl.outstack.runtime.iam.PolicyValidationError;
+import com.cloudimpl.outstack.runtime.iam.ResourceDescriptor;
 
 /**
  *
  * @author nuwan
  */
-public class CreatePolicyStatementRef extends EntityCommandHandler<PolicyStatementRef, PolicyStatementRefRequest, PolicyStatementRef>{
+public class CreatePolicyStatementRef extends EntityCommandHandler<PolicyStatementRef, PolicyStatementRefRequest, PolicyStatementRef> {
 
     @Override
     protected PolicyStatementRef execute(EntityContext<PolicyStatementRef> context, PolicyStatementRefRequest command) {
-        PolicyStatement stmt = context.getEntityQueryProvider(PolicyStatement.class).getRoot(command.getPolicyStmtName()).orElseThrow(()->new PolicyValidationError("policy statement "+command.getPolicyStmtName()+" not found"));
-        return context.<Policy,PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()),new PolicyStatementRefCreated(context.asChildContext().getRoot().entityId(),EntityIdHelper.idToRefId(stmt.id())));
+        PolicyStatement stmt = context.getEntityQueryProvider(PolicyStatement.class).getRoot(command.getPolicyStmtName()).orElseThrow(() -> new PolicyValidationError("policy statement " + command.getPolicyStmtName() + " not found"));
+        Policy policy = context.<Policy, PolicyStatementRef>asChildContext().getRoot();
+        stmt.getResources().forEach((ResourceDescriptor rs) -> {
+            if (!rs.getRootType().equals(policy.getRootType())) {
+                throw new ValidationErrorException("rootType mismatched ,expecting : " + policy.getRootType() + " attaching : " + rs.getRootType());
+            }
+        }
+        );
+        return context.<Policy, PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()), new PolicyStatementRefCreated(context.asChildContext().getRoot().entityId(), EntityIdHelper.idToRefId(stmt.id())));
     }
 
-   
-    
 }
