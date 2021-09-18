@@ -27,7 +27,7 @@ import static com.cloudimpl.outstack.spring.component.SpringQueryService.$$;
  * @author nuwan
  */
 @CloudFunction(name = "ApiDocQueryService")
-@Router(routerType = RouterType.LOCAL)
+@Router(routerType = RouterType.ROUND_ROBIN)
 public class ApiDocQueryService extends SpringQueryService<ApiDoc> {
 
     static {
