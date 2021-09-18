@@ -27,13 +27,14 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
     private final String domainContext;
     private final String policyName;
     private final String policyContext;
-
+    private final String rootType;
     public PolicyCreateRequest(Builder builder) {
         super(builder);
         this.domainOwner = builder.domainOwner;
         this.domainContext = builder.domainContext;
         this.policyName = builder.policyName;
         this.policyContext = builder.policyContext;
+        this.rootType = builder.rootType;
     }
 
     public String getPolicyName() {
@@ -52,6 +53,10 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
         return domainContext;
     }
 
+    public String getRootType() {
+        return rootType;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -62,7 +67,8 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
         private String policyContext;
         private String domainOwner;
         private String domainContext;
-
+        private String rootType;
+        
         public Builder withPolicyContext(String policyContext) {
             this.policyContext = policyContext;
             return this;
@@ -80,6 +86,11 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
         
         public Builder withDomainContext(String domainContext){
             this.domainContext = domainContext;
+            return this;
+        }
+        
+        public Builder withRootType(String rootType){
+            this.rootType = rootType;
             return this;
         }
         
