@@ -27,14 +27,14 @@ import com.cloudimpl.outstack.runtime.domain.PolicyCreated;
  *
  * @author nuwan
  */
-public class CreatePolicy extends EntityCommandHandler<Policy, PolicyCreateRequest, Policy>{
+public class CreatePolicy extends EntityCommandHandler<Policy, PolicyCreateRequest, Policy> {
 
     @Inject
     private ResourceHelper helper;
-    
+
     @Override
     protected Policy execute(EntityContext<Policy> context, PolicyCreateRequest command) {
-        return context.create(command.getPolicyName(), new PolicyCreated(command.getPolicyName(),command.getPolicyContext(),helper.getDomainOwner(),helper.getDomainContext(),helper.getApiContext()));
+        return context.create(command.getPolicyName(), new PolicyCreated(command.getPolicyName(), command.getPolicyContext(), helper.getDomainOwner(), helper.getDomainContext(), helper.getApiContext(), command.getRootType()));
     }
-    
+
 }
