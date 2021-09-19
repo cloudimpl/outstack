@@ -240,8 +240,8 @@ public abstract class Event<T extends Entity> implements IResource, Input {
             this.version = version;
         }
 
-        public String getCreatedDate() {
-            return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(createdDate));
+        public long getCreatedDate() {
+            return createdDate;
         }
 
         public void setIdIgnoreCase(boolean ignoreCase) {
