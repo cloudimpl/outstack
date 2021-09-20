@@ -171,17 +171,25 @@ public abstract class Query implements IQuery {
 
     public static class PagingRequest {
 
-        public static final PagingRequest EMPTY = new PagingRequest(0, Integer.MAX_VALUE, Collections.EMPTY_LIST, Collections.EMPTY_MAP);
+        public static final PagingRequest EMPTY = new PagingRequest(0, Integer.MAX_VALUE, Collections.EMPTY_LIST, Collections.EMPTY_MAP,null,null);
         private final int pageNum;
         private final int pageSize;
         private final List<Order> orders;
         private final Map<String,String> params;
+        private final String search;
+        private final String orderBy;
+        public PagingRequest(int pageNum, int pageSize, List<Order> orders,Map<String,String> params)
+        {
+            this(pageNum, pageSize, orders, params, null,null);
+        }
         
-        public PagingRequest(int pageNum, int pageSize, List<Order> orders,Map<String,String> params) {
+        public PagingRequest(int pageNum, int pageSize, List<Order> orders,Map<String,String> params,String searchFilter,String orderBy) {
             this.pageNum = pageNum;
             this.pageSize = pageSize;
             this.orders = Collections.unmodifiableList(orders);
             this.params = Collections.unmodifiableMap(params);
+            this.search = searchFilter;
+            this.orderBy = orderBy;
         }
 
         public List<Order> orders() {
@@ -194,6 +202,14 @@ public abstract class Query implements IQuery {
 
         public int pageSize() {
             return this.pageSize;
+        }
+
+        public String getSearchFilter() {
+            return search;
+        }
+
+        public String getOrderBy() {
+            return orderBy;
         }
         
         public Map<String,String> getParams()
