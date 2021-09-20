@@ -60,6 +60,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         config.setJdbcUrl(providerConfig.getOption("jdbcUrl").get());
         config.setUsername(providerConfig.getOption("username").get());
         config.setPassword(providerConfig.getOption("password").get());
+        System.out.println(providerConfig.getOption("jdbcUrl").get() + "- " + providerConfig.getOption("username").get() + "-" + providerConfig.getOption("password").get());
         config.addDataSourceProperty("cachePrepStmts", "true");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
@@ -342,7 +343,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
-        String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ?"+ (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + " limit " + limit + " offset " + offset;
+        String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ?" + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + " limit " + limit + " offset " + offset;
         log.info("getChildEntityByType : " + sql);
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
