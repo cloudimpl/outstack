@@ -148,12 +148,12 @@ public abstract class Entity implements IResource, Comparable<Entity> {
             this.version = version;
         }
 
-        public String getCreatedDate() {
-            return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(createdDate));
+        public long getCreatedDate() {
+            return createdDate;
         }
 
-        public String getUpdatedDate() {
-            return TimeUtils.toStringDateTime(TimeUtils.fromEpoch(updatedDate));
+        public long getUpdatedDate() {
+            return updatedDate;
         }
 
         protected void setIdIgnoreCase(boolean idIgnoreCase) {

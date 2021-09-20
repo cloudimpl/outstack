@@ -52,6 +52,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
@@ -129,7 +130,8 @@ public class IAMCache {
             streamClient.subscribeToMicroService("non tenant role sync ", roleDomainOwner, roleDomainContext,
                     new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null)),
                             Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null),
-                            new RepoStreamingReq.ResourceInfo(PolicyRef.class.getName(), "*", null))))
+                            new RepoStreamingReq.ResourceInfo(PolicyRef.class.getName(), "*", "*"),
+                                    new RepoStreamingReq.ResourceInfo(PolicyRef.class.getName(), "*", null))))
                     .doOnNext(e -> updateCache(e))
                     .doOnError(err -> log.error("error syncing roles ", err))
                     .subscribe();
@@ -188,6 +190,11 @@ public class IAMCache {
     public Collection<Policy> listPolicy(String domainOwner, String domainContext) {
         return entityCache.values().stream().filter(e -> Policy.class.isInstance(e)).map(e -> Policy.class.cast(e))
                 .filter(p -> p.getDomainOwner().equals(domainOwner) && p.getDomainContext().equals(domainContext))
+                .collect(Collectors.toList());
+    }
+    public Collection<Policy> listPolicy(List<String> policyContext) {
+        return entityCache.values().stream().filter(e -> Policy.class.isInstance(e)).map(e -> Policy.class.cast(e))
+                .filter(p -> p.getPolicyContext() != null && policyContext.contains(p.getPolicyContext()))
                 .collect(Collectors.toList());
     }
 
