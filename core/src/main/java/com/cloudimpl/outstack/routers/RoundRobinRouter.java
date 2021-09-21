@@ -24,37 +24,42 @@ import reactor.core.publisher.Mono;
  */
 public class RoundRobinRouter implements CloudRouter {
 
-  private Set<CloudService> services = new ConcurrentSkipListSet<>();
-  private Iterator<CloudService> iterator;
-  private final String topic;
+    private Set<CloudService> services = new ConcurrentSkipListSet<>();
+    private Iterator<CloudService> iterator;
+    private final String topic;
 
-  @Inject
-  public RoundRobinRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
-    this.topic = topic;
-    serviceRegistry.services().filter(s->s.name().equals(topic)).forEach(s->services.add(s));
-    serviceRegistry.flux("RoundRobinRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD)
-        .map(e -> e.getValue())
-        .filter(srv -> srv.name().equals(topic))
-        .doOnNext(srv -> services.add(srv))
-        .subscribe();
-    serviceRegistry.flux("RoundRobinRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
-        .map(e -> e.getValue())
-        .filter(srv -> srv.name().equals(topic))
-        .doOnNext(srv -> services.remove(srv))
-        .subscribe();
-    iterator = services.iterator();
-  }
+    @Inject
+    public RoundRobinRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
+        this.topic = topic;
+        serviceRegistry.services().filter(s -> s.name().equals(topic)).forEach(s -> services.add(s));
+        serviceRegistry.flux("RoundRobinRouter:" + topic + ":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD)
+                .map(e -> e.getValue())
+                .filter(srv -> srv.name().equals(topic))
+                .doOnNext(srv -> services.add(srv))
+                .subscribe();
+        serviceRegistry.flux("RoundRobinRouter:" + topic + ":1").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
+                .map(e -> e.getValue())
+                .filter(srv -> srv.name().equals(topic))
+                .doOnNext(srv -> services.remove(srv))
+                .subscribe();
+        iterator = services.iterator();
+    }
 
-  @Override
-  public Mono<CloudService> route(CloudMessage msg) {
-    if (!iterator.hasNext())
-      iterator = services.iterator();
+    @Override
+    public Mono<CloudService> route(CloudMessage msg) {
+        return Mono.defer(() -> {
+            if (!iterator.hasNext()) {
+                iterator = services.iterator();
+            }
 
-    if (iterator.hasNext())
-      return Mono.just(iterator.next());
-    else
-      return Mono.error(new RouterException("service [" + topic + "] not found"));
+            if (iterator.hasNext()) {
+                return Mono.just(iterator.next());
+            } else {
+                return Mono.error(new RouterException("service [" + topic + "] not found"));
+            }
 
-  }
+        });
 
+    }
+    
 }

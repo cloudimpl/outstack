@@ -43,11 +43,11 @@ public class NodeIdRouter implements CloudRouter {
         serviceRegistry.services().filter(e -> e.name().equals(topic)).forEach(s -> nodeIdTopics.put(s.nodeId(), s));
         serviceRegistry.flux("NodeIdRouter:" + topic + ":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic))
-                .doOnNext(e -> System.out.println(this + "added node id router " + e))
+             //   .doOnNext(e -> System.out.println(this + "added node id router " + e))
                 .doOnNext(e -> nodeIdTopics.put(e.nodeId(), e)).subscribe();
         serviceRegistry.flux("NodeIdRouter:" + topic + ":2").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic))
-                .doOnNext(e -> System.out.println(this + "removed node id router " + e))
+                //.doOnNext(e -> System.out.println(this + "removed node id router " + e))
                 .doOnNext(e -> nodeIdTopics.remove(e.nodeId())).subscribe();
     }
 
@@ -58,12 +58,7 @@ public class NodeIdRouter implements CloudRouter {
             if (srv != null) {
                 return Mono.just(srv);
             } else {
-                System.out.println("testing" + nodeIdTopics.size() + " Key value " + msg.getKey());
-                StringBuilder builder = new StringBuilder();
-                builder.append("service not found to route for topic [" + topic + "]");
-
-                nodeIdTopics.entrySet().forEach(s -> builder.append(s));
-                return Mono.error(new RouterException(builder.toString()));
+                return Mono.error(new RouterException("service not found to route for topic [" + topic + "]"));
             }
         });
     }
