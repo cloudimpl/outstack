@@ -35,7 +35,7 @@ public class PostgresSqlNode implements RestQLNode {
             return String.valueOf(ConstBooleanNode.class.cast(node).getVal());
         } else if (node instanceof RelNode) {
             RelNode rel = RelNode.class.cast(node);
-            return convertToJsonField(rel.getFieldName()) + rel.getOp().getOp() + (String) rel.getConstNode().eval(this);
+            return convertToJsonField(rel.getFieldName()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":rel.getOp().getOp()) + (String) rel.getConstNode().eval(this);
         } else if (node instanceof BinNode) {
             BinNode binNode = BinNode.class.cast(node);
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
