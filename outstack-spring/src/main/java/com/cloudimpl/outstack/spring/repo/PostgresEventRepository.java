@@ -162,7 +162,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(e.rootType(), version, e.rootId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-        func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, resourceHelper.getFQTrn(trn));
+        func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, resourceHelper.getFQTrn(trn),e.getClass().getSimpleName(),e.id());
         txContext.get().add(func);
     }
 
