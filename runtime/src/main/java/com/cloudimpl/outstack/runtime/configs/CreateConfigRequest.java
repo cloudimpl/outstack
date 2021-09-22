@@ -28,7 +28,7 @@ public class CreateConfigRequest extends Command {
     private String value;
     private String configType;
 
-    public CreateConfigRequest(Builder builder) {
+    public CreateConfigRequest(CreateConfigRequest.Builder builder) {
         super(builder);
         this.groupName = builder.groupName;
         this.configName = builder.configName;
@@ -51,8 +51,8 @@ public class CreateConfigRequest extends Command {
         return configType;
     }
 
-    public static final Builder builder() {
-        return new Builder();
+    public static final CreateConfigRequest.Builder builder() {
+        return new CreateConfigRequest.Builder();
     }
 
     public static final class Builder extends Command.Builder {
@@ -72,7 +72,7 @@ public class CreateConfigRequest extends Command {
         }
 
         public Builder withConfigName(String configName) {
-            this.groupName = configName;
+            this.configName = configName;
             return this;
         }
 
@@ -84,6 +84,10 @@ public class CreateConfigRequest extends Command {
         public Builder withConfigType(String configType) {
             this.configType = configType;
             return this;
+        }
+
+        public CreateConfigRequest build() {
+            return new CreateConfigRequest(this);
         }
     }
 }
