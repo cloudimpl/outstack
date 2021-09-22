@@ -159,6 +159,29 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
+    protected int deleteChildEntityByRootId(Connection conn, String tableName, String tenantId, String rootEntityType, String rootId) {
+        createTenantIfNotExist(tableName, tenantId);
+        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and rootEntityType = ? and rootId = ?")) {
+            stmt.setString(1, tenantId);
+            stmt.setString(2, rootEntityType);
+            stmt.setString(3, rootId);
+            return stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    protected int deleteEventsByRootId(Connection conn, String tableName, String tenantId, String rootId) {
+        createTenantIfNotExist(tableName, tenantId);
+        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and json->>'_rootId' = ?")) {
+            stmt.setString(1, tenantId);
+            stmt.setString(2, rootId);
+            return stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
     protected int insertCheckpoint(Connection conn, String tableName, String tenantId, String brn, String entityType, String entityId, String json, long lastSeq) {
         createTenantIfNotExist(tableName, tenantId);
         try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?) on conflict (tenantId,brn) do update set json = ? , timestamp  = ? , lastseq = ?")) {
@@ -182,7 +205,6 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     protected int insertEvent(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, String eventType, long eventSeq, String json) {
-        System.out.println("starting event insert");
         createTenantIfNotExist(tableName, tenantId);
         try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,trn,eventOwner,eventOwnerId,eventType,eventSeq,json,timestamp) values(?,?,?,?,?,?,?,?) ")) {
             stmt.setString(1, tenantId);
@@ -196,6 +218,17 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             pGobject.setValue(json);
             stmt.setObject(7, pGobject);
             stmt.setLong(8, System.currentTimeMillis());
+            return stmt.executeUpdate();
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    protected int deleteEventsByTrn(Connection conn, String tableName, String tenantId, String trn) {
+        createTenantIfNotExist(tableName, tenantId);
+        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and trn = ?")) {
+            stmt.setString(1, tenantId);
+            stmt.setString(2, trn);
             return stmt.executeUpdate();
         } catch (SQLException ex) {
             throw new PostgresException(ex);
@@ -294,7 +327,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected Collection<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, String tenantId, String filter, String orderBy, int offset, int limit) {
+    protected com.cloudimpl.outstack.runtime.ResultSet<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, String tenantId, String filter, String orderBy, int pageNum, int pageSize) {
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
@@ -308,19 +341,78 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
+
         createTenantIfNotExist(tableName, tenantId);
-        String sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and tenantId = ? " + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + " limit " + limit + " offset " + offset;
+        long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantId, filter);
+        String sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and tenantId = ? " + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         log.info("getRootEntityByType : " + sql);
+        List<String> list = new LinkedList<>();
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootEntityType);
             stmt.setString(3, tenantId);
             try ( ResultSet rs = stmt.executeQuery()) {
-                List<String> list = new LinkedList<>();
                 while (rs.next()) {
                     list.add(rs.getString("json"));
                 }
-                return list;
+            }
+            return new com.cloudimpl.outstack.runtime.ResultSet<>(total, (int) Math.ceil(((double) total) / pageSize), pageNum, list);
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    protected long getRootEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String tenantId, String filter) {
+
+        String filterSql = null;
+        if (filter != null) {
+            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            PostgresSqlNode sqlNode = new PostgresSqlNode();
+            filterSql = sqlNode.eval(qlNode);
+        }
+
+        createTenantIfNotExist(tableName, tenantId);
+        String sql = "select count(*) as totalCount from " + tableName + " where rootEntityType = ?  and entityType = ? and tenantId = ? " + (filterSql != null ? "and " + filterSql : "");
+        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, rootEntityType);
+            stmt.setString(2, rootEntityType);
+            stmt.setString(3, tenantId);
+            try ( ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("totalCount");
+                } else {
+                    return 0;
+                }
+            }
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    protected long getChildEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter, String orderBy) {
+        createTenantIfNotExist(tableName, tenantId);
+        String filterSql = null;
+
+        if (filter != null) {
+            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            PostgresSqlNode sqlNode = new PostgresSqlNode();
+            filterSql = sqlNode.eval(qlNode);
+        }
+
+        String sql = "select count(*) as TotalCount from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ? " + (filterSql != null ? "and " + filterSql : "");
+        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, rootEntityType);
+            stmt.setString(2, rootId);
+            stmt.setString(3, entityType);
+            stmt.setString(4, tenantId);
+            try ( ResultSet rs = stmt.executeQuery()) {
+
+                if (rs.next()) {
+                    return rs.getLong("TotalCount");
+                } else {
+                    return 0;
+                }
+
             }
 
         } catch (SQLException ex) {
@@ -328,7 +420,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected Collection<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter, String orderBy, int offset, int limit) {
+    protected com.cloudimpl.outstack.runtime.ResultSet<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter, String orderBy, int pageNum, int pageSize) {
         createTenantIfNotExist(tableName, tenantId);
         String filterSql = null;
         String orderBySql = null;
@@ -343,19 +435,20 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
-        String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ?" + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + " limit " + limit + " offset " + offset;
+        long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantId, filter);
+        String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ? " + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         log.info("getChildEntityByType : " + sql);
+        List<String> list = new LinkedList<>();
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootId);
             stmt.setString(3, entityType);
             stmt.setString(4, tenantId);
             try ( ResultSet rs = stmt.executeQuery()) {
-                List<String> list = new LinkedList<>();
                 while (rs.next()) {
                     list.add(rs.getString("json"));
                 }
-                return list;
+                return new com.cloudimpl.outstack.runtime.ResultSet<>(total, (int) Math.ceil(((double) total) / pageSize), pageNum, list);
             }
 
         } catch (SQLException ex) {

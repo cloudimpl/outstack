@@ -143,7 +143,10 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String rn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, e.entityId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-
+        func = conn -> factory.deleteChildEntityByRootId(conn, tableName, e.getTenantId(), e.getClass().getSimpleName(),e.id());
+        txContext.get().add(func);
+        func = conn -> factory.deleteEventsByRootId(conn, tableName + "Events", tenantId, e.id());
+        txContext.get().add(func);
     }
 
     @Override
@@ -158,7 +161,8 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String rn = resourceHelper.getFQBrn(ChildEntity.makeRN(e.rootType(), version, e.rootId(), e.getClass(), e.entityId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-
+        func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, resourceHelper.getFQTrn(e));
+        txContext.get().add(func);
     }
 
     @Override
@@ -231,16 +235,14 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String t = tenantId != null ? tenantId : "nonTenant";
 
-        int offset = paging.getOrderBy() != null ? paging.pageSize() * paging.pageNum() : 0;
-        int limit = paging.getOrderBy() != null ? paging.pageSize() : Integer.MAX_VALUE;
-
-        Function<Connection, Collection<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), offset, limit);
-        List<T> items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(),paging.pageNum(), paging.pageSize());
+        ResultSet<String> rs = factory.executeQuery(fn);
+        List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
         if (paging.getOrderBy() == null) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
-        return new ResultSet<>(items.size(), (int) Math.ceil(((double) items.size()) / paging.pageSize()), paging.pageNum(), items);
+        return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
     }
 
     @Override
@@ -281,15 +283,15 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
-        int offset = paging.getOrderBy() != null ? paging.pageSize() * paging.pageNum() : 0;
-        int limit = paging.getOrderBy() != null ? paging.pageSize() : Integer.MAX_VALUE;
-        Function<Connection, Collection<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), offset, limit);
-        List<C> items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
+
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(),paging.pageNum(), paging.pageSize());
+        ResultSet<String> rs = factory.executeQuery(fn);
+        List<C> items = rs.getItems().stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
         if (paging.getOrderBy() == null) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
-        return new ResultSet<>(items.size(), (int) Math.ceil(((double) items.size()) / paging.pageSize()), paging.pageNum(), items);
+        return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
     }
 
     @Override
