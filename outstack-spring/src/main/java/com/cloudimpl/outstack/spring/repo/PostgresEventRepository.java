@@ -143,7 +143,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String rn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, e.entityId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-        func = conn -> factory.deleteChildEntityByRootId(conn, tableName, tenantId, e.getClass().getSimpleName(),e.id());
+        func = conn -> factory.deleteChildEntityByRootId(conn, tableName, tenantId, e.getClass().getSimpleName(), e.id());
         txContext.get().add(func);
         func = conn -> factory.deleteEventsByRootId(conn, tableName + "Events", tenantId, e.id());
         txContext.get().add(func);
@@ -159,9 +159,10 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(ChildEntity.makeRN(e.rootType(), version, e.rootId(), e.getClass(), e.entityId(), e.getTenantId()));
+        String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(e.rootType(), version, e.rootId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-        func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, resourceHelper.getFQTrn(e));
+        func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, resourceHelper.getFQTrn(trn));
         txContext.get().add(func);
     }
 
@@ -235,7 +236,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String t = tenantId != null ? tenantId : "nonTenant";
 
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(),paging.pageNum(), paging.pageSize());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
         if (paging.getOrderBy() == null) {
@@ -284,7 +285,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
 
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(),paging.pageNum(), paging.pageSize());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<C> items = rs.getItems().stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
         if (paging.getOrderBy() == null) {
