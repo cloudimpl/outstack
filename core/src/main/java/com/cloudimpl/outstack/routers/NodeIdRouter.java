@@ -40,25 +40,27 @@ public class NodeIdRouter implements CloudRouter {
     @Inject
     public NodeIdRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
         this.topic = topic;
-        serviceRegistry.services().filter(e -> e.name().equals(topic)).forEach(s->nodeIdTopics.put(s.nodeId(), s));
-        serviceRegistry.flux("NodeIdRouter:"+topic+":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
+        serviceRegistry.services().filter(e -> e.name().equals(topic)).forEach(s -> nodeIdTopics.put(s.nodeId(), s));
+        serviceRegistry.flux("NodeIdRouter:" + topic + ":1").filter(e -> e.getType() == FluxMap.Event.Type.ADD || e.getType() == FluxMap.Event.Type.UPDATE)
                 .map(e -> e.getValue()).filter(e -> e.name().equals(topic))
-                .doOnNext(e -> System.out.println("added node id router " + e))
+             //   .doOnNext(e -> System.out.println(this + "added node id router " + e))
                 .doOnNext(e -> nodeIdTopics.put(e.nodeId(), e)).subscribe();
-        serviceRegistry.flux("NodeIdRouter:"+topic+":2").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
-                .map(e -> e.getValue()).filter(e -> e.name().equals(topic)).doOnNext(e -> nodeIdTopics.remove(e.nodeId())).subscribe();
+        serviceRegistry.flux("NodeIdRouter:" + topic + ":2").filter(e -> e.getType() == FluxMap.Event.Type.REMOVE)
+                .map(e -> e.getValue()).filter(e -> e.name().equals(topic))
+                //.doOnNext(e -> System.out.println(this + "removed node id router " + e))
+                .doOnNext(e -> nodeIdTopics.remove(e.nodeId())).subscribe();
     }
 
     @Override
     public Mono<CloudService> route(CloudMessage msg) {
-        CloudService srv = nodeIdTopics.get(msg.getKey());
-        if (srv != null) {
-            return Mono.just(srv);
-        } else {
-            System.out.println("testing" + nodeIdTopics.size() + " Key value "+ msg.getKey());
-            nodeIdTopics.entrySet().forEach(s -> System.out.println(s));
-            return Mono.error(new RouterException("service not found to route for topic [" + topic + "]"));
-        }
+        return Mono.defer(() -> {
+            CloudService srv = nodeIdTopics.get(msg.getKey());
+            if (srv != null) {
+                return Mono.just(srv);
+            } else {
+                return Mono.error(new RouterException("service not found to route for topic [" + topic + "]"));
+            }
+        });
     }
 
 }

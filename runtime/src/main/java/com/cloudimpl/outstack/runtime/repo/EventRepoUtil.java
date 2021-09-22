@@ -147,5 +147,4 @@ public class EventRepoUtil {
         }
         return new ResultSet<>(result.size(), (int) Math.ceil(((double) result.size()) / paging.pageSize()), paging.pageNum(), out);
     }
-
 }

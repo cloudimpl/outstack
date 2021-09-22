@@ -15,27 +15,10 @@
  */
 package com.cloudimpl.outstack.spring.repo;
 
-import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
-import com.amazonaws.services.dynamodbv2.document.*;
-import com.amazonaws.services.dynamodbv2.document.internal.IteratorSupport;
-import com.amazonaws.services.dynamodbv2.document.spec.QuerySpec;
-import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
-import com.amazonaws.services.dynamodbv2.model.AttributeValue;
-import com.amazonaws.services.dynamodbv2.model.Delete;
-import com.amazonaws.services.dynamodbv2.model.Put;
-import com.amazonaws.services.dynamodbv2.model.QueryRequest;
-import com.amazonaws.services.dynamodbv2.model.QueryResult;
-import com.amazonaws.services.dynamodbv2.model.ReturnConsumedCapacity;
-import com.amazonaws.services.dynamodbv2.model.ReturnValuesOnConditionCheckFailure;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItem;
-import com.amazonaws.services.dynamodbv2.model.TransactWriteItemsRequest;
-import com.amazonaws.services.dynamodbv2.model.Update;
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.runtime.EntityCheckpoint;
-import com.cloudimpl.outstack.runtime.EntityContextProvider;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
-import com.cloudimpl.outstack.runtime.EventStream;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
@@ -45,15 +28,11 @@ import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import com.cloudimpl.outstack.runtime.repo.EventRepoUtil;
-import com.cloudimpl.outstack.runtime.repo.RepositoryException;
 import com.cloudimpl.outstack.spring.component.SpringApplicationConfigManager.Provider;
 import java.sql.Connection;
-import java.text.MessageFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  *
@@ -251,11 +230,17 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     @Override
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String t = tenantId != null ? tenantId : "nonTenant";
-        Function<Connection, Collection<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t);
 
-        List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(rootType, s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
-        return EventRepoUtil.onPageable(items, paging);
+        int offset = paging.getOrderBy() != null ? paging.pageSize() * paging.pageNum() : 0;
+        int limit = paging.getOrderBy() != null ? paging.pageSize() : Integer.MAX_VALUE;
 
+        Function<Connection, Collection<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), offset, limit);
+        List<T> items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
+        if (paging.getOrderBy() == null) {
+            items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+            return EventRepoUtil.onPageable(items, paging);
+        }
+        return new ResultSet<>(items.size(), (int) Math.ceil(((double) items.size()) / paging.pageSize()), paging.pageNum(), items);
     }
 
     @Override
@@ -296,10 +281,15 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
-        Function<Connection, Collection<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t);
-
-        List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(childType, s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
-        return EventRepoUtil.onPageable(items, paging);
+        int offset = paging.getOrderBy() != null ? paging.pageSize() * paging.pageNum() : 0;
+        int limit = paging.getOrderBy() != null ? paging.pageSize() : Integer.MAX_VALUE;
+        Function<Connection, Collection<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), offset, limit);
+        List<C> items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
+        if (paging.getOrderBy() == null) {
+            items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+            return EventRepoUtil.onPageable(items, paging);
+        }
+        return new ResultSet<>(items.size(), (int) Math.ceil(((double) items.size()) / paging.pageSize()), paging.pageNum(), items);
     }
 
     @Override
