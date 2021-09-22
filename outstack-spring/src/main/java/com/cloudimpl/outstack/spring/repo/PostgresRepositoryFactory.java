@@ -165,7 +165,8 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             stmt.setString(1, tenantId);
             stmt.setString(2, rootEntityType);
             stmt.setString(3, rootId);
-            return stmt.executeUpdate();
+            stmt.executeUpdate();
+            return 1;
         } catch (SQLException ex) {
             throw new PostgresException(ex);
         }
@@ -176,7 +177,8 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and json->>'_rootId' = ?")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, rootId);
-            return stmt.executeUpdate();
+            stmt.executeUpdate();
+            return 1;
         } catch (SQLException ex) {
             throw new PostgresException(ex);
         }
