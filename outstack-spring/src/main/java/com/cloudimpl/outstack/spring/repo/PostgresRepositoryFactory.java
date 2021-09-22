@@ -228,7 +228,9 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int deleteEventsByTrn(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and trn = ? and eventOwner = ? and eventOwnerId = ?")) {
+        String sql = "delete from " + tableName + " where tenantId = ? and trn = ? and eventOwner = ? and eventOwnerId = ?";
+        log.info("deleteEventsByTrn : " + sql);
+        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, tenantId);
             stmt.setString(2, trn);
             stmt.setString(3, eventOwner);
