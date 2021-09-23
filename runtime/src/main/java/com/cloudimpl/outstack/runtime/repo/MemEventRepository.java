@@ -269,7 +269,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected void deleteRootEntityBrnById(RootEntity e) {
+    protected void deleteRootEntityBrnById(RootEntity e,boolean deleteOnlyEntity) {
         EntityIdHelper.validateEntityId(e.entityId());
         String brn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, e.entityId(), e.getTenantId()));
         mapEntites.remove(brn);
@@ -283,7 +283,7 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
-    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e) {
+    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e,boolean deleteOnlyEntity) {
         // EntityIdHelper.validateTechnicalId(id);
         // EntityIdHelper.validateEntityId(childId);
         String brn = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, e.rootId(), e.getClass(), e.id(), e.getTenantId()));

@@ -105,10 +105,10 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
         });
         tx.getDeletedEntities().values().forEach(e -> {
             if (e.isRoot()) {
-                deleteRootEntityBrnById((RootEntity)e);
+                deleteRootEntityBrnById((RootEntity)e,tx.isEntityRenamed(e.getTRN()));
             } else {
                 ChildEntity child = (ChildEntity) e;
-                deleteChildEntityBrnById(child);
+                deleteChildEntityBrnById(child,tx.isEntityRenamed(e.getTRN()));
             }
         });
         mapTxDirtyCheckpoints.get().values().forEach(checkpoint -> updateCheckpoint(checkpoint));
@@ -281,11 +281,11 @@ public abstract class EventRepositoy<T extends RootEntity> implements QueryOpera
 
     protected abstract void saveChildEntityTrnIfExist(long lastSeq, ChildEntity e);
 
-    protected abstract void deleteRootEntityBrnById(RootEntity e);
+    protected abstract void deleteRootEntityBrnById(RootEntity e,boolean deleteOnlyEntity);
 
     protected abstract void deleteRootEntityTrnById(Class<T> rootType, String id, String tenantId);
 
-    protected abstract <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e);
+    protected abstract <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e,boolean deleteOnlyEntity);
 
     protected abstract <C extends ChildEntity<T>> void deleteChildEntityTrnById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId);
 

@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Abstract controller
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
  * @author roshanmadhushanka
  *
  */
+@Slf4j
 public abstract class AbstractController {
 
     protected final Cluster cluster;
@@ -65,9 +67,10 @@ public abstract class AbstractController {
                 .withRootType(rootType)
                 .withVersion(version)
                 .withTenantId(tenantId).build();
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, rootType);
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request)
                 .onErrorMap(this::onError)
-                .map(e -> onRootEntityCreation(context, version, rootEntity, e));
+                .map(e -> onRootEntityCreation(context, version, rootEntity, e)).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> updateRootEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -88,7 +91,9 @@ public abstract class AbstractController {
                 .withPayload(body)
                 .withId(rootId)
                 .withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, rootType);
+        stats.setRootId(rootId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> uploadRootEntityFiles(ServerHttpRequest httpRequest, String context, String version,
@@ -123,7 +128,9 @@ public abstract class AbstractController {
                 .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withId(rootId)
                 .withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, rootType);
+        stats.setRootId(rootId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<ResponseEntity<Object>> createChildEntity(ServerHttpRequest httpRequest, String context,
@@ -149,9 +156,12 @@ public abstract class AbstractController {
                 .withPayload(body)
                 .withRootId(rootId)
                 .withTenantId(tenantId).build();
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request)
                 .onErrorMap(this::onError)
-                .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
+                .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r)).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> updateChildEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -175,7 +185,11 @@ public abstract class AbstractController {
                 .withVersion(version)
                 .withPayload(body)
                 .withId(childId).withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
+        stats.setChildId(childId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<ResponseEntity<Object>> uploadChildEntityFiles(ServerHttpRequest httpRequest, String context,
@@ -218,9 +232,12 @@ public abstract class AbstractController {
                 .withRootId(rootId)
                 .withTenantId(tenantId)
                 .build();
-
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
+        stats.setChildId(childId);
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError)
-                .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r));
+                .map(r -> this.onChildEntityCreation(context, version, rootEntity, rootId, childEntity, r)).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> getRootEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -231,7 +248,7 @@ public abstract class AbstractController {
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null,null);
+                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, null);
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
@@ -247,7 +264,9 @@ public abstract class AbstractController {
                 .withId(rootId).withRootId(rootId)
                 .withPageRequest(pagingReq)
                 .withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), query, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> getRootEntityEvents(ServerHttpRequest httpRequest, String context, String version,
@@ -260,7 +279,7 @@ public abstract class AbstractController {
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null,orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
+                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType + "Events");
@@ -276,7 +295,9 @@ public abstract class AbstractController {
                 .withId(rootId).withRootId(rootId)
                 .withTenantId(tenantId)
                 .withPageRequest(pagingReq).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), query, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> getChildEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -308,7 +329,11 @@ public abstract class AbstractController {
                 .withPageRequest(pagingReq)
                 .withRootId(rootId)
                 .withId(childId).withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
+        stats.setChildId(childId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> getChildEntityEvents(ServerHttpRequest httpRequest, String context, String version,
@@ -344,7 +369,11 @@ public abstract class AbstractController {
                 .withTenantId(tenantId)
                 .withPageRequest(pagingReq)
                 .build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
+        stats.setChildId(childId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> listChildEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -375,7 +404,10 @@ public abstract class AbstractController {
                 .withVersion(version)
                 .withRootId(rootId)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> listRootEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -404,7 +436,8 @@ public abstract class AbstractController {
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withTenantId(tenantId).withPageRequest(pagingReq).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), query, serviceDesc.getRootType());
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> deleteChildEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -427,7 +460,11 @@ public abstract class AbstractController {
                 .withChildType(child.getName())
                 .withVersion(version)
                 .withRootId(rootId).withId(childId).withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        stats.setChildType(child.getName());
+        stats.setChildId(childId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Mono<Object> deleteRootEntity(ServerHttpRequest httpRequest, String context, String version,
@@ -445,7 +482,9 @@ public abstract class AbstractController {
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
-        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError);
+         ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        stats.setRootId(rootId);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
     protected Flux<String> getRootEntityStream(String context, String version,
