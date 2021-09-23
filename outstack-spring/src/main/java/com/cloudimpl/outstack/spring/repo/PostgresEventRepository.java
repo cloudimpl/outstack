@@ -137,16 +137,19 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void deleteRootEntityBrnById(RootEntity e) {
+    protected void deleteRootEntityBrnById(RootEntity e, boolean deleteOnlyEntity) {
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, e.entityId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-        func = conn -> factory.deleteChildEntityByRootId(conn, tableName, tenantId, e.getClass().getSimpleName(), e.id());
-        txContext.get().add(func);
-        func = conn -> factory.deleteEventsByRootId(conn, tableName + "Events", tenantId, e.id());
-        txContext.get().add(func);
+        if (!deleteOnlyEntity) {
+            func = conn -> factory.deleteChildEntityByRootId(conn, tableName, tenantId, e.getClass().getSimpleName(), e.id());
+            txContext.get().add(func);
+            func = conn -> factory.deleteEventsByRootId(conn, tableName + "Events", tenantId, e.id());
+            txContext.get().add(func);
+        }
+
     }
 
     @Override
@@ -155,15 +158,17 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e) {
+    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e, boolean deleteOnlyEntity) {
 
         String tenantId = e.getTenantId() != null ? e.getTenantId() : "nonTenant";
         String rn = resourceHelper.getFQBrn(ChildEntity.makeRN(e.rootType(), version, e.rootId(), e.getClass(), e.entityId(), e.getTenantId()));
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(e.rootType(), version, e.rootId(), e.getTenantId()));
         Function<Connection, Integer> func = conn -> factory.deleteEntity(conn, tableName, tenantId, rn, e.id());
         txContext.get().add(func);
-        func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, trn,e.getClass().getSimpleName(),e.id());
-        txContext.get().add(func);
+        if (!deleteOnlyEntity) {
+            func = conn -> factory.deleteEventsByTrn(conn, tableName + "Events", tenantId, trn, e.getClass().getSimpleName(), e.id());
+            txContext.get().add(func);
+        }
     }
 
     @Override

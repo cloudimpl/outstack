@@ -276,7 +276,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected void deleteRootEntityBrnById(RootEntity e) {
+    protected void deleteRootEntityBrnById(RootEntity e,boolean deleteOnlyEntity) {
         String rn = resourceHelper.getFQBrn(RootEntity.makeRN(e.getClass(), version, e.entityId(), e.getTenantId()));
         String prefix = rn.substring(0, rn.lastIndexOf("/"));
         HashMap<String, AttributeValue> item = new HashMap<>();
@@ -294,7 +294,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e) {
+    protected <C extends ChildEntity<T>> void deleteChildEntityBrnById(ChildEntity e,boolean deleteOnlyEntity) {
         String partitionKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, e.id(),e.getTenantId()));
         String rangeKey = resourceHelper.getFQBrn(ChildEntity.makeRN(rootType, version, e.rootId(), e.getClass(), e.id(), e.getTenantId()));
         HashMap<String, AttributeValue> item = new HashMap<>();
