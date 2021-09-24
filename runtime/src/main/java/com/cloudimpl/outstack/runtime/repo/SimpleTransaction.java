@@ -211,4 +211,8 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
+    public Class<T> getRootType() {
+        return (Class<T>) this.rootType;
+    }
 }

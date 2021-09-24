@@ -360,7 +360,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                 return (Z) new UnboundedEntityContext<>(entityContextProvider, rootType,
                             tenantId,
                             idGenerator, Optional.of((CRUDOperations) this),
-                            this.queryOperation,
+                            this,
                             Optional.of((Consumer<Event>) this::publishEvent),
                             validator, this.queryOperationSelector, entityMetaDetail.getVersion(), requestHandler.get());
 
@@ -389,7 +389,7 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
         @Override
         public Optional<R> getRootById(Class<R> rootType, String id, String tenantId) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            return transactionMap.values().stream().filter(tr -> tr.getRootType() == rootType).map(tx -> tx.getRootById(rootType, id, tenantId)).filter(t -> t.isPresent()).findFirst().orElse(this.queryOperation.getRootById(rootType, id, tenantId));
         }
 
         @Override
@@ -456,6 +456,11 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         @Override
         public boolean isIdExist(String id, String tenantId) {
             return this.queryOperation.isIdExist(id, tenantId);
+        }
+
+        @Override
+        public Class<R> getRootType() {
+            throw new UnsupportedOperationException("Not supported.");
         }
     }
 }

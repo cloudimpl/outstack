@@ -216,5 +216,9 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             return this.queryOperation.isIdExist(id, tenantId);
         }
 
+        @Override
+        public Class<R> getRootType() {
+            return this.type;
+        }
     }
 }
