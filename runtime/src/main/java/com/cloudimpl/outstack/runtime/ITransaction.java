@@ -56,4 +56,6 @@ public interface ITransaction<R extends RootEntity> extends QueryOperations<R> {
     <C extends ChildEntity<R>, K extends Entity, Z extends EntityQueryContext> Z getContext(Class<K> entityType);
 
     InputMetaProvider getInputMetaProvider();
+
+    Class<R> getRootType();
 }
