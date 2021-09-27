@@ -404,8 +404,8 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected long getChildEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter) {
-        createTenantIfNotExist(tableName, tenantId);
+    protected long getChildEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, List<String> tenantIds, String filter) {
+        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
         String filterSql = null;
 
         if (filter != null) {
@@ -413,13 +413,16 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
-
-        String sql = "select count(*) as TotalCount from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ? " + (filterSql != null ? "and " + filterSql : "");
+        String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
+        String sql = "select count(*) as TotalCount from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and " + tenantQuery + (filterSql != null ? "and " + filterSql : "");
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootId);
             stmt.setString(3, entityType);
-            stmt.setString(4, tenantId);
+            int i = 4;
+            for(String tenantId: tenantIds) {
+                stmt.setString(i++, tenantId);
+            }
             try ( ResultSet rs = stmt.executeQuery()) {
 
                 if (rs.next()) {
@@ -435,8 +438,9 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected com.cloudimpl.outstack.runtime.ResultSet<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter, String orderBy, int pageNum, int pageSize) {
-        createTenantIfNotExist(tableName, tenantId);
+    protected com.cloudimpl.outstack.runtime.ResultSet<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, List<String> tenantIds, String filter, String orderBy, int pageNum, int pageSize) {
+        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
@@ -450,15 +454,18 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
-        long total = getChildEntityByTypeCount(conn, tableName, rootEntityType, rootId, entityType, tenantId, filter);
-        String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ? " + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
+        long total = getChildEntityByTypeCount(conn, tableName, rootEntityType, rootId, entityType, tenantIds, filter);
+        String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         log.info("getChildEntityByType : " + sql);
         List<String> list = new LinkedList<>();
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootId);
             stmt.setString(3, entityType);
-            stmt.setString(4, tenantId);
+            int i = 4;
+            for(String tenantId: tenantIds) {
+                stmt.setString(i++, tenantId);
+            }
             try ( ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     list.add(rs.getString("json"));
