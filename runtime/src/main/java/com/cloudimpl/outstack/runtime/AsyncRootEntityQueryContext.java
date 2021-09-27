@@ -21,6 +21,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import reactor.core.publisher.Mono;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
@@ -88,7 +89,7 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     }
     
     @Override
-    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String... tenantId) {
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,Collection<String> tenantId) {
         return inst.getEntityQueryProvider(rootType,tenantId);
     }
 

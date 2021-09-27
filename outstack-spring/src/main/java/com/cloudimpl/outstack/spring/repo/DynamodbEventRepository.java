@@ -420,7 +420,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    public ResultSet<T> getAllByRootType(Class<T> rootType, List<String> tenantId, Query.PagingRequest paging) {
+    public ResultSet<T> getAllByRootType(Class<T> rootType, Collection<String> tenantId, Query.PagingRequest paging) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
@@ -513,7 +513,7 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, List<String> tenantId, Query.PagingRequest paging) {
+    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, Collection<String> tenantId, Query.PagingRequest paging) {
         throw new UnsupportedOperationException("Not supported.");
     }
 

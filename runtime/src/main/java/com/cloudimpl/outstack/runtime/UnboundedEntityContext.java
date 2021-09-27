@@ -65,14 +65,14 @@ private EntityContextProvider entityContextProvider;
         return null;
     }
 
-    @Override
-    public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, Collection<String> tenantId) {
-        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
-        {
-            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowed");
-        }
-        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);
-    }
+//    @Override
+//    public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, Collection<String> tenantId) {
+//        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
+//        {
+//            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowed");
+//        }
+//        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);
+//    }
 
     @Override
     public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType) {

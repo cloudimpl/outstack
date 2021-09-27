@@ -252,7 +252,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    public ResultSet<T> getAllByRootType(Class<T> rootType, List<String> tenantIds, Query.PagingRequest paging) {
+    public ResultSet<T> getAllByRootType(Class<T> rootType, Collection<String> tenantIds, Query.PagingRequest paging) {
 
         List<String> tenantIdList = tenantIds.stream().map(t -> t==null? "nonTenant": t).collect(Collectors.toList());
         Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
@@ -315,7 +315,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
-    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, List<String> tenantId, Query.PagingRequest paging) {
+    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, Collection<String> tenantId, Query.PagingRequest paging) {
         throw new UnsupportedOperationException("Not supported.");
     }
 
