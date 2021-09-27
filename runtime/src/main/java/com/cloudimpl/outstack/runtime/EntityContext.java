@@ -121,7 +121,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
         return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, Collections.singletonList(getTenantId()));
     }
     
-    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,Collection<String> tenantId) {
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProviderFromTenantList(Class<R> rootType,Collection<String> tenantId) {
 //        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
 //        {
 //            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowd");
@@ -130,7 +130,7 @@ public abstract class EntityContext<T extends Entity> implements Context {
     }
 
     public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String tenantId) {
-        return getEntityQueryProvider(rootType, Collections.singletonList(tenantId));
+        return getEntityQueryProviderFromTenantList(rootType, Collections.singletonList(tenantId));
     }
 
     }
