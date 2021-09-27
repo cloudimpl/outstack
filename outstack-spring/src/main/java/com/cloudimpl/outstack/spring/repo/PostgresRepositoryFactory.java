@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.concurrent.ConcurrentException;
 import org.postgresql.util.PGobject;
@@ -333,7 +335,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected com.cloudimpl.outstack.runtime.ResultSet<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, String tenantId, String filter, String orderBy, int pageNum, int pageSize) {
+    protected com.cloudimpl.outstack.runtime.ResultSet<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, List<String> tenantIds, String filter, String orderBy, int pageNum, int pageSize) {
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
@@ -348,15 +350,19 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             orderBySql = sqlNode.eval(qlNode);
         }
 
-        createTenantIfNotExist(tableName, tenantId);
-        long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantId, filter);
-        String sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and tenantId = ? " + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
+        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantIds, filter);
+        String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
+        String sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         log.info("getRootEntityByType : " + sql);
         List<String> list = new LinkedList<>();
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootEntityType);
-            stmt.setString(3, tenantId);
+            int i = 3;
+            for(String tenantId: tenantIds) {
+                stmt.setString(i++, tenantId);
+            }
             try ( ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     list.add(rs.getString("json"));
@@ -368,7 +374,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected long getRootEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String tenantId, String filter) {
+    protected long getRootEntityByTypeCount(Connection conn, String tableName, String rootEntityType, List<String> tenantIds, String filter) {
 
         String filterSql = null;
         if (filter != null) {
@@ -376,13 +382,16 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
-
-        createTenantIfNotExist(tableName, tenantId);
-        String sql = "select count(*) as totalCount from " + tableName + " where rootEntityType = ?  and entityType = ? and tenantId = ? " + (filterSql != null ? "and " + filterSql : "");
+        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
+        String sql = "select count(*) as totalCount from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "");
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootEntityType);
-            stmt.setString(3, tenantId);
+            int i = 3;
+            for(String tenantId: tenantIds) {
+                stmt.setString(i++, tenantId);
+            }
             try ( ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong("totalCount");
@@ -395,7 +404,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected long getChildEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter, String orderBy) {
+    protected long getChildEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, String tenantId, String filter) {
         createTenantIfNotExist(tableName, tenantId);
         String filterSql = null;
 
@@ -441,7 +450,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
-        long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantId, filter);
+        long total = getChildEntityByTypeCount(conn, tableName, rootEntityType, rootId, entityType, tenantId, filter);
         String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and tenantId = ? " + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         log.info("getChildEntityByType : " + sql);
         List<String> list = new LinkedList<>();

@@ -13,11 +13,8 @@ import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.util.Util;
 import reactor.core.publisher.Mono;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -167,7 +164,17 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         }
 
         @Override
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, Collection<String> tenantId, Query.PagingRequest paging) {
+            return queryOperation.getAllChildByType(rootType, id, childType, tenantId, paging);
+        }
+
+        @Override
         public ResultSet<R> getAllByRootType(Class<R> rootType, String tenantId, Query.PagingRequest paging) {
+            return queryOperation.getAllByRootType(rootType, tenantId, paging);
+        }
+
+        @Override
+        public ResultSet<R> getAllByRootType(Class<R> rootType, Collection<String> tenantId, Query.PagingRequest paging) {
             return queryOperation.getAllByRootType(rootType, tenantId, paging);
         }
 

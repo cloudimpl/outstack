@@ -241,7 +241,21 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String t = tenantId != null ? tenantId : "nonTenant";
 
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), t, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        ResultSet<String> rs = factory.executeQuery(fn);
+        List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
+        if (paging.getOrderBy() == null) {
+            items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+            return EventRepoUtil.onPageable(items, paging);
+        }
+        return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
+    }
+
+    @Override
+    public ResultSet<T> getAllByRootType(Class<T> rootType, List<String> tenantIds, Query.PagingRequest paging) {
+
+        List<String> tenantIdList = tenantIds.stream().map(t -> t==null? "nonTenant": t).collect(Collectors.toList());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
         if (paging.getOrderBy() == null) {
@@ -298,6 +312,11 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
             return EventRepoUtil.onPageable(items, paging);
         }
         return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
+    }
+
+    @Override
+    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, List<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

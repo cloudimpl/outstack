@@ -5,12 +5,12 @@
  */
 package com.cloudimpl.outstack.runtime;
 
+import com.amazonaws.services.dynamodbv2.xspec.L;
 import com.cloudimpl.outstack.runtime.domainspec.ChildEntity;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Optional;
+
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -21,22 +21,22 @@ import java.util.function.Function;
 public class ExternalEntityQueryProvider<R extends RootEntity> {
 
     private final Class<R> type;
-    private final String tenantId;
+    private final Collection<String> tenantIds;
     private final QueryOperations<R> queryOperations;
 
-    public ExternalEntityQueryProvider(QueryOperations<R> queryOperations, Class<R> type,String tenantId) {
+    public ExternalEntityQueryProvider(QueryOperations<R> queryOperations, Class<R> type, Collection<String> tenantIds) {
         this.queryOperations = queryOperations;
-        this.tenantId = tenantId;
+        this.tenantIds = tenantIds;
         this.type = type;
     }
 
     public ResultSet<R> getAllRootByType(Query.PagingRequest pageRequest)
     {
-        return this.queryOperations.getAllByRootType(type, tenantId, pageRequest);
+        return this.queryOperations.getAllByRootType(type, tenantIds, pageRequest);
     }
     
     public Optional<R> getRoot(String id) {
-        return this.queryOperations.getRootById(type, id, tenantId);
+        return this.queryOperations.getRootById(type, id, tenantIds.isEmpty()? null: tenantIds.iterator().next());
     }
 
     public <T extends ChildEntity<R>> Optional<T> getChild(String rootId,Class<T> childType, String childId) {
@@ -44,7 +44,7 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
         if (!tid.startsWith(EventRepositoy.TID_PREFIX)) {
             tid = getRoot(rootId).get().id();
         }
-        return this.queryOperations.getChildById(type, tid, childType, childId, tenantId);
+        return this.queryOperations.getChildById(type, tid, childType, childId, tenantIds.isEmpty()? null: tenantIds.iterator().next());
     }
 
     public <T extends ChildEntity<R>> ResultSet<T> getChildsByType(String rootId,Class<T> childType, Query.PagingRequest pageRequest) {
@@ -52,7 +52,7 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
         if (!rootId.startsWith(EventRepositoy.TID_PREFIX)) {
             tid = getRoot(rootId).get().id();
         }
-        return this.queryOperations.getAllChildByType(type, tid, childType, tenantId, pageRequest);
+        return this.queryOperations.getAllChildByType(type, tid, childType, tenantIds, pageRequest);
     }
 
     public <T extends ChildEntity<R>> Collection<T> getChildsByType(String rootId,Class<T> childType) {

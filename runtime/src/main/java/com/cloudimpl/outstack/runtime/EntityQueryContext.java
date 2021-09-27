@@ -10,6 +10,8 @@ import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -33,7 +35,7 @@ public interface EntityQueryContext<T extends Entity> {
 
     <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType);
 
-    <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType, String tenantId);
+    <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType, Collection<String> tenantId);
 
     ResultSet<Event<T>> getEntityEventsById(String id, Query.PagingRequest pageRequest);
 

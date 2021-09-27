@@ -26,13 +26,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -116,6 +110,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
+    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, Collection<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public synchronized Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         if (id.startsWith(TID_PREFIX)) {
             return Optional.ofNullable((T) mapEntites.get(resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId))));
@@ -162,6 +161,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
                 .collect(Collectors.toList());
         return EventRepoUtil.onPageable(filterCollection, paging);
 
+    }
+
+    @Override
+    public ResultSet<T> getAllByRootType(Class<T> rootType, Collection<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

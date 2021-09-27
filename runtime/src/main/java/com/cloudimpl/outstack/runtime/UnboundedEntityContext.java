@@ -4,6 +4,7 @@ import com.cloudimpl.outstack.runtime.domainspec.*;
 import reactor.core.publisher.Mono;
 
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -65,7 +66,7 @@ private EntityContextProvider entityContextProvider;
     }
 
     @Override
-    public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, String tenantId) {
+    public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, Collection<String> tenantId) {
         if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
         {
             throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowed");

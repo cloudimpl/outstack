@@ -88,7 +88,7 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     }
     
     @Override
-    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String tenantId) {
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String... tenantId) {
         return inst.getEntityQueryProvider(rootType,tenantId);
     }
 

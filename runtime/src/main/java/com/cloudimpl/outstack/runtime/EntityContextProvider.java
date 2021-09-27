@@ -388,6 +388,11 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         }
 
         @Override
+        public ResultSet<R> getAllByRootType(Class<R> rootType, Collection<String> tenantId, Query.PagingRequest paging) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public Optional<R> getRootById(Class<R> rootType, String id, String tenantId) {
             return transactionMap.values().stream().filter(tr -> tr.getRootType() == rootType).map(tx -> tx.getRootById(rootType, id, tenantId)).filter(t -> t.isPresent()).findFirst().orElse(this.queryOperation.getRootById(rootType, id, tenantId));
         }
@@ -399,6 +404,11 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
 
         @Override
         public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, String tenantId, Query.PagingRequest paging) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType, String id, Class<T> childType, Collection<String> tenantId, Query.PagingRequest paging) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
