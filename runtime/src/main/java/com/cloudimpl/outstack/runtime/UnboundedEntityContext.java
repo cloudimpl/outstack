@@ -66,13 +66,13 @@ private EntityContextProvider entityContextProvider;
     }
 
 //    @Override
-//    public ExternalEntityQueryProvider<T> getEntityQueryProviderFromTenantList(Class<T> rootType, Collection<String> tenantId) {
+//    public <K extends RootEntity> ExternalEntityQueryProvider<K> getEntityQueryProviderFromTenantList(Class<K> rootType, Collection<String> tenantId) {
 //        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);
 //    }
 
     @Override
     public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType) {
-        return null;
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

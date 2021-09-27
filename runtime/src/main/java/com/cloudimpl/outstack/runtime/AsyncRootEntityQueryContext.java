@@ -89,11 +89,6 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     }
     
     @Override
-    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,Collection<String> tenantId) {
-        return inst.getEntityQueryProvider(rootType,tenantId);
-    }
-
-    @Override
     public ResultSet<Event<T>> getEntityEventsById(String id, Query.PagingRequest pageRequest) {
         return inst.getEntityEventsById(id, pageRequest);
     }
@@ -115,6 +110,11 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     @Override
     public boolean isIdExist(String id, String tenantId) {
         return inst.isIdExist(id, tenantId);
+    }
+
+    @Override
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProviderFromTenantList(Class<R> rootType, Collection<String> tenantId) {
+        return inst.getEntityQueryProviderFromTenantList(rootType, tenantId);
     }
 
 
