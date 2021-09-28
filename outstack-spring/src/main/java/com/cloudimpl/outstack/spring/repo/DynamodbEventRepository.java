@@ -420,6 +420,11 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
+    public ResultSet<T> getAllByRootType(Class<T> rootType, Collection<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         String pKey;
         String rKey;
@@ -505,6 +510,11 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
         List items = StreamSupport.stream(iterable.spliterator(), false).map(attr -> GsonCodec.decode(childType, attr.getString("json"))).filter(i->EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
 
         return EventRepoUtil.onPageable(items, paging);
+    }
+
+    @Override
+    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, Collection<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override

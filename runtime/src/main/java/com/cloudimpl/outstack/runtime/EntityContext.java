@@ -10,9 +10,12 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -119,14 +122,19 @@ public abstract class EntityContext<T extends Entity> implements Context {
     public abstract <R extends RootEntity, K extends ChildEntity<R>> ChildEntityContext<R, K> asChildContext();
 
     public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType) {
-        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, getTenantId());
+        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, Collections.singletonList(getTenantId()));
     }
     
-    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String tenantId) {
-        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
-        {
-            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowd");
-        }
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProviderFromTenantList(Class<R> rootType,Collection<String> tenantId) {
+//        if(getTenantId() != null && tenantId != null  && !getTenantId().equals(tenantId))
+//        {
+//            throw new DomainEventException(DomainEventException.ErrorCode.BASIC_VIOLATION,"cross tenant access from tenant context not allowd");
+//        }
         return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);
     }
-}
+
+    public <R extends RootEntity> ExternalEntityQueryProvider<R> getEntityQueryProvider(Class<R> rootType,String tenantId) {
+        return getEntityQueryProviderFromTenantList(rootType, Collections.singletonList(tenantId));
+    }
+
+    }

@@ -23,6 +23,7 @@ import com.cloudimpl.outstack.runtime.domainspec.EntityRenamed;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -172,6 +173,11 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
     }
 
     @Override
+    public ResultSet<T> getAllByRootType(Class<T> rootType, Collection<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         if (EntityIdHelper.isTechnicalId(id)) {
             return Optional.ofNullable((T) mapTrnEntities.get(RootEntity.makeTRN(rootType, version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
@@ -194,6 +200,11 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
     @Override
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public <T1 extends ChildEntity<T>> ResultSet<T1> getAllChildByType(Class<T> rootType, String id, Class<T1> childType, Collection<String> tenantId, Query.PagingRequest paging) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
