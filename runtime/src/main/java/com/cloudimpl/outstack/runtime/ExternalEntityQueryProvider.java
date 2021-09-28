@@ -12,6 +12,7 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -28,12 +29,16 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
 
     public ExternalEntityQueryProvider(QueryOperations<R> queryOperations, Class<R> type, Collection<String> tenantIds) {
         this.queryOperations = queryOperations;
-        this.tenantIds = tenantIds;
+        this.tenantIds = tenantIds == null ? Collections.EMPTY_LIST:tenantIds;
         this.type = type;
     }
 
     public ResultSet<R> getAllRootByType(Query.PagingRequest pageRequest)
     {
+        if(tenantIds.isEmpty() || tenantIds.size() == 1)
+        {
+            return this.queryOperations.getAllByRootType(type, tenantIds.isEmpty()? null:tenantIds.iterator().next(), pageRequest);
+        }
         return this.queryOperations.getAllByRootType(type, tenantIds, pageRequest);
     }
     
@@ -53,6 +58,10 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
         String tid = rootId;
         if (!rootId.startsWith(EventRepositoy.TID_PREFIX)) {
             tid = getRoot(rootId).get().id();
+        }
+        if(tenantIds.isEmpty() || tenantIds.size() == 1)
+        {
+            return this.queryOperations.getAllChildByType(type, tid, childType, tenantIds.isEmpty()? null:tenantIds.iterator().next(), pageRequest);
         }
         return this.queryOperations.getAllChildByType(type, tid, childType, tenantIds, pageRequest);
     }
