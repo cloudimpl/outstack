@@ -5,15 +5,7 @@
  */
 package com.cloudimpl.outstack.spring.repo;
 
-import com.cloudimpl.rstack.dsl.restql.BinNode;
-import com.cloudimpl.rstack.dsl.restql.ConstArrayNode;
-import com.cloudimpl.rstack.dsl.restql.ConstBooleanNode;
-import com.cloudimpl.rstack.dsl.restql.ConstNumberNode;
-import com.cloudimpl.rstack.dsl.restql.ConstStringNode;
-import com.cloudimpl.rstack.dsl.restql.OrderByExpNode;
-import com.cloudimpl.rstack.dsl.restql.OrderByNode;
-import com.cloudimpl.rstack.dsl.restql.RelNode;
-import com.cloudimpl.rstack.dsl.restql.RestQLNode;
+import com.cloudimpl.rstack.dsl.restql.*;
 import com.google.gson.JsonObject;
 import java.util.stream.Collectors;
 
@@ -35,7 +27,7 @@ public class PostgresSqlNode implements RestQLNode {
             return String.valueOf(ConstBooleanNode.class.cast(node).getVal());
         } else if (node instanceof RelNode) {
             RelNode rel = RelNode.class.cast(node);
-            return convertToJsonField(rel.getFieldName()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":rel.getOp().getOp()) + (String) rel.getConstNode().eval(this);
+            return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":rel.getOp().getOp()) + (String) rel.getConstNode().eval(this);
         } else if (node instanceof BinNode) {
             BinNode binNode = BinNode.class.cast(node);
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
@@ -56,12 +48,22 @@ public class PostgresSqlNode implements RestQLNode {
     }
 
     public static String convertToJsonField(String field) {
-        String[] fields = field.split(".");
-        if (fields.length == 0) {
+        String[] fields = field.split("\\.");
+        if (fields.length == 1) {
             return "json->>'" + field + "'";
-        } else if (field.length() == 2) {
+        } else if (fields.length == 2) {
             return "json->'" + fields[0] + "'->>'" + fields[1] + "'";
         }
         throw new RuntimeException("invalid field format");
+    }
+
+    public static String castToType(String fieldName, ConstNode constNode) {
+        if (constNode instanceof ConstNumberNode) {
+            return "(" + fieldName + ")::numeric";
+        } else if (constNode instanceof ConstBooleanNode) {
+            return "(" + fieldName + ")::bool";
+        } else {
+            return fieldName;
+        }
     }
 }
