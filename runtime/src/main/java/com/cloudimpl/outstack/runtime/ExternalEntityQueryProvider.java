@@ -29,7 +29,7 @@ public class ExternalEntityQueryProvider<R extends RootEntity> {
 
     public ExternalEntityQueryProvider(QueryOperations<R> queryOperations, Class<R> type, Collection<String> tenantIds) {
         this.queryOperations = queryOperations;
-        this.tenantIds = tenantIds == null ? new LinkedList<>():tenantIds;
+        this.tenantIds = tenantIds == null ? Collections.EMPTY_LIST:tenantIds;
         this.type = type;
     }
 
