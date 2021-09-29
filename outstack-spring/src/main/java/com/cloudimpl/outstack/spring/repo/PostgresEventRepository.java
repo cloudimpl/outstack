@@ -374,4 +374,11 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         return factory.executeQuery(func);
     }
 
+    @Override
+    public <K> K executeRawQuery(String rawQuery) {
+        Function<Connection, java.sql.ResultSet> func = conn -> factory.executeRawQuery(conn, rawQuery);
+        return ((K) factory.executeCustomRawQuery(func));
+
+    }
+
 }

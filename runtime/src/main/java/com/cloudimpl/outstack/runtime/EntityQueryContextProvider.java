@@ -183,6 +183,11 @@ public class EntityQueryContextProvider<T extends RootEntity> {
         }
 
         @Override
+        public <K> K executeRawQuery(String rawQuery) {
+            return queryOperation.executeRawQuery(rawQuery);
+        }
+
+        @Override
         public ResultSet<Event<R>> getEventsByRootId(Class<R> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
             return queryOperation.getEventsByRootId(rootType, rootId, tenantId, paging);
         }

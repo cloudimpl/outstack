@@ -175,6 +175,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
+    public <K> K executeRawQuery(String rawQuery) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public ResultSet<Event<T>> getEventsByRootId(Class<T> rootType, String rootId, String tenantId, Query.PagingRequest paging) {
 
         String rn;

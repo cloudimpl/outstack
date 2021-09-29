@@ -65,6 +65,11 @@ private EntityContextProvider entityContextProvider;
         return null;
     }
 
+    @Override
+    public Object executeRawQuery(String rawQuery) {
+        return this.getQueryOperations().executeRawQuery(rawQuery);
+    }
+
 //    @Override
 //    public <K extends RootEntity> ExternalEntityQueryProvider<K> getEntityQueryProviderFromTenantList(Class<K> rootType, Collection<String> tenantId) {
 //        return new ExternalEntityQueryProvider(this.queryOperationSelector.apply(rootType), rootType, tenantId);

@@ -267,6 +267,11 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
+    public <K> K executeRawQuery(String rawQuery) {
+        return this.getQueryOperations().executeRawQuery(rawQuery);
+    }
+
+    @Override
     public AsyncEntityContext<T> asAsyncEntityContext() {
         throw new UnsupportedOperationException("Not supported."); //To change body of generated methods, choose Tools | Templates.
     }

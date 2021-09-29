@@ -45,4 +45,6 @@ public interface EntityQueryContext<T extends Entity> {
 
     ResultSet<Event<T>> getEntityEventsById(String id, Query.PagingRequest pageRequest);
 
+    <K> K executeRawQuery(String rawQuery);
+
 }

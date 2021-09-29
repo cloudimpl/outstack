@@ -94,6 +94,11 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     }
 
     @Override
+    public <K> K executeRawQuery(String rawQuery) {
+        return inst.getQueryOperations().executeRawQuery(rawQuery);
+    }
+
+    @Override
     public  AsyncRootEntityQueryContext<T> asAsyncQueryContext() {
         return this;
     }
