@@ -37,12 +37,7 @@ public class CreatePolicyStatementRef extends EntityCommandHandler<PolicyStateme
     protected PolicyStatementRef execute(EntityContext<PolicyStatementRef> context, PolicyStatementRefRequest command) {
         PolicyStatement stmt = context.getEntityQueryProvider(PolicyStatement.class).getRoot(command.getPolicyStmtName()).orElseThrow(() -> new PolicyValidationError("policy statement " + command.getPolicyStmtName() + " not found"));
         Policy policy = context.<Policy, PolicyStatementRef>asChildContext().getRoot();
-        stmt.getResources().forEach((ResourceDescriptor rs) -> {
-            if (!rs.getRootType().equals(policy.getRootType())) {
-                throw new ValidationErrorException("rootType mismatched ,expecting : " + policy.getRootType() + " attaching : " + rs.getRootType());
-            }
-        }
-        );
+
         return context.<Policy, PolicyStatementRef>asChildContext().create(EntityIdHelper.idToRefId(stmt.id()), new PolicyStatementRefCreated(context.asChildContext().getRoot().entityId(), EntityIdHelper.idToRefId(stmt.id())));
     }
 
