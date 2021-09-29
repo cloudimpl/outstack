@@ -425,6 +425,11 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
+    public <K> K executeRawQuery(String rawQuery) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public Optional<T> getRootById(Class<T> rootType, String id, String tenantId) {
         String pKey;
         String rKey;

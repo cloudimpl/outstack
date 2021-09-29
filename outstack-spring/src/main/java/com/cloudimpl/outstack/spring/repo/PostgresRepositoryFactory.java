@@ -25,6 +25,7 @@ import com.cloudimpl.rstack.dsl.restql.RestQLNode;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
+import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -495,5 +496,21 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     @Override
     public <T extends RootEntity> EventRepositoy<T> createOrGetRepository(Class<T> rootType) {
         return (EventRepositoy<T>) mapRepos.computeIfAbsent(rootType, type -> new PostgresEventRepository<>(this, (Class<T>) type, this.helper, this.providerConfig));
+    }
+
+    protected java.sql.ResultSet executeRawQuery(Connection conn, String query) {
+
+        log.info("raw query : " + query);
+        try {
+            Statement stmt = conn.createStatement();
+            return stmt.executeQuery(query);
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    public SqlResultSet executeCustomRawQuery(Function<Connection, java.sql.ResultSet> queryHandler) {
+        Connection conn = getConnection();
+        return new SqlResultSet(conn, queryHandler.apply(conn));
     }
 }

@@ -21,6 +21,7 @@ import java.util.Optional;
 public interface QueryOperations<R extends RootEntity>{
     ResultSet<R> getAllByRootType(Class<R> rootType,String tenantId,Query.PagingRequest paging);
     ResultSet<R> getAllByRootType(Class<R> rootType, Collection<String> tenantId, Query.PagingRequest paging);
+    <K> K executeRawQuery(String rawQuery);
     boolean isIdExist(String id,String tenantId);
     Optional<R> getRootById(Class<R> rootType,String id,String tenantId);
     <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType,String id,Class<T> childType, String childId,String tenantId);

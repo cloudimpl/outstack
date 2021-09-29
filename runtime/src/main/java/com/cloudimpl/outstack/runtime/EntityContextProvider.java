@@ -393,6 +393,11 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         }
 
         @Override
+        public <K> K executeRawQuery(String rawQuery) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
         public Optional<R> getRootById(Class<R> rootType, String id, String tenantId) {
             return transactionMap.values().stream().filter(tr -> tr.getRootType() == rootType).map(tx -> tx.getRootById(rootType, id, tenantId)).filter(t -> t.isPresent()).findFirst().orElse(this.queryOperation.getRootById(rootType, id, tenantId));
         }
