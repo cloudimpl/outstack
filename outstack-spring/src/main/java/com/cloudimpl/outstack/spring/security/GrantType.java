@@ -26,7 +26,8 @@ public enum GrantType {
     AUTHORIZATION_CODE,
     PASSWORD,
     REFRESH_TOKEN,
-    TENANT_TOKEN;
+    TENANT_TOKEN,
+    CUSTOM_TOKEN;
 
     public static GrantType from(String type) {
         Objects.requireNonNull(type,"grant type cannot be null");
@@ -43,6 +44,9 @@ public enum GrantType {
             }
             case "tenant_token": {
                 return TENANT_TOKEN;
+            }
+            case "custom_token": {
+                return CUSTOM_TOKEN;
             }
 
             default:
