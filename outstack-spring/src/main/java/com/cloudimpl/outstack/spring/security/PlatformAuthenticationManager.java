@@ -102,6 +102,14 @@ public abstract class PlatformAuthenticationManager implements ReactiveAuthentic
                 }
                 break;
             }
+            case CUSTOM_TOKEN:
+            {
+                if(!BearerTokenAuthenticationToken.class.isInstance(token.getSystemToken()))
+                {
+                    throw new ValidationErrorException("grant type does not match with token type");
+                }
+                break;
+            }
         }
     }
 }

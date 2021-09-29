@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
@@ -36,11 +36,11 @@ import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 public class JwtConfiguration {
 
     @Bean
-    public ReactiveJwtDecoder jwtDecoder(RSAPublicKey publicKey) {
+    public ReactiveJwtDecoder jwtDecoder(@Qualifier("tokenVerificationKey")RSAPublicKey publicKey) {
         return new NimbusReactiveJwtDecoder(publicKey);
     }
 
-    @Bean
+    @Bean(name="tokenVerificationKey")
     //@SneakyThrows
     public RSAPublicKey tokenVerificationKey(SecurityProperties securityProperties) {
 
