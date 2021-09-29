@@ -32,6 +32,7 @@ import com.cloudimpl.outstack.spring.component.SpringService;
 public class PolicyService extends SpringService<Policy>{
     static{
         $(CreatePolicy.class);
+        $(UpdatePolicy.class);
         $(CreatePolicyStatementRef.class);
         $$(Policy.class);
         $$(PolicyStatementRef.class);
