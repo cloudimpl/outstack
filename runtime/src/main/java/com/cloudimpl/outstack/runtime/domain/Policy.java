@@ -75,7 +75,7 @@ public class Policy extends RootEntity implements ITenantOptional {
         return apiContext;
     }
 
-    public String getRootType() {
+    public String getBoundary() {
         return boundary;
     }
     
