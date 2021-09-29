@@ -34,7 +34,7 @@ public class CreatePolicy extends EntityCommandHandler<Policy, PolicyCreateReque
 
     @Override
     protected Policy execute(EntityContext<Policy> context, PolicyCreateRequest command) {
-        return context.create(command.getPolicyName(), new PolicyCreated(command.getPolicyName(), command.getPolicyContext(), helper.getDomainOwner(), helper.getDomainContext(), helper.getApiContext(), command.getRootType()));
+        return context.create(command.getPolicyName(), new PolicyCreated(command.getPolicyName(), command.getPolicyContext(), helper.getDomainOwner(), helper.getDomainContext(), helper.getApiContext(), command.getBoundary()));
     }
 
 }
