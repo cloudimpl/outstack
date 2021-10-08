@@ -96,7 +96,6 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         }
         
         EntityIdHelper.validateId(id, child);
-        EntityIdHelper.validateId(id, event);
        
         EntityHelper.setCreatedDate(event, System.currentTimeMillis());
         EntityHelper.setUserId(event, getTx().getInputMetaProvider().getUserId());
@@ -112,6 +111,7 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
         EntityHelper.setUserId(child, getTx().getInputMetaProvider().getUserId());
         EntityHelper.setUserName(child, getTx().getInputMetaProvider().getUserName());
         validator.accept(child);
+        EntityIdHelper.validateId(id, event);
         addEvent(event);
         getCrudOperations().update(child);
         getEventPublisher().accept(event);
