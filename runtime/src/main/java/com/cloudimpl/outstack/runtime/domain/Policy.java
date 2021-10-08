@@ -87,11 +87,25 @@ public class Policy extends RootEntity implements ITenantOptional {
         this.boundary = policyCreated.getBoundary();
     }
 
+    private void applyEvent(PolicyUpdated policyUpdated) {
+        this.policyContext = policyUpdated.getPolicyContext();
+        this.domainContext = policyUpdated.getDomainContext();
+        this.domainOwner = policyUpdated.getDomainOwner();
+        this.apiContext = policyUpdated.getApiContext();
+        this.boundary = policyUpdated.getBoundary();
+    }
+
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "PolicyCreated": {
+            case "PolicyCreated":
+            {
                 applyEvent((PolicyCreated) event);
+                break;
+            }
+            case "PolicyUpdated":
+            {
+                applyEvent((PolicyUpdated) event);
                 break;
             }
             default: {
