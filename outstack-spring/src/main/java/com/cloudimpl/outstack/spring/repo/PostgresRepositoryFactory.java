@@ -84,7 +84,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     public void execute(List<Function<Connection, Integer>> consumer) {
-        try ( Connection conn = getConnection()) {
+        try (Connection conn = getConnection()) {
             for (Function<Connection, Integer> command : consumer) {
                 int ret = command.apply(conn);
                 if (ret == 0) {
@@ -99,7 +99,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     public int createEntityTable(Connection conn, String tableName) {
-        try ( PreparedStatement stmt = conn.prepareStatement("create table if not exists " + tableName + " (tenantId varchar,brn varchar ,rootEntityType varchar ,rootId varchar , entityType varchar,entityId varchar,json json,lastseq bigint,timestamp bigint,primary key(tenantId,brn)) partition by LIST(tenantId)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("create table if not exists " + tableName + " (tenantId varchar,brn varchar ,rootEntityType varchar ,rootId varchar , entityType varchar,entityId varchar,json json,lastseq bigint,timestamp bigint,primary key(tenantId,brn)) partition by LIST(tenantId)")) {
             boolean ok = stmt.execute();
             conn.commit();
             log.info("creating entity table {} executed , ret {}", tableName, ok);
@@ -111,7 +111,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     public int createEventTable(Connection conn, String tableName) {
         tableName = tableName + "Events";
-        try ( PreparedStatement stmt = conn.prepareStatement("create table if not exists " + tableName + " (tenantId varchar,trn varchar,eventOwner varchar,eventOwnerId varchar,eventType varchar,eventSeq bigint,json json,timestamp bigint,primary key(tenantId,trn,eventSeq)) partition by LIST(tenantId)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("create table if not exists " + tableName + " (tenantId varchar,trn varchar,eventOwner varchar,eventOwnerId varchar,eventType varchar,eventSeq bigint,json json,timestamp bigint,primary key(tenantId,trn,eventSeq)) partition by LIST(tenantId)")) {
             boolean ok = stmt.execute();
             conn.commit();
             log.info("creating events table {} executed , ret {}", tableName, ok);
@@ -122,7 +122,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     public <T> T executeQuery(Function<Connection, T> queryHandler) {
-        try ( Connection conn = getConnection()) {
+        try (Connection conn = getConnection()) {
             return queryHandler.apply(conn);
         } catch (SQLException ex) {
             throw new PostgresException(ex);
@@ -131,7 +131,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     private String createTenantTable(String table, String tenantId) {
         log.info("creating tenant {} for table {} if not exist", tenantId, table);
-        try ( Connection conn = getConnection();  PreparedStatement stmt = conn.prepareStatement("create table if not exists " + table + "_" + tenantId.replaceAll("-", "_") + " partition of " + table + " for values in ('" + tenantId + "')")) {
+        try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement("create table if not exists " + table + "_" + tenantId.replaceAll("-", "_") + " partition of " + table + " for values in ('" + tenantId + "')")) {
             boolean ok = stmt.execute();
             conn.commit();
             log.info("creating tenant {} for table {} if not exist completed. {}", tenantId, table, ok);
@@ -143,7 +143,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int insertEntity(Connection conn, String tableName, String tenantId, String rootEntityType, String rootId, String brn, String entityType, String entityId, String json, long lastSeq) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,rootEntityType,rootId,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?,?,?)")) {
+        try (PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,rootEntityType,rootId,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?,?,?)")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, rootEntityType);
             stmt.setString(3, rootId);
@@ -164,7 +164,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int deleteChildEntityByRootId(Connection conn, String tableName, String tenantId, String rootEntityType, String rootId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and rootEntityType = ? and rootId = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and rootEntityType = ? and rootId = ?")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, rootEntityType);
             stmt.setString(3, rootId);
@@ -177,7 +177,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int deleteEventsByRootId(Connection conn, String tableName, String tenantId, String rootId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and json->>'_rootId' = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and json->>'_rootId' = ?")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, rootId);
             stmt.executeUpdate();
@@ -189,7 +189,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int insertCheckpoint(Connection conn, String tableName, String tenantId, String brn, String entityType, String entityId, String json, long lastSeq) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?) on conflict (tenantId,brn) do update set json = ? , timestamp  = ? , lastseq = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,brn,entityType,entityId,json,lastseq,timestamp) values(?,?,?,?,?,?,?) on conflict (tenantId,brn) do update set json = ? , timestamp  = ? , lastseq = ?")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, brn);
             stmt.setString(3, entityType);
@@ -211,7 +211,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int insertEvent(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, String eventType, long eventSeq, String json) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,trn,eventOwner,eventOwnerId,eventType,eventSeq,json,timestamp) values(?,?,?,?,?,?,?,?) ")) {
+        try (PreparedStatement stmt = conn.prepareStatement("insert into " + tableName + " (tenantId,trn,eventOwner,eventOwnerId,eventType,eventSeq,json,timestamp) values(?,?,?,?,?,?,?,?) ")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, trn);
             stmt.setString(3, eventOwner);
@@ -233,7 +233,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         createTenantIfNotExist(tableName, tenantId);
         String sql = "delete from " + tableName + " where tenantId = ? and trn = ? and eventOwner = ? and eventOwnerId = ?";
         log.info("deleteEventsByTrn : " + sql);
-        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, tenantId);
             stmt.setString(2, trn);
             stmt.setString(3, eventOwner);
@@ -244,22 +244,68 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected Collection<String> getEvents(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, long eventSeq) {
+    protected com.cloudimpl.outstack.runtime.ResultSet<String> getEvents(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, String filter, String orderBy, int pageNum, int pageSize) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ? and eventOwnerId = ? and eventSeq < ? order by eventSeq desc")) {
+        String filterSql = null;
+        String orderBySql = null;
+        if (filter != null) {
+            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            PostgresSqlNode sqlNode = new PostgresSqlNode();
+            filterSql = sqlNode.eval(qlNode);
+        }
+
+        if (orderBy != null) {
+            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(orderBy));
+            PostgresSqlNode sqlNode = new PostgresSqlNode();
+            orderBySql = sqlNode.eval(qlNode);
+        } else {
+            orderBy = "eventSeq desc";
+        }
+        long total = getTotalEventsCount(conn, tableName, tenantId, trn, eventOwner, eventOwnerId, filter);
+        String sqlQuery = "select json from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ? and eventOwnerId = ? " + (filterSql != null ? " and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
+        log.info("getEvents : " + sqlQuery);
+        try (PreparedStatement stmt = conn.prepareStatement(sqlQuery)) {
             stmt.setString(1, trn);
             stmt.setString(2, tenantId);
             stmt.setString(3, eventOwner);
             stmt.setString(4, eventOwnerId);
-            stmt.setLong(5, eventSeq);
 
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 System.out.println("fetch size : " + rs.getFetchSize());
                 List<String> list = new LinkedList<>();
                 while (rs.next()) {
                     list.add(rs.getString("json"));
                 }
-                return list;
+                return new com.cloudimpl.outstack.runtime.ResultSet<>(total, (int) Math.ceil(((double) total) / pageSize), pageNum, list);
+            }
+
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
+    protected long getTotalEventsCount(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, String filter) {
+        createTenantIfNotExist(tableName, tenantId);
+        String filterSql = null;
+        if (filter != null) {
+            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            PostgresSqlNode sqlNode = new PostgresSqlNode();
+            filterSql = sqlNode.eval(qlNode);
+        }
+        String sqlQuery = "select count(*) as totalCount  from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ? and eventOwnerId = ? " + (filterSql != null ? " and " + filterSql : "");
+        try (PreparedStatement stmt = conn.prepareStatement(sqlQuery)) {
+            stmt.setString(1, trn);
+            stmt.setString(2, tenantId);
+            stmt.setString(3, eventOwner);
+            stmt.setString(4, eventOwnerId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                System.out.println("fetch size : " + rs.getFetchSize());
+                if (rs.next()) {
+                    return rs.getLong("totalCount");
+                } else {
+                    return 0;
+                }
             }
 
         } catch (SQLException ex) {
@@ -269,7 +315,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int updateEntity(Connection conn, String tableName, String tenantId, String brn, String entityType, String entityId, String json, long lastSeq, long updatedSeq) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("update " + tableName + " set brn = ?, json = ? , lastseq = ?  ,timestamp = ?  where tenantId = ? and lastSeq = ? and entityType = ? and entityId = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("update " + tableName + " set brn = ?, json = ? , lastseq = ?  ,timestamp = ?  where tenantId = ? and lastSeq = ? and entityType = ? and entityId = ?")) {
             stmt.setString(1, brn);
             PGobject pGobject = new PGobject();
             pGobject.setType("json");
@@ -289,7 +335,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected int deleteEntity(Connection conn, String tableName, String tenantId, String brn, String entityId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and brn = ? and entityId = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("delete from " + tableName + " where tenantId = ? and brn = ? and entityId = ?")) {
             stmt.setString(1, tenantId);
             stmt.setString(2, brn);
             stmt.setString(3, entityId);
@@ -301,10 +347,10 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected Optional<String> getEntityByBrn(Connection conn, String tableName, String brn, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where brn = ? and tenantId = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where brn = ? and tenantId = ?")) {
             stmt.setString(1, brn);
             stmt.setString(2, tenantId);
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(rs.getString("json"));
                 } else {
@@ -319,11 +365,11 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected Optional<String> getEntityByTrn(Connection conn, String tableName, String entityType, String id, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where entityType = ? and entityId = ? and tenantId = ?")) {
+        try (PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where entityType = ? and entityId = ? and tenantId = ?")) {
             stmt.setString(1, entityType);
             stmt.setString(2, id);
             stmt.setString(3, tenantId);
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return Optional.of(rs.getString("json"));
                 } else {
@@ -351,9 +397,10 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             orderBySql = sqlNode.eval(qlNode);
         }
 
-        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        tenantIds.forEach(tenantId -> createTenantIfNotExist(tableName, tenantId));
         long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantIds, filter);
         String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
+        String sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? " and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         String sql = "";
         if (total > (pageNum * pageSize)) {
             sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
@@ -362,14 +409,14 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
         log.info("getRootEntityByType : " + sql);
         List<String> list = new LinkedList<>();
-        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootEntityType);
             int i = 3;
-            for(String tenantId: tenantIds) {
+            for (String tenantId : tenantIds) {
                 stmt.setString(i++, tenantId);
             }
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     list.add(rs.getString("json"));
                 }
@@ -388,17 +435,17 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
-        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        tenantIds.forEach(tenantId -> createTenantIfNotExist(tableName, tenantId));
         String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
         String sql = "select count(*) as totalCount from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "");
-        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootEntityType);
             int i = 3;
-            for(String tenantId: tenantIds) {
+            for (String tenantId : tenantIds) {
                 stmt.setString(i++, tenantId);
             }
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getLong("totalCount");
                 } else {
@@ -411,7 +458,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     protected long getChildEntityByTypeCount(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, List<String> tenantIds, String filter) {
-        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        tenantIds.forEach(tenantId -> createTenantIfNotExist(tableName, tenantId));
         String filterSql = null;
 
         if (filter != null) {
@@ -421,15 +468,15 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
         String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
         String sql = "select count(*) as TotalCount from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and " + tenantQuery + (filterSql != null ? "and " + filterSql : "");
-        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootId);
             stmt.setString(3, entityType);
             int i = 4;
-            for(String tenantId: tenantIds) {
+            for (String tenantId : tenantIds) {
                 stmt.setString(i++, tenantId);
             }
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
 
                 if (rs.next()) {
                     return rs.getLong("TotalCount");
@@ -445,7 +492,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     protected com.cloudimpl.outstack.runtime.ResultSet<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, List<String> tenantIds, String filter, String orderBy, int pageNum, int pageSize) {
-        tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
+        tenantIds.forEach(tenantId -> createTenantIfNotExist(tableName, tenantId));
         String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
         String filterSql = null;
         String orderBySql = null;
@@ -464,15 +511,15 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         String sql = "select json from " + tableName + " where rootEntityType = ? and rootId = ? and entityType = ?  and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
         log.info("getChildEntityByType : " + sql);
         List<String> list = new LinkedList<>();
-        try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, rootEntityType);
             stmt.setString(2, rootId);
             stmt.setString(3, entityType);
             int i = 4;
-            for(String tenantId: tenantIds) {
+            for (String tenantId : tenantIds) {
                 stmt.setString(i++, tenantId);
             }
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     list.add(rs.getString("json"));
                 }
@@ -486,10 +533,10 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
     protected boolean isIdExist(Connection conn, String tableName, String id, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
-        try ( PreparedStatement stmt = conn.prepareStatement("select 1 from " + tableName + " where entityId = ? and tenantId = ? limit 1")) {
+        try (PreparedStatement stmt = conn.prepareStatement("select 1 from " + tableName + " where entityId = ? and tenantId = ? limit 1")) {
             stmt.setString(1, id);
             stmt.setString(2, tenantId);
-            try ( ResultSet rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
             }
 
