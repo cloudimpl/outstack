@@ -334,10 +334,10 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String t = tenantId != null ? tenantId : "nonTenant";
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, rootId, tenantId));
 
-        Function<Connection, Collection<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, this.rootType.getSimpleName(), rootId, Long.MAX_VALUE);
-
-        List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
-        return EventRepoUtil.onPageable(items, paging);
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, this.rootType.getSimpleName(), rootId,paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        ResultSet<String> rs = factory.executeQuery(fn);
+        List items = rs.getItems().stream().map(s -> GsonCodec.decode(s)).collect(Collectors.toList());
+        return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
     }
 
     @Override
@@ -351,10 +351,10 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
 
         String childTid = childId;
-        Function<Connection, Collection<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, childType.getSimpleName(), childTid, Long.MAX_VALUE);
-
-        List items = factory.executeQuery(fn).stream().map(s -> GsonCodec.decode(s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
-        return EventRepoUtil.onPageable(items, paging);
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, childType.getSimpleName(), childTid,paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        ResultSet<String> rs = factory.executeQuery(fn);
+        List items = rs.getItems().stream().map(s -> GsonCodec.decode(s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
+        return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
     }
 
     @Override
