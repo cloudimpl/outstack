@@ -354,7 +354,12 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         tenantIds.forEach(tenantId->createTenantIfNotExist(tableName, tenantId));
         long total = getRootEntityByTypeCount(conn, tableName, rootEntityType, tenantIds, filter);
         String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
-        String sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
+        String sql = "";
+        if (total > (pageNum * pageSize)) {
+            sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
+        } else {
+            sql = "select json from " + tableName + " where rootEntityType = ?  and entityType = ? and " + tenantQuery + (filterSql != null ? "and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize: "");
+        }
         log.info("getRootEntityByType : " + sql);
         List<String> list = new LinkedList<>();
         try ( PreparedStatement stmt = conn.prepareStatement(sql)) {
