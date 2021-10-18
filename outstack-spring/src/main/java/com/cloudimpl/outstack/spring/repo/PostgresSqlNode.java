@@ -42,7 +42,7 @@ public class PostgresSqlNode implements RestQLNode {
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
         }else if (node instanceof OrderByNode) {
             OrderByNode orderBy = OrderByNode.class.cast(node);
-            return convertToJsonField(orderBy.getFieldName()) + " " + orderBy.getOrder();
+            return castToType(convertToJsonField(orderBy.getFieldName()),orderBy.getDataType() )+ " " + orderBy.getOrder();
         }else if(node instanceof  OrderByExpNode)
         {
             OrderByExpNode expNode = OrderByExpNode.class.cast(node);
@@ -57,6 +57,11 @@ public class PostgresSqlNode implements RestQLNode {
     }
 
     public static String convertToJsonField(String field) {
+        if(field.startsWith("_"))
+        {
+            return field.substring(1);
+        }
+        
         String[] fields = field.split("\\.");
         if (fields.length == 1) {
             return "json->>'" + field + "'";
@@ -75,4 +80,27 @@ public class PostgresSqlNode implements RestQLNode {
             return fieldName;
         }
     }
+    
+    public static String castToType(String fieldName,OrderByNode.DataType dataType) {
+        switch(dataType)
+        {
+            case BOOL:
+            {
+                return "("+fieldName+")::bool";
+            }
+            case NUMBER:{
+                return "("+fieldName+")::numeric";
+            }
+            case STRING:
+            {
+                return fieldName;
+            }
+            default:
+            {
+                return fieldName;
+            }
+        }
+        
+    }
+    
 }

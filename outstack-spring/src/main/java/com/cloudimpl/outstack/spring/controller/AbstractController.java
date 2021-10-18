@@ -13,6 +13,7 @@ import com.cloudimpl.outstack.spring.controller.exception.BadRequestException;
 import com.cloudimpl.outstack.spring.controller.exception.NotImplementedException;
 import com.cloudimpl.outstack.spring.controller.exception.ResourceNotFoundException;
 import com.cloudimpl.outstack.spring.security.PolicyEvaluationException;
+import com.cloudimpl.outstack.spring.service.RestControllerService;
 import com.cloudimpl.outstack.spring.util.FileUtil;
 import com.cloudimpl.rstack.dsl.restql.RestQLNode;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
@@ -482,7 +483,7 @@ public abstract class AbstractController {
                 .withRootType(serviceDesc.getRootType())
                 .withVersion(version)
                 .withRootId(rootId).withId(rootId).withTenantId(tenantId).build();
-         ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, serviceDesc.getRootType());
         stats.setRootId(rootId);
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
@@ -507,17 +508,34 @@ public abstract class AbstractController {
     }
 
     protected SpringServiceDescriptor getServiceCmdDescriptor(String context, String version, String rootTypePlural) {
-        return cluster.getServiceDescriptorContextManager()
-                .getCmdServiceDescriptorManager(context, version)
-                .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
-                .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+        try {
+            return cluster.getServiceDescriptorContextManager()
+                    .getCmdServiceDescriptorManager(context, version)
+                    .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
+                    .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+        } catch (ResourceNotFoundException ex) {
+            RestControllerService.refresh(rootTypePlural);
+            return cluster.getServiceDescriptorContextManager()
+                    .getCmdServiceDescriptorManager(context, version)
+                    .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
+                    .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+        }
+
     }
 
     protected SpringServiceDescriptor getServiceQueryDescriptor(String context, String version, String rootTypePlural) {
-        return cluster.getServiceDescriptorContextManager()
-                .getQueryServiceDescriptorManager(context, version)
-                .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
-                .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+        try {
+            return cluster.getServiceDescriptorContextManager()
+                    .getQueryServiceDescriptorManager(context, version)
+                    .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
+                    .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+        } catch (ResourceNotFoundException ex) {
+            RestControllerService.refresh(rootTypePlural);
+            return cluster.getServiceDescriptorContextManager()
+                    .getQueryServiceDescriptorManager(context, version)
+                    .flatMap(desc -> desc.getServiceDescriptorByPlural(rootTypePlural))
+                    .orElseThrow(() -> new ResourceNotFoundException("resource {0} not found", rootTypePlural));
+        }
     }
 
     protected void validateAction(SpringServiceDescriptor.ActionDescriptor action,
