@@ -57,7 +57,7 @@ public class PostgresSqlNode implements RestQLNode {
     }
 
     public static String convertToJsonField(String field) {
-        if(field.startsWith("_"))
+        if(field.equals("_eventType"))
         {
             return field.substring(1);
         }
