@@ -13,6 +13,7 @@ import com.cloudimpl.outstack.core.CloudService;
 import com.cloudimpl.outstack.core.CloudServiceDescriptor;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.Named;
+import com.cloudimpl.outstack.core.ServiceRegistryReadOnly;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
 import com.cloudimpl.outstack.core.logger.ILogger;
@@ -53,12 +54,17 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     private ServiceDescriptorContextManager serviceManager;
     private ILogger logger;
     private EventRepositoryFactory eventRepoFactory;
-    private Map<String,DomainContext> domainContexts = new ConcurrentHashMap<>();
-    public static FluxMap<String,DomainContext> domainContextsFlux = new FluxMap<>("DomainContext");
-    
+    private Map<String, DomainContext> domainContexts = new ConcurrentHashMap<>();
+    public static FluxMap<String, DomainContext> domainContextsFlux = new FluxMap<>("DomainContext");
+
+    public static RestControllerService instance;
+    private ServiceRegistryReadOnly serviceRegistry;
+
     @Inject
-    public RestControllerService(@Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
-            ServiceDescriptorContextManager serviceManager,@Named("MemRepositoryFactory") EventRepositoryFactory eventRepoFactory, ILogger logger) {
+    public RestControllerService(ServiceRegistryReadOnly serviceRegistry, @Named("@serviceFlux") Flux<FluxMap.Event<String, CloudService>> serviceFlux,
+            ServiceDescriptorContextManager serviceManager, @Named("MemRepositoryFactory") EventRepositoryFactory eventRepoFactory, ILogger logger) {
+        this.serviceRegistry = serviceRegistry;
+        RestControllerService.instance = this;
         this.logger = logger.createSubLogger(RestControllerService.class);
         this.eventRepoFactory = eventRepoFactory;
         this.serviceFlux = serviceFlux;
@@ -90,6 +96,25 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
         return Optional.empty();
     }
 
+    public static void refresh(String rootTypePlural) {
+        instance._refresh(rootTypePlural);
+    }
+
+    public void _refresh(String rootTypePlural) {
+        logger.warn("refreshing  rootType : {0}", rootTypePlural);
+        serviceRegistry.services().filter(srv -> srv.getDescriptor().getAttr().get("serviceMeta") != null)
+                .map(srv -> srv.getDescriptor().getAttr().get("serviceMeta"))
+                .map(s -> GsonCodec.decode(SpringServiceDescriptor.class, s))
+                .filter(s -> s.getPlural().equals(rootTypePlural))
+                .forEach(this::addCmdDescriptor);
+
+        serviceRegistry.services().filter(srv -> srv.getDescriptor().getAttr().get("serviceQueryMeta") != null)
+                .map(srv -> srv.getDescriptor().getAttr().get("serviceQueryMeta"))
+                .map(s -> GsonCodec.decode(SpringServiceDescriptor.class, s))
+                .filter(s -> s.getPlural().equals(rootTypePlural))
+                .forEach(this::addQueryDescriptor);
+    }
+
     private Optional<SpringServiceDescriptor> getSpringQueryDescriptor(CloudServiceDescriptor serviceDescriptor) {
         String str = serviceDescriptor.getAttr().get("serviceQueryMeta");
         if (str != null) {
@@ -101,23 +126,20 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
     }
 
     private void addCmdDescriptor(SpringServiceDescriptor desc) {
-        try
-        {
+        try {
             this.serviceManager.putCmdContext(desc.getApiContext(), desc.getVersion(), desc);
             addEntities(desc);
-        }catch(Exception ex)
-        {
-            logger.exception(ex,"addCmdDescriptor");
+        } catch (Exception ex) {
+            logger.exception(ex, "addCmdDescriptor");
         }
     }
 
     private void addQueryDescriptor(SpringServiceDescriptor desc) {
-        try{
-             this.serviceManager.putQueryContext(desc.getApiContext(), desc.getVersion(), desc);
-             addEntities(desc);
-        }catch(Exception ex)
-        {
-            logger.exception(ex,"addQueryDescriptor");
+        try {
+            this.serviceManager.putQueryContext(desc.getApiContext(), desc.getVersion(), desc);
+            addEntities(desc);
+        } catch (Exception ex) {
+            logger.exception(ex, "addQueryDescriptor");
         }
     }
 
@@ -128,27 +150,27 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
     private void addEntities(SpringServiceDescriptor desc) {
 
-        ServiceModule service = eventRepoFactory.createOrGetRepository(ServiceModule.class).getRootById(ServiceModule.class, desc.getDomainOwner()+":"+desc.getDomainContext() + ":" + desc.getRootType(), null)
-                .orElseGet(()->createMicroService(desc));
-        addActions(eventRepoFactory.createOrGetRepository(ServiceModule.class),service.id(), desc.getRootType(), desc, desc.getRootActions());
+        ServiceModule service = eventRepoFactory.createOrGetRepository(ServiceModule.class).getRootById(ServiceModule.class, desc.getDomainOwner() + ":" + desc.getDomainContext() + ":" + desc.getRootType(), null)
+                .orElseGet(() -> createMicroService(desc));
+        addActions(eventRepoFactory.createOrGetRepository(ServiceModule.class), service.id(), desc.getRootType(), desc, desc.getRootActions());
         desc.entityDescriptors().forEach(ed -> {
-            addActions(eventRepoFactory.createOrGetRepository(ServiceModule.class),service.id(), ed.getName(), desc, desc.getChildActions(ed.getName()));
+            addActions(eventRepoFactory.createOrGetRepository(ServiceModule.class), service.id(), ed.getName(), desc, desc.getChildActions(ed.getName()));
         });
     }
 
     private ServiceModule createMicroService(SpringServiceDescriptor desc) {
         DomainContext domainContext = createOrGetDomainContext(desc);
-        
-        String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(desc.getDomainOwner()+"/"+desc.getDomainContext() + ":" + desc.getRootType());
-        ServiceModuleProvisioned provisioned = new ServiceModuleProvisioned(desc.getServiceName(), desc.getDomainOwner()+":"+desc.getDomainContext() + ":" + desc.getRootType(),
+
+        String id = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(desc.getDomainOwner() + "/" + desc.getDomainContext() + ":" + desc.getRootType());
+        ServiceModuleProvisioned provisioned = new ServiceModuleProvisioned(desc.getServiceName(), desc.getDomainOwner() + ":" + desc.getDomainContext() + ":" + desc.getRootType(),
                 desc.getVersion(), desc.getApiContext(), desc.getTenancy());
         provisioned.setId(id);
         provisioned.setRootId(id);
         provisioned.setAction(Event.Action.CREATE);
         EntityHelper.setVersion(provisioned, Entity.getVersion(ServiceModule.class));
         EntityHelper.setCreatedDate(provisioned, System.currentTimeMillis());
-        
-        String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(desc.getDomainOwner()+"/"+desc.getDomainContext() + ":" + id);
+
+        String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(desc.getDomainOwner() + "/" + desc.getDomainContext() + ":" + id);
         ServiceModuleRefCreated refEvent = new ServiceModuleRefCreated(EntityIdHelper.idToRefId(id), domainContext.entityId());
         refEvent.setId(childId);
         refEvent.setRootId(domainContext.id());
@@ -159,10 +181,10 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
         return eventRepoFactory.createOrGetRepository(ServiceModule.class).applyEvent(provisioned);
     }
 
-    private void addActions(EventRepositoy eventRepo,String rootId, String targetEntity, SpringServiceDescriptor serviceDesc, Collection<SpringServiceDescriptor.ActionDescriptor> actions) {
+    private void addActions(EventRepositoy eventRepo, String rootId, String targetEntity, SpringServiceDescriptor serviceDesc, Collection<SpringServiceDescriptor.ActionDescriptor> actions) {
         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER).forEach(action -> {
             CommandHandlerRegistered event = new CommandHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":cmd:" + action.getName());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner() + "/" + serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":cmd:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
@@ -173,7 +195,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
 
         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.EVENT_HANDLER).forEach(action -> {
             EventHandlerRegistered event = new EventHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":evt:" + action.getName());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner() + "/" + serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":evt:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
@@ -182,29 +204,28 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             eventRepo.applyEvent(event);
         });
 
-         actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
+        actions.stream().filter(action -> action.getActionType() == SpringServiceDescriptor.ActionDescriptor.ActionType.QUERY_HANDLER).forEach(action -> {
             QueryHandlerRegistered event = new QueryHandlerRegistered(action.getName(), targetEntity, serviceDesc.getRootType());
-            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
+            String childId = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner() + "/" + serviceDesc.getDomainContext() + ":" + serviceDesc.getRootType() + ":query:" + action.getName());
             event.setId(childId);
             event.setRootId(rootId);
             event.setAction(Event.Action.CREATE);
             EntityHelper.setCreatedDate(event, System.currentTimeMillis());
-             EntityHelper.setVersion(event, Entity.getVersion(ServiceModule.class));
+            EntityHelper.setVersion(event, Entity.getVersion(ServiceModule.class));
             eventRepo.applyEvent(event);
         });
     }
-    
-    private DomainContext createOrGetDomainContext(SpringServiceDescriptor serviceDesc)
-    {
-        return domainContexts.computeIfAbsent(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext(), id->{
-            String tid = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner()+"/"+serviceDesc.getDomainContext() + ":" + id);
+
+    private DomainContext createOrGetDomainContext(SpringServiceDescriptor serviceDesc) {
+        return domainContexts.computeIfAbsent(serviceDesc.getDomainOwner() + "/" + serviceDesc.getDomainContext(), id -> {
+            String tid = EventRepositoy.TID_PREFIX + "i" + SpringUtil.toMD5(serviceDesc.getDomainOwner() + "/" + serviceDesc.getDomainContext() + ":" + id);
             DomainContextCreated event = new DomainContextCreated(id, serviceDesc.getDomainOwner(), serviceDesc.getDomainContext());
             event.setId(tid);
             event.setRootId(tid);
             event.setAction(Event.Action.CREATE);
             EntityHelper.setVersion(event, Entity.getVersion(DomainContext.class));
             EntityHelper.setCreatedDate(event, System.currentTimeMillis());
-            DomainContext ctx =  eventRepoFactory.createOrGetRepository(DomainContext.class).applyEvent(event);
+            DomainContext ctx = eventRepoFactory.createOrGetRepository(DomainContext.class).applyEvent(event);
             domainContextsFlux.put(id, ctx);
             return ctx;
         });
