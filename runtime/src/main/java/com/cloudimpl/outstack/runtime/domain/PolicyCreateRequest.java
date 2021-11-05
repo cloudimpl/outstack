@@ -17,6 +17,8 @@ package com.cloudimpl.outstack.runtime.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Command;
 
+import java.util.List;
+
 /**
  *
  * @author nuwan
@@ -28,6 +30,8 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
     private final String policyName;
     private final String policyContext;
     private final String boundary;
+    private final List<String> dependentPolicies;
+
     public PolicyCreateRequest(Builder builder) {
         super(builder);
         this.domainOwner = builder.domainOwner;
@@ -35,6 +39,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
         this.policyName = builder.policyName;
         this.policyContext = builder.policyContext;
         this.boundary = builder.boundary;
+        this.dependentPolicies = builder.dependentPolicies;
     }
 
     public String getPolicyName() {
@@ -57,6 +62,10 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
         return boundary;
     }
 
+    public List<String> getDependentPolicies() {
+        return dependentPolicies;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -68,6 +77,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
         private String domainOwner;
         private String domainContext;
         private String boundary;
+        private List<String> dependentPolicies;
         
         public Builder withPolicyContext(String policyContext) {
             this.policyContext = policyContext;
@@ -93,7 +103,12 @@ import com.cloudimpl.outstack.runtime.domainspec.Command;
             this.boundary = boundary;
             return this;
         }
-        
+
+        public Builder WithDependentPolicies(List<String> dependentPolicies) {
+            this.dependentPolicies = dependentPolicies;
+            return this;
+        }
+
         @Override
         public PolicyCreateRequest build() {
             return new PolicyCreateRequest(this);

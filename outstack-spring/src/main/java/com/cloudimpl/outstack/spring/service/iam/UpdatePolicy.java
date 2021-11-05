@@ -15,7 +15,7 @@ public class UpdatePolicy extends EntityCommandHandler<Policy, PolicyCreateReque
 
     @Override
     protected Policy execute(EntityContext<Policy> context, PolicyCreateRequest command) {
-        return context.update(command.getPolicyName(), new PolicyUpdated(command.getPolicyName(), command.getPolicyContext(), helper.getDomainOwner(), helper.getDomainContext(), helper.getApiContext(), command.getBoundary()));
+        return context.update(command.getPolicyName(), new PolicyUpdated(command.getPolicyName(), command.getPolicyContext(), helper.getDomainOwner(), helper.getDomainContext(), helper.getApiContext(), command.getBoundary(), command.getDependentPolicies()));
     }
 
 }
