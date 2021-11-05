@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.common.RetryUtil;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.ResultSet;
+import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import com.cloudimpl.outstack.runtime.domain.Policy;
 import com.cloudimpl.outstack.runtime.domain.PolicyCreated;
 import com.cloudimpl.outstack.runtime.domain.PolicyRef;
@@ -48,8 +49,6 @@ import com.github.benmanes.caffeine.cache.Expiry;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.List;
@@ -225,6 +224,25 @@ public class IAMCache {
                 .map(pf -> (PolicyStatement) entityCache.get(EntityIdHelper.refIdToId(pf.entityId())))
                 .collect(Collectors.toList());
     }
+
+    public Optional<Policy> getPolicyFromName(String fqPolicyName) {
+
+        String[] arr = fqPolicyName.split(":");
+        if(arr.length != 3){
+            throw new ValidationErrorException("Invalid fully qualified policy name");
+        }
+        String domainOwner = arr[0];
+        String domainContext = arr[1];
+        String policyName = arr[2];
+
+        return entityCache.values().stream().filter(e -> Policy.class.isInstance(e)).filter(p -> isPolicyMatch(domainOwner, domainContext, policyName, Policy.class.cast(p))).findFirst().map(p -> (Policy)p);
+
+    }
+
+    private boolean isPolicyMatch(String domainOwner, String domainContext, String policyName, Policy policy){
+        return policy.getDomainOwner().equals(domainOwner) && policy.getDomainContext().equals(domainContext) && policy.getPolicyName().equals(policyName);
+    }
+
 
     public void putToInMemoryCache(Entity entity) {
         inMemoryEntities.add(entity);
