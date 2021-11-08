@@ -15,6 +15,7 @@ import com.cloudimpl.rstack.dsl.restql.OrderByNode;
 import com.cloudimpl.rstack.dsl.restql.RelNode;
 import com.cloudimpl.rstack.dsl.restql.RestQLNode;
 import com.cloudimpl.rstack.dsl.restql.ConstNode;
+import com.cloudimpl.rstack.dsl.restql.RestQLParser;
 import com.google.gson.JsonObject;
 import java.util.stream.Collectors;
 
@@ -36,7 +37,7 @@ public class PostgresSqlNode implements RestQLNode {
             return String.valueOf(ConstBooleanNode.class.cast(node).getVal());
         } else if (node instanceof RelNode) {
             RelNode rel = RelNode.class.cast(node);
-            return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":rel.getOp().getOp()) + (String) rel.getConstNode().eval(this);
+            return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":(rel.getOp() == RelNode.Op.NOT_LIKE?" NOT ILIKE ":rel.getOp().getOp())) + (String) rel.getConstNode().eval(this);
         } else if (node instanceof BinNode) {
             BinNode binNode = BinNode.class.cast(node);
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
@@ -103,4 +104,11 @@ public class PostgresSqlNode implements RestQLNode {
         
     }
     
+    
+    public static void main(String[] args) {
+        OrderByExpNode node = RestQLParser.parseOrderBy("N(seqNum):DESC");
+        PostgresSqlNode postgersNode = new PostgresSqlNode();
+        String sql = postgersNode.eval(node);
+        System.out.println("sql : "+sql);
+    }
 }
