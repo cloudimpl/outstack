@@ -25,4 +25,5 @@ import reactor.core.publisher.Mono;
 public interface UserInfoService {
     
     Mono<Collection<String>> getRoleIds(String userId,String tenantId);
+    Mono<Boolean> isUserActive(String userId, String tenantId);
 }

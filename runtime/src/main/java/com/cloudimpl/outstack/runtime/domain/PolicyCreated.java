@@ -19,6 +19,9 @@ import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  *
  * @author nuwan
@@ -31,13 +34,15 @@ public class PolicyCreated extends Event<Policy> {
     private final String domainContext;
     private final String apiContext;
     private final String boundary;
-    public PolicyCreated(String policyName,String policyContext,String domainOwner,String domainContext,String apiContext,String boundary) {
+    private final List<String> dependentPolicies;
+    public PolicyCreated(String policyName,String policyContext,String domainOwner,String domainContext,String apiContext,String boundary,List<String> dependentPolicies) {
         this.policyName = policyName;
         this.policyContext = policyContext;    
         this.domainOwner = domainOwner;
         this.domainContext = domainContext;
         this.apiContext = apiContext;
         this.boundary = boundary;
+        this.dependentPolicies = dependentPolicies == null? Collections.EMPTY_LIST : dependentPolicies;
     }
 
     @Override
@@ -68,6 +73,10 @@ public class PolicyCreated extends Event<Policy> {
 
     public String getBoundary() {
         return boundary;
+    }
+
+    public List<String> getDependentPolicies() {
+        return dependentPolicies;
     }
 
     @Override

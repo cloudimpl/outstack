@@ -22,6 +22,9 @@ import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  *
  * @author nuwan
@@ -37,6 +40,7 @@ public class Policy extends RootEntity implements ITenantOptional {
     private String domainOwner;
     private String domainContext;
     private String apiContext;
+    private List<String> dependentPolicies = Collections.EMPTY_LIST;
 
     private String boundary;
 
@@ -78,6 +82,10 @@ public class Policy extends RootEntity implements ITenantOptional {
     public String getBoundary() {
         return boundary;
     }
+
+    public List<String> getDependentPolicies() {
+        return dependentPolicies == null? Collections.emptyList() : dependentPolicies;
+    }
     
     private void applyEvent(PolicyCreated policyCreated) {
         this.policyContext = policyCreated.getPolicyContext();
@@ -85,6 +93,7 @@ public class Policy extends RootEntity implements ITenantOptional {
         this.domainOwner = policyCreated.getDomainOwner();
         this.apiContext = policyCreated.getApiContext();
         this.boundary = policyCreated.getBoundary();
+        this.dependentPolicies = policyCreated.getDependentPolicies();
     }
 
     private void applyEvent(PolicyUpdated policyUpdated) {
@@ -93,6 +102,7 @@ public class Policy extends RootEntity implements ITenantOptional {
         this.domainOwner = policyUpdated.getDomainOwner();
         this.apiContext = policyUpdated.getApiContext();
         this.boundary = policyUpdated.getBoundary();
+        this.dependentPolicies = policyUpdated.getDependentPolicies();
     }
 
     @Override
