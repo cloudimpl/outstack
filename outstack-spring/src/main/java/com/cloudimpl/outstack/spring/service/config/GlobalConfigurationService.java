@@ -73,7 +73,7 @@ public class GlobalConfigurationService {
     if(globalGroupEntityId!=null){
       streamClient.subscribeToMicroService("global configurations sync ", domainOwner,domainContext,
           new RepoStreamingReq(Arrays
-              .asList(new RepoStreamingReq.ResourceInfo(ConfigGroupEntity.class.getName(), "Global",
+              .asList(new RepoStreamingReq.ResourceInfo(ConfigGroupEntity.class.getName(), globalGroupEntityId,
                   ConfigEntity.class.getName(),"*", null)),
               Arrays.asList(new RepoStreamingReq.ResourceInfo(ConfigEntity.class.getName(),"*", null))))
           .doOnNext(e -> updateCache(e))
