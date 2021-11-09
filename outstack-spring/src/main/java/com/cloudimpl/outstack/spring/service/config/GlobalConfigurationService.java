@@ -38,6 +38,7 @@ public class GlobalConfigurationService {
   private void init(){
     
     if (globalEndPoint == null) {
+      log.info("global configuration endpoint not setup");
       return;
     }
     streamClient = new StreamClient(cluster);
