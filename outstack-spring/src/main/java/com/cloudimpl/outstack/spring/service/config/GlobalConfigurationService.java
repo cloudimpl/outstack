@@ -56,7 +56,7 @@ public class GlobalConfigurationService {
             .asList(new RepoStreamingReq.ResourceInfo(ConfigGroupEntity.class.getName(), "Global",
                 null)),
             Arrays.asList(new RepoStreamingReq.ResourceInfo(ConfigGroupEntity.class.getName(), "Global", null))))
-        .doOnNext(e -> updateCache(e))
+        .doOnNext(e -> updateGlobalGroupEntityId((ConfigGroupEntity) e.getEvent(),domainOwner,domainContext))
         .doOnError(err -> log.error("error syncing global configuration ", err))
         .subscribe();
   }
