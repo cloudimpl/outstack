@@ -46,7 +46,7 @@ public class GlobalConfigurationService {
     if(configs.length !=2){
       throw new RuntimeException("Invalid global endpoint configuration "+globalEndPoint);
     }
-    loadGlobalGroupEntity(configs[0],configs[1]);
+    loadGlobalGroupEntity(configs[0].trim(),configs[1].trim());
     
   }
   
