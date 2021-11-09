@@ -31,10 +31,13 @@ import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.repo.MemEventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.repo.RepoStreamingReq;
+import com.cloudimpl.outstack.runtime.repo.RepoStreamingReq.ResourceInfo;
 import com.cloudimpl.outstack.runtime.repo.StreamEvent;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Flux;
 
@@ -88,8 +91,18 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
     }
 
     private Flux<StreamEvent> subscribeToRootResources(RepoStreamingReq req) {
-        return Flux.fromIterable(req.getInitialDownloadResources()).map(res -> getEventRepo(res.getEntityType()).getAllByRootType(CloudUtil.classForName(res.getEntityType()), res.getTenantId(), Query.PagingRequest.EMPTY))
-                .flatMapIterable(rs -> rs.getItems()).map(r -> new StreamEvent(StreamEvent.Action.ADD, r));
+        return Flux.fromIterable(req.getInitialDownloadResources()).map(s->getResources(s)).flatMapIterable(l->l);
+    }
+
+    
+    private Collection<StreamEvent> getResources(ResourceInfo resourceInfo){
+        if(resourceInfo.getChildType() == null){
+            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllByRootType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
+                map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());
+        }else{
+            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllChildByType(CloudUtil.classForName(resourceInfo.getEntityType()),resourceInfo.getEntityId(),CloudUtil.classForName(resourceInfo.getChildType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
+                map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());         
+        }
     }
 
     private EventRepositoy getEventRepo(String rootType) {

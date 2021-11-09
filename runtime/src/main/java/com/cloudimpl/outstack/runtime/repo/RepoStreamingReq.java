@@ -51,10 +51,17 @@ public class RepoStreamingReq {
         private final String entityType;
         private final String entityId;
         private final String tenantId;
+        private final String childType;
+        private final String childId;
 
         public ResourceInfo(String entityType, String entityId, String tenantId) {
+            this(entityType,entityId,null,null,tenantId);
+        }
+        public ResourceInfo(String entityType, String entityId, String childType,String childId,String tenantId) {
             this.entityType = entityType;
             this.entityId = entityId;
+            this.childType = childType;
+            this.childId = childId;
             this.tenantId = tenantId;
         }
 
@@ -69,7 +76,13 @@ public class RepoStreamingReq {
         public String getTenantId() {
             return tenantId;
         }
-        
-        
+
+        public String getChildType() {
+            return childType;
+        }
+
+        public String getChildId() {
+            return childId;
+        }
     }
 }
