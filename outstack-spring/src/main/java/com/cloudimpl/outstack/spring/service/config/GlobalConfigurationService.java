@@ -84,7 +84,7 @@ public class GlobalConfigurationService {
   private void updateCache(StreamEvent streamEvent){
     if(streamEvent.getAction() == Action.ADD){
       ConfigEntity configEntity = (ConfigEntity) streamEvent.getEvent();
-      if(configEntity.id().equals(globalGroupEntityId)){
+      if(configEntity.rootId().equals(globalGroupEntityId)){
         configMap.put(configEntity.getConfigName(),configEntity.getConfigValue());
         log.info("inserted/updated global config {}:{}",configEntity.getConfigName(),configEntity.getConfigValue());
       }
