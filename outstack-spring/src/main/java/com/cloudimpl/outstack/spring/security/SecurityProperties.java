@@ -29,7 +29,7 @@ public class SecurityProperties {
                 return new ClassPathResource(resourceName);
             } else {
                     log.info("resource {} loaded from environment variable {}",resourceName,r);
-                    return new ByteArrayResource(Base64.getDecoder().decode(val));
+                    return new ByteArrayResource(Base64.getDecoder().decode(val.replaceAll(" ","")));
             }
         }
 
