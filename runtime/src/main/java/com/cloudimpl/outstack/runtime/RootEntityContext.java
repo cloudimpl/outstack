@@ -174,6 +174,12 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
         return (C) childContext.delete(id);
     }
 
+    public <C extends ChildEntity<T>> C delete(String rootId, Class<C> type, String id) {
+        ChildEntityContext childContext = new ChildEntityContext(entityType, rootId, type, getTenantId(), entitySupplier, idGenerator, crudOperations, queryOperation, eventPublisher, validator, queryOperationSelector, version);
+        childContext.setTx(getTx());
+        return (C) childContext.delete(id);
+    }
+
     @Override
     public T rename(String id, String newId) {
         EntityIdHelper.validateEntityId(id);
