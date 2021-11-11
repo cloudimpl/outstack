@@ -1,6 +1,7 @@
 package com.cloudimpl.outstack.spring.security;
 
 import java.io.UnsupportedEncodingException;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import lombok.Data;
@@ -27,12 +28,8 @@ public class SecurityProperties {
                 log.info("resource {} loaded from classpath",resourceName);
                 return new ClassPathResource(resourceName);
             } else {
-                try {
                     log.info("resource {} loaded from environment variable {}",resourceName,r);
-                    return new ByteArrayResource(val.getBytes("UTF-8"));
-                } catch (UnsupportedEncodingException ex) {
-                    throw new RuntimeException(ex);
-                }
+                    return new ByteArrayResource(Base64.getDecoder().decode(val));
             }
         }
 
