@@ -207,6 +207,7 @@
         <module>domaingen-example</module>
         <module>service-example</module>
         <module>outstack-spring-test</module>
+        <module>workflow</module>
     </modules>
     <distributionManagement>
         <snapshotRepository>
