@@ -488,7 +488,7 @@ public abstract class AbstractController {
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
-    protected Flux<String> getRootEntityStream(String context, String version,
+    protected Flux<String> getRootEntityStream(ServerHttpRequest httpRequest, String context, String version,
             String rootEntity, String rootId, String contentType, String tenantId) {
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -503,7 +503,7 @@ public abstract class AbstractController {
                 .withRootType(serviceDesc.getRootType())
                 .withQuery(action.getName())
                 .withId(rootId).withRootId(rootId).withTenantId(tenantId).build();
-        return cluster.requestStream(serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s))
+        return cluster.requestStream(httpRequest, serviceDesc.getServiceName(), request).map(s -> GsonCodec.encode(s))
                 .onErrorMap(this::onError);
     }
 

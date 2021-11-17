@@ -181,6 +181,23 @@ public class Cluster {
     }
 
     public <T> Flux<T> requestStream(String serviceName, Object msg) {
+        return this.requestStream(null, serviceName, msg);
+    }
+
+    public <T> Flux<T> requestStream(ServerHttpRequest httpRequest, String serviceName, Object msg) {
+        if (msg instanceof QueryWrapper) {
+            QueryWrapper wrapper = QueryWrapper.class.cast(msg);
+            return ReactiveSecurityContextHolder
+                    .getContext().map(c -> c.getAuthentication())
+                    .cast(PlatformAuthenticationToken.class)
+                    .doOnNext(c -> validateTenantId(c, httpRequest))
+                    .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
+                    .map(t -> policyValidator.processPolicyStatementsForQuery(wrapper, t))
+                    .doOnNext(g -> wrapper.setGrant(g))
+                    .flatMapMany(g -> this.node.requestStream(serviceName, msg))
+                    .switchIfEmpty(Flux.defer(() -> this.node.requestStream(serviceName, msg)))
+                    .map(o -> (T) o);
+        }
         return this.node.requestStream(serviceName, msg);
     }
 
