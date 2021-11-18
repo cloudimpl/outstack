@@ -68,7 +68,7 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
                         if (onChildEventListener(info, entity)) {
                             return true;
                         }
-                    } else if (info.getChildType() == null && entity instanceof RootEntity) {
+                    } else if (info.getChildType() == null) {
                         if (onRootEventListener(info, entity)) {
                             return true;
                         }
