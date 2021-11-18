@@ -114,6 +114,18 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
             return false;
         }
 
+        if (!info.getEntityId().equals("*")) {
+            if (EntityIdHelper.isTechnicalId(info.getEntityId())) {
+                if (!info.getEntityId().equals(entity.id())) {
+                    return false;
+                }
+            } else {
+                if (!info.getEntityId().equals(entity.entityId())) {
+                    return false;
+                }
+            }
+        }
+
         if (info.getTenantId() != null && info.getTenantId().equals("*")) {
             if (info.getChildId().equals("*")) {
                 return true;
