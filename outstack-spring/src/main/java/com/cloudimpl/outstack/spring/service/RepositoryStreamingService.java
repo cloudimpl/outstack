@@ -64,11 +64,11 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
             if (listOptional.isPresent()) {
                 List<RepoStreamingReq.ResourceInfo> list = listOptional.get();
                 for (RepoStreamingReq.ResourceInfo info : list) {
-                    if (info.getChildType() != null) {
+                    if (info.getChildType() != null && entity instanceof ChildEntity) {
                         if (onChildEventListener(info, entity)) {
                             return true;
                         }
-                    } else {
+                    } else if (info.getChildType() == null && entity instanceof RootEntity) {
                         if (onRootEventListener(info, entity)) {
                             return true;
                         }
@@ -113,16 +113,14 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
         if (!info.getChildType().equals("*") && !info.getChildType().equals(entity.getClass().getName())) {
             return false;
         }
-
+        ChildEntity child = (ChildEntity) entity;
         if (!info.getEntityId().equals("*")) {
             if (EntityIdHelper.isTechnicalId(info.getEntityId())) {
-                if (!info.getEntityId().equals(entity.id())) {
+                if (!info.getEntityId().equals(child.rootId())) {
                     return false;
                 }
             } else {
-                if (!info.getEntityId().equals(entity.entityId())) {
-                    return false;
-                }
+                throw new RuntimeException("resource " + info.getEntityType() + " rootId should be technical id");
             }
         }
 
