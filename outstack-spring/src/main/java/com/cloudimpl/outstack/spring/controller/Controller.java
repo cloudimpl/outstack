@@ -231,7 +231,7 @@ public class Controller extends AbstractController {
             @PathVariable String rootEntity, @PathVariable String rootId,
             @RequestHeader("Content-Type") String contentType,
             @RequestHeader(name = "X-TenantId", required = false) String tenantId) {
-        return super.getRootEntityStream(context, version, rootEntity, rootId, contentType, tenantId);
+        return super.getRootEntityStream(request, context, version, rootEntity, rootId, contentType, tenantId);
     }
 
     @GetMapping("/doAuth")
