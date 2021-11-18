@@ -21,6 +21,7 @@ import com.cloudimpl.outstack.core.CloudUtil;
 import com.cloudimpl.outstack.core.Inject;
 import com.cloudimpl.outstack.core.annon.CloudFunction;
 import com.cloudimpl.outstack.core.annon.Router;
+import com.cloudimpl.outstack.runtime.EntityIdHelper;
 import com.cloudimpl.outstack.runtime.EntityMetaDetailCache;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
@@ -56,33 +57,22 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
 
         StreamProcessor<StreamEvent> eventStream = EventRepositoryFactory.<StreamEvent>getEventStream();
         Flux<StreamEvent> eventsFlux = eventStream.flux().filter(e -> {
-       //     log.info("repo stream event {}", e.getEvent());
+            //     log.info("repo stream event {}", e.getEvent());
             Entity entity = (Entity) e.getEvent();
-            Optional<List<RepoStreamingReq.ResourceInfo>> listOptional = req.getResources(e.getEvent().getClass().getName());
+            String rootType = entity.isRoot() ? entity.getClass().getName() : ChildEntity.class.cast(entity).rootType().getName();
+            Optional<List<RepoStreamingReq.ResourceInfo>> listOptional = req.getResources(rootType);
             if (listOptional.isPresent()) {
                 List<RepoStreamingReq.ResourceInfo> list = listOptional.get();
                 for (RepoStreamingReq.ResourceInfo info : list) {
-                    if (info.getTenantId() != null && info.getTenantId().equals("*")) {
-                        if (info.getEntityId().equals("*")) {
+                    if (info.getChildType() != null) {
+                        if (onChildEventListener(info, entity)) {
                             return true;
-                        } else if (info.getEntityId().equals(info.getEntityId())) {
+                        }
+                    } else {
+                        if (onRootEventListener(info, entity)) {
                             return true;
                         }
                     }
-                    else if (info.getTenantId() == null && entity.getTenantId() == null) {
-                        if (info.getEntityId().equals("*")) {
-                            return true;
-                        } else if (info.getEntityId().equals(info.getEntityId())) {
-                            return true;
-                        }
-                    } else if (info.getTenantId() != null && entity.getTenantId() != null && info.getTenantId().equals(entity.getTenantId())) {
-                        if (info.getEntityId().equals("*")) {
-                            return true;
-                        } else if (info.getEntityId().equals(info.getEntityId())) {
-                            return true;
-                        }
-                    }
-
                 }
             }
             return false;
@@ -90,18 +80,91 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
         return Flux.merge(subscribeToRootResources(req), eventsFlux);
     }
 
-    private Flux<StreamEvent> subscribeToRootResources(RepoStreamingReq req) {
-        return Flux.fromIterable(req.getInitialDownloadResources()).map(s->getResources(s)).flatMapIterable(l->l);
+    private boolean onRootEventListener(RepoStreamingReq.ResourceInfo info, Entity entity) {
+        if (info.getTenantId() != null && info.getTenantId().equals("*")) {
+            if (info.getEntityId().equals("*")) {
+                return true;
+            } else if (EntityIdHelper.isTechnicalId(info.getEntityId())) {
+                return info.getEntityId().equals(entity.id());
+            } else {
+                return info.getEntityId().equals(entity.entityId());
+            }
+        } else if (info.getTenantId() == null && entity.getTenantId() == null) {
+            if (info.getEntityId().equals("*")) {
+                return true;
+            } else if (EntityIdHelper.isTechnicalId(info.getEntityId())) {
+                return info.getEntityId().equals(entity.id());
+            } else {
+                return info.getEntityId().equals(entity.entityId());
+            }
+        } else if (info.getTenantId() != null && entity.getTenantId() != null && info.getTenantId().equals(entity.getTenantId())) {
+            if (info.getEntityId().equals("*")) {
+                return true;
+            } else if (EntityIdHelper.isTechnicalId(info.getEntityId())) {
+                return info.getEntityId().equals(entity.id());
+            } else {
+                return info.getEntityId().equals(entity.entityId());
+            }
+        }
+        return false;
     }
 
-    
-    private Collection<StreamEvent> getResources(ResourceInfo resourceInfo){
-        if(resourceInfo.getChildType() == null){
+    private boolean onChildEventListener(RepoStreamingReq.ResourceInfo info, Entity entity) {
+        if (!info.getChildType().equals("*") && !info.getChildType().equals(entity.getClass().getName())) {
+            return false;
+        }
+
+        if (!info.getEntityId().equals("*")) {
+            if (EntityIdHelper.isTechnicalId(info.getEntityId())) {
+                if (!info.getEntityId().equals(entity.id())) {
+                    return false;
+                }
+            } else {
+                if (!info.getEntityId().equals(entity.entityId())) {
+                    return false;
+                }
+            }
+        }
+
+        if (info.getTenantId() != null && info.getTenantId().equals("*")) {
+            if (info.getChildId().equals("*")) {
+                return true;
+            } else if (EntityIdHelper.isTechnicalId(info.getChildId())) {
+                return info.getChildId().equals(entity.id());
+            } else {
+                return info.getChildId().equals(entity.entityId());
+            }
+        } else if (info.getTenantId() == null && entity.getTenantId() == null) {
+            if (info.getChildId().equals("*")) {
+                return true;
+            } else if (EntityIdHelper.isTechnicalId(info.getChildId())) {
+                return info.getChildId().equals(entity.id());
+            } else {
+                return info.getChildId().equals(entity.entityId());
+            }
+        } else if (info.getTenantId() != null && entity.getTenantId() != null && info.getTenantId().equals(entity.getTenantId())) {
+            if (info.getChildId().equals("*")) {
+                return true;
+            } else if (EntityIdHelper.isTechnicalId(info.getChildId())) {
+                return info.getChildId().equals(entity.id());
+            } else {
+                return info.getChildId().equals(entity.entityId());
+            }
+        }
+        return false;
+    }
+
+    private Flux<StreamEvent> subscribeToRootResources(RepoStreamingReq req) {
+        return Flux.fromIterable(req.getInitialDownloadResources()).map(s -> getResources(s)).flatMapIterable(l -> l);
+    }
+
+    private Collection<StreamEvent> getResources(ResourceInfo resourceInfo) {
+        if (resourceInfo.getChildType() == null) {
             return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllByRootType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
-                map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());
-        }else{
-            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllChildByType(CloudUtil.classForName(resourceInfo.getEntityType()),resourceInfo.getEntityId(),CloudUtil.classForName(resourceInfo.getChildType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
-                map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());         
+                    map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());
+        } else {
+            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllChildByType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getEntityId(), CloudUtil.classForName(resourceInfo.getChildType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
+                    map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());
         }
     }
 
