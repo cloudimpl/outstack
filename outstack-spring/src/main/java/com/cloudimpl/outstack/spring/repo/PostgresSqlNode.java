@@ -5,17 +5,7 @@
  */
 package com.cloudimpl.outstack.spring.repo;
 
-import com.cloudimpl.rstack.dsl.restql.BinNode;
-import com.cloudimpl.rstack.dsl.restql.ConstArrayNode;
-import com.cloudimpl.rstack.dsl.restql.ConstBooleanNode;
-import com.cloudimpl.rstack.dsl.restql.ConstNumberNode;
-import com.cloudimpl.rstack.dsl.restql.ConstStringNode;
-import com.cloudimpl.rstack.dsl.restql.OrderByExpNode;
-import com.cloudimpl.rstack.dsl.restql.OrderByNode;
-import com.cloudimpl.rstack.dsl.restql.RelNode;
-import com.cloudimpl.rstack.dsl.restql.RestQLNode;
-import com.cloudimpl.rstack.dsl.restql.ConstNode;
-import com.cloudimpl.rstack.dsl.restql.RestQLParser;
+import com.cloudimpl.rstack.dsl.restql.*;
 import com.google.gson.JsonObject;
 import java.util.stream.Collectors;
 
@@ -37,7 +27,11 @@ public class PostgresSqlNode implements RestQLNode {
             return String.valueOf(ConstBooleanNode.class.cast(node).getVal());
         } else if (node instanceof RelNode) {
             RelNode rel = RelNode.class.cast(node);
-            return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":(rel.getOp() == RelNode.Op.NOT_LIKE?" NOT ILIKE ":rel.getOp().getOp())) + (String) rel.getConstNode().eval(this);
+            if (rel.getOp() == RelNode.Op.IN){
+                return this.inOperator(rel);
+            } else{
+                return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":(rel.getOp() == RelNode.Op.NOT_LIKE?" NOT ILIKE ":rel.getOp().getOp())) + (String) rel.getConstNode().eval(this);
+            }
         } else if (node instanceof BinNode) {
             BinNode binNode = BinNode.class.cast(node);
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
@@ -55,6 +49,19 @@ public class PostgresSqlNode implements RestQLNode {
     @Override
     public JsonObject toJson() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    
+    private String inOperator(RelNode relNode){
+        ConstNode constNode = relNode.getConstNode();
+        if (constNode instanceof ConstStringArrayNode){
+            return convertToJsonField( relNode.getFieldName() ) + " IN (" + ConstStringArrayNode.class.cast(constNode).getVals().stream().collect(Collectors.joining(",")) + ")";
+        } else if(constNode instanceof ConstNumberArrayNode){
+            return convertToJsonField( relNode.getFieldName() ) + " IN (" + ConstNumberArrayNode.class.cast(constNode).getVals().stream().map(v->v.toString()).collect(Collectors.joining(",")) + ")";
+        } else if(constNode instanceof ConstBooleanArrayNode){
+            return convertToJsonField( relNode.getFieldName() ) + " IN (" + ConstBooleanArrayNode.class.cast(constNode).getVals().stream().map(v->v.toString()).collect(Collectors.joining(",")) + ")";
+        } else {
+            throw new RuntimeException("unknown const array node :" + constNode.getClass().getName());
+        }
     }
 
     public static String convertToJsonField(String field) {
@@ -110,5 +117,10 @@ public class PostgresSqlNode implements RestQLNode {
         PostgresSqlNode postgersNode = new PostgresSqlNode();
         String sql = postgersNode.eval(node);
         System.out.println("sql : "+sql);
+
+        RestQLNode parse = RestQLParser.parse("read=false");
+        PostgresSqlNode postgersNode2 = new PostgresSqlNode();
+        String sql2 = postgersNode2.eval(parse);
+        System.out.println("sql2 : "+sql2);
     }
 }
