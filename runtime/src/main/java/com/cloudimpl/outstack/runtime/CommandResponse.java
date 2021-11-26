@@ -21,13 +21,23 @@ package com.cloudimpl.outstack.runtime;
  */
 public class CommandResponse {
     private String status;
+    private Object value;
 
     public CommandResponse(String status) {
         this.status = status;
     }
 
+    public CommandResponse(String status, Object value) {
+        this.status = status;
+        this.value = value;
+    }
+
     public String getStatus() {
         return status;
+    }
+
+    public Object getValue() {
+        return value;
     }
     
 }

@@ -75,7 +75,7 @@ public class GlobalConfigurationService {
           new RepoStreamingReq(Arrays
               .asList(new RepoStreamingReq.ResourceInfo(ConfigGroupEntity.class.getName(), globalGroupEntityId,
                   ConfigEntity.class.getName(),"*", null)),
-              Arrays.asList(new RepoStreamingReq.ResourceInfo(ConfigEntity.class.getName(),"*", null))))
+              Arrays.asList(new RepoStreamingReq.ResourceInfo(ConfigGroupEntity.class.getName(), "*", ConfigEntity.class.getName(),"*", null))))
           .doOnNext(e -> updateCache(e))
           .doOnError(err -> log.error("error syncing global configuration ", err))
           .subscribe();

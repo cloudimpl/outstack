@@ -129,8 +129,8 @@ public class IAMCache {
             streamClient.subscribeToMicroService("non tenant role sync ", roleDomainOwner, roleDomainContext,
                     new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null)),
                             Arrays.asList(new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", null),
-                            new RepoStreamingReq.ResourceInfo(PolicyRef.class.getName(), "*", "*"),
-                                    new RepoStreamingReq.ResourceInfo(PolicyRef.class.getName(), "*", null))))
+                            new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*",  PolicyRef.class.getName(), "*", "*"),
+                                    new RepoStreamingReq.ResourceInfo(Role.class.getName(), "*", PolicyRef.class.getName(), "*", null))))
                     .doOnNext(e -> updateCache(e))
                     .doOnError(err -> log.error("error syncing roles ", err))
                     .subscribe();
@@ -172,7 +172,7 @@ public class IAMCache {
 
     private void subscribeToPolicyUpdate(String domainOwner, String domainContext) {
         streamClient.subscribeToMicroService("policy sync", domainOwner, domainContext, new RepoStreamingReq(Arrays.asList(new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", null)),
-                Arrays.asList(new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", null), new RepoStreamingReq.ResourceInfo(PolicyStatementRef.class.getName(), "*", null))))
+                Arrays.asList(new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", null), new RepoStreamingReq.ResourceInfo(Policy.class.getName(), "*", PolicyStatementRef.class.getName(), "*", null))))
                 .doOnNext(e -> updateCache(e))
                 .subscribe();
 //        cluster.requestReply(null, domainOwner + "/" + domainContext + "/v1/PolicyQueryService", QueryByIdRequest.builder().withQueryName("ListPolicy").withVersion("v1").withPagingReq(Query.PagingRequest.EMPTY).build())
