@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
  */
 public class ParrallalWorkflow implements Workflow{
     
-    private final List<Workflow> works = new LinkedList<>();
+    private final List<Work> works = new LinkedList<>();
     
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
@@ -34,4 +34,8 @@ public class ParrallalWorkflow implements Workflow{
       return null;
     }
     
+    public Work.Builder execute(Work.Builder builder)
+    {
+        
+    }
 }

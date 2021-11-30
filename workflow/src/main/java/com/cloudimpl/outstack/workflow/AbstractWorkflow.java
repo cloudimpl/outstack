@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 nuwan.
+ * Copyright 2021 nuwansa.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,26 +15,10 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import com.cloudimpl.outstack.workflow.domain.WorkEntity;
 /**
  *
- * @author nuwan
+ * @author nuwansa
  */
-public  class WorkResult {
-    private final WorkEntity.Status status;
-    private final WorkContext context;
-    public WorkResult(WorkEntity.Status status,WorkContext context) {
-        this.status = status;
-        this.context = context;
-    }
-
-    public WorkContext getContext() {
-        return context;
-    }
-
-    public WorkEntity.Status getStatus() {
-        return status;
-    }
+public abstract class AbstractWorkflow implements Workflow{
     
-     
 }

@@ -15,37 +15,73 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
  * @author nuwan
  */
-public interface WorkContext {
-
-    String name();
+public class WorkContext {
+    private final Map<String,String> contexts = new HashMap<>();
     
-    void put(String key, boolean value);
+    public void put(String key, boolean value)
+    {
+        this.contexts.put(key, String.valueOf(value));
+    }
 
-    void put(String key, String value);
+    public void put(String key, String value)
+    {
+        this.contexts.put(key, value);
+    }
 
-    void put(String key, int value);
+    public void put(String key, int value)
+    {
+        this.contexts.put(key, String.valueOf(value));
+    }
 
-    void put(String key, long value);
+    public void put(String key, long value)
+    {
+        this.contexts.put(key, String.valueOf(value));
+    }
 
-    void put(String key, float value);
+    public void put(String key, float value)
+    {
+        this.contexts.put(key, String.valueOf(value));
+    }
 
-    void put(String key, double value);
+    public void put(String key, double value)
+    {
+        this.contexts.put(key, String.valueOf(value));
+    }
 
-    boolean getBoolean(String key);
+    public boolean getBoolean(String key)
+    {
+        return Boolean.valueOf(this.contexts.getOrDefault(key, "false"));
+    }
 
-    String getString(String key);
+    public String getString(String key)
+    {
+        return this.contexts.getOrDefault(key, null);
+    }
 
-    int getInt(String key);
+    public int getInt(String key)
+    {
+        return Integer.valueOf(this.contexts.getOrDefault(key, "0"));
+    }
 
-    long getLong(String key);
+    public  long getLong(String key)
+    {
+        return Long.valueOf(this.contexts.getOrDefault(key, "0L"));
+    }
 
-    float getFloat(String key);
+    public float getFloat(String key)
+    {
+        return Float.valueOf(this.contexts.getOrDefault(key, "0.0f"));
+    }
 
-    double getDouble(String key);
+    public double getDouble(String key)
+    {
+        return Double.valueOf(this.contexts.getOrDefault(key, "0.0d"));
+    }
 }

@@ -25,12 +25,12 @@ import reactor.core.publisher.Mono;
  */
 public class SequentialWorkflow implements Workflow {
 
-    private final List<Workflow> works = new LinkedList<>();
+    private final List<Work> works = new LinkedList<>();
 
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
         Mono<WorkResult> ret = null;
-        for (Workflow flow : works) {
+        for (Work flow : works) {
             if (ret == null) {
                 ret = flow.execute(context);
             } else {
@@ -41,4 +41,69 @@ public class SequentialWorkflow implements Workflow {
         return ret == null ? Mono.empty() : ret;
     }
 
+    public static final SequentialWorkflow.Builder execute(Work.Builder builder)
+    {
+        return new Builder().then(builder);
+    }
+    
+    public static final SequentialWorkflow build()
+    {
+        return null;
+    }
+    
+    public static final class Builder
+    {
+        private final List<WorkCreated> works = new LinkedList<>();
+        public Builder then(Work.Builder builder)
+        {
+            works.add(builder.toEvent());
+            return this;
+        }
+        
+        public SequentialWorkflow build()
+        {
+            return new SequentialWorkflow();
+        }
+    }
+    
+    public static final class Work1 implements Work
+    {
+
+        @Override
+        public String id() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Mono<WorkResult> execute(WorkContext context) {
+            return Mono.empty();
+        }
+        
+    }
+    
+    public static final class Work2 implements Work
+    {
+
+        @Override
+        public String id() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public Mono<WorkResult> execute(WorkContext context) {
+            return Mono.empty();
+        }
+        
+    }
+    
+    public static void main(String[] args) {
+        SequentialWorkflow sequential = SequentialWorkflow
+                .execute(Work.of(Work1.class).withParam("nuwan","asfa"))
+                .then(Work.of(Work2.class))
+                .then(Work.of(Work2.class))
+                .build();
+        
+        
+                
+    }
 }

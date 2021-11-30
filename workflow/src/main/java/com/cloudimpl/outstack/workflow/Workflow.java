@@ -22,7 +22,7 @@ import reactor.core.publisher.Mono;
  *
  * @author nuwan
  */
-public interface Workflow {
+public interface Workflow extends Work{
 
     default String id() {
         return "flow-" + UUID.randomUUID().toString();
