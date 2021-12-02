@@ -32,11 +32,11 @@ public class Example2 {
     public static void main(String[] args) throws InterruptedException {
         
         ParallelWorkflow parallel = ParallelWorkflow.name("p1")
-                .execute(WorkUnit.of("work3", DynamicWork.class).withParam("work3").build(),WorkUnit.of("work4", DynamicWork.class).withParam("work4").build())
+                .execute(WorkUnit.of("work3", new DynamicWork("work3")).build(),WorkUnit.of("work4", new DynamicWork("work4")).build())
                 .build();
         
-        SequentialWorkflow sequential = SequentialWorkflow.name("seq1").execute(WorkUnit.of("work1", Work1.class).build())
-                .then(WorkUnit.of("work2", DynamicWork.class).withParam("work2").build())
+        SequentialWorkflow sequential = SequentialWorkflow.name("seq1").execute(WorkUnit.of("work1", new Work1()).build())
+                .then(WorkUnit.of("work2", new DynamicWork("work2")).build())
                 .then(parallel)
                 .build();
         

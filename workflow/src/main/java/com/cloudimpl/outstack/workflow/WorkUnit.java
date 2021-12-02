@@ -34,19 +34,19 @@ import reactor.core.publisher.Mono;
 public class WorkUnit extends AbstractWork {
 
     private final Class<? extends Work> workUnit;
-    private final List<Param> params;
+    private final String content;
 
-    private WorkUnit(String id, String name, Class<? extends Work> work, List<Param> params) {
+    private WorkUnit(String id, String name, Class<? extends Work> work, String content) {
         super(id,name);
         this.workUnit = work;
-        this.params = params;
+        this.content = content;
     }
 
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
-        Class[] types = params.stream().map(p -> CloudUtil.classForName(p.getType())).toArray(Class[]::new);
-        Object[] args = params.stream().map(p -> p.getItem()).toArray(Object[]::new);
-        Work workItem = Util.createObject(workUnit, new Util.VarArg<>(types), new Util.VarArg<>(args));
+     
+        Work workItem = GsonCodec.decode(workUnit, content);
+        
         context.setRRHandler(rrHandler);
         if (workItem instanceof ExternalTrigger) {
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
@@ -73,9 +73,9 @@ public class WorkUnit extends AbstractWork {
         return Mono.empty();
     }
 
-    public static Builder of(String name, Class<? extends Work> work) {
+    public static Builder of(String name, Work work) {
 
-        return new Builder(name, work);
+        return new Builder(name, work.getClass(),GsonCodec.encode(work));
     }
 
     @Override
@@ -85,39 +85,29 @@ public class WorkUnit extends AbstractWork {
         json.addProperty("name", name);
         json.addProperty("workflowType", WorkUnit.class.getName());
         json.addProperty("workUnit", workUnit.getName());
-        JsonArray arr = new JsonArray();
-        params.forEach(p -> arr.add(p.toJson()));
-        json.add("params", arr);
+        json.addProperty("content", content);
         return json;
     }
 
     public static WorkUnit fromJson(JsonObject json) {
         String workUnit = json.get("workUnit").getAsString();
-        JsonArray arr = json.getAsJsonArray("params");
-        List<Param> params = new LinkedList<>();
-        arr.forEach(el -> params.add(Param.fromJson(el.getAsJsonObject())));
-        return new WorkUnit(json.get("id").getAsString(), json.get("name").getAsString(), CloudUtil.classForName(workUnit), params);
+        return new WorkUnit(json.get("id").getAsString(), json.get("name").getAsString(), CloudUtil.classForName(workUnit), json.getAsJsonPrimitive("content").getAsString());
     }
 
     public static class Builder {
 
-        private Class<? extends Work> work;
+        private Class<? extends Work> workType;
         private String name;
-        private final List<Param> params = new LinkedList<>();
+        private String content;
 
-        public Builder(String name, Class<? extends Work> work) {
+        public Builder(String name, Class<? extends Work> work,String content) {
             this.name = name;
-            this.work = work;
+            this.workType = work;
+            this.content = content;
         }
-
-        public Builder withParam(Object... param) {
-
-            Arrays.asList(param).forEach(p -> this.params.add(new Param(p, p.getClass().getName())));
-            return this;
-        }
-
+        
         public WorkUnit build() {
-            return new WorkUnit(Work.generateId(), name, work, params);
+            return new WorkUnit(Work.generateId(), name, workType, content);
         }
     }
 

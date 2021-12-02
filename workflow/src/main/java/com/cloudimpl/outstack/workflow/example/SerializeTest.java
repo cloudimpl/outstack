@@ -35,11 +35,11 @@ public class SerializeTest {
         SequentialWorkflow sequence
                 = SequentialWorkflow
                         .name("seq1")
-                        .execute(WorkUnit.of("work1", Example.Work1.class).build())
-                        .then(WorkUnit.of("work2", Example.Work2.class).withParam("work2").build())
-                        .then(WorkUnit.of("work3", Example.Work2.class).withParam("work3").build())
-                        .then(ParallelWorkflow.name("p1").execute(WorkUnit.of("work4", Example.Work2.class).withParam("work4-parallel").build())
-                                .execute(WorkUnit.of("work5", Example.Work2.class).withParam("work5-parallel").build())
+                        .execute(WorkUnit.of("work1", new Example.Work1()).build())
+                        .then(WorkUnit.of("work2", new Example.Work2("work2")).build())
+                        .then(WorkUnit.of("work3", new Example.Work2("work3")).build())
+                        .then(ParallelWorkflow.name("p1").execute(WorkUnit.of("work4", new Example.Work2("work4-parallel")).build())
+                                .execute(WorkUnit.of("work5", new Example.Work2("work5-parallel")).build())
                                 .build())
                         .build();
 

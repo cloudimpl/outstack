@@ -23,6 +23,9 @@ import com.cloudimpl.outstack.workflow.WorkContext;
 import com.cloudimpl.outstack.workflow.WorkResult;
 import com.cloudimpl.outstack.workflow.WorkUnit;
 import com.cloudimpl.outstack.workflow.WorkflowEngine;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import reactor.core.publisher.Mono;
 
 /**
@@ -35,14 +38,14 @@ public class Example {
         SequentialWorkflow sequence
                 = SequentialWorkflow
                         .name("seq1")
-                        .execute(WorkUnit.of("work1", Work1.class).build())
-                        .then(WorkUnit.of("work2", Work2.class).withParam("work2").build())
-                        .then(WorkUnit.of("work3", Work2.class).withParam("work3").build())
-                        .then(WorkUnit.of("work6", ExternalTrigger.class).build())
-                        .then(ParallelWorkflow.name("parrallal").execute(WorkUnit.of("work4", Work2.class).withParam("work4-parallel").build())
-                                .execute(WorkUnit.of("work5", Work2.class).withParam("work5-parallel").build())
+                        .execute(WorkUnit.of("work1",new Work2(Arrays.asList("nuwan","sanjeewa"))).build())
+                        .then(WorkUnit.of("work2", new Work2("work2")).build())
+                        .then(WorkUnit.of("work3", new Work2("work3")).build())
+                        .then(WorkUnit.of("work6", new ExternalTrigger()).build())
+                        .then(ParallelWorkflow.name("parrallal").execute(WorkUnit.of("work4",new Work2("work4-parallel")).build())
+                                .execute(WorkUnit.of("work5", new Work2("work5-parallel"))
                                 .build())
-                        .build();
+                        .build()).build();
         WorkflowEngine engine  = new WorkflowEngine("1");
         
         engine.execute(sequence, new WorkContext()).subscribe();
@@ -64,8 +67,8 @@ public class Example {
          
          
         System.out.println("---------------------------");
-        SequentialWorkflow seq1 = SequentialWorkflow.name("seq1").execute(WorkUnit.of("work1-seq1", Work2.class).withParam("work1-seq1").build()).then(WorkUnit.of("work2-seq1", Work2.class).withParam("work2-seq1").build()).build();
-        SequentialWorkflow seq2 = SequentialWorkflow.name("seq2").execute(WorkUnit.of("work1-seq2", Work2.class).withParam("work1-seq2").build()).then(WorkUnit.of("work2-seq2", Work2.class).withParam("work2-seq2").build()).build();
+        SequentialWorkflow seq1 = SequentialWorkflow.name("seq1").execute(WorkUnit.of("work1-seq1", new Work2("work1-seq1")).build()).then(WorkUnit.of("work2-seq1", new Work2("work2-seq1")).build()).build();
+        SequentialWorkflow seq2 = SequentialWorkflow.name("seq2").execute(WorkUnit.of("work1-seq2", new Work2("work1-seq2")).build()).then(WorkUnit.of("work2-seq2", new Work2("work2-seq2")).build()).build();
         ParallelWorkflow parallal = ParallelWorkflow
                 .name("parrallel1").execute(
                 seq1, seq2
@@ -92,12 +95,15 @@ public class Example {
 
     public static class Work2 implements Work {
 
-        private String msg;
+        private List<String> msg;
 
-        public Work2(String msg) {
+        public Work2(List<String> msg) {
             this.msg = msg;
         }
 
+         public Work2(String  msg) {
+            this.msg = Collections.singletonList(msg);
+        }
         @Override
         public Mono<WorkResult> execute(WorkContext context) {
 //            if(msg.equals("work4-parallel"))
