@@ -47,6 +47,7 @@ public class WorkUnit extends AbstractWork {
         Class[] types = params.stream().map(p -> CloudUtil.classForName(p.getType())).toArray(Class[]::new);
         Object[] args = params.stream().map(p -> p.getItem()).toArray(Object[]::new);
         Work workItem = Util.createObject(workUnit, new Util.VarArg<>(types), new Util.VarArg<>(args));
+        context.setRRHandler(rrHandler);
         if (workItem instanceof ExternalTrigger) {
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
         }

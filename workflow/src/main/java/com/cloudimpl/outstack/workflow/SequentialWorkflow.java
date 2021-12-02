@@ -39,6 +39,7 @@ public class SequentialWorkflow extends Workflow {
 
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
+        log("started");
         Mono<WorkResult> ret = null;
         for (Work flow : workUnits) {
             if (ret == null) {

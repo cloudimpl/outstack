@@ -18,6 +18,7 @@ package com.cloudimpl.outstack.workflow;
 import com.google.gson.JsonObject;
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,6 @@ public abstract class AbstractWork implements Work {
     protected BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
     protected Function<String, Mono<WorkResult>> stateSupplier;
     protected BiFunction<String, Object, Mono> rrHandler;
-    protected AtomicBoolean canceled = new AtomicBoolean(false);
 
     public AbstractWork(String id, String name) {
         this.id = id;
@@ -59,9 +59,14 @@ public abstract class AbstractWork implements Work {
         return this.engine;
     }
 
+    public void cancel()
+    {
+       // this.canceled.set(true);
+    }
+    
     public void log(String format, Object... args) {
         String msg = MessageFormat.format(format, args);
-        log.info("{}:{}:{} -> {} ", engine.getId(), this.getClass().getSimpleName(), name, msg);
+        log.info("workflow {}:{}:{} -> {} ", engine.getId(), this.getClass().getSimpleName(), name, msg);
     }
 
     protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, Function<String, Mono<WorkResult>> stateSupplier, BiFunction<String, Object, Mono> rrHandler) {

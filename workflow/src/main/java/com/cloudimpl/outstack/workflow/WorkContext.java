@@ -20,6 +20,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
+import reactor.core.publisher.Mono;
 
 /**
  *
@@ -28,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WorkContext {
 
     private final Map<String, List<String>> contexts;
-    
+    private transient BiFunction<String,Object,Mono> rrHandler;
     public WorkContext() {
         contexts = new ConcurrentHashMap<>();
     }
@@ -48,6 +50,16 @@ public class WorkContext {
         }
     }
 
+    protected void setRRHandler(BiFunction<String,Object,Mono> rrHandler)
+    {
+        this.rrHandler = rrHandler;
+    }
+    
+    public BiFunction<String,Object,Mono> getRRHandler()
+    {
+        return this.rrHandler;
+    }
+    
     public void put(String key, int value) {
         put(key, String.valueOf(value));
     }

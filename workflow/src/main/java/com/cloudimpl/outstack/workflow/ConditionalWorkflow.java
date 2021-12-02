@@ -36,7 +36,7 @@ public class ConditionalWorkflow extends Workflow {
     private final AbstractWork otherwise;
 
     public ConditionalWorkflow(String id, String name, Class<? extends WorkPredicate> predicate, AbstractWork then, AbstractWork otherwise) {
-        super(id,name);
+        super(id, name);
         this.predicateType = predicate;
         this.then = then;
         this.otherwise = otherwise;
@@ -45,11 +45,12 @@ public class ConditionalWorkflow extends Workflow {
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
         WorkPredicate predicate = Util.createObject(this.predicateType, new Util.VarArg<>(), new Util.VarArg<>());
-        log.info("{}: ConditionalWorkflow {}  started",getEngine().getId(),name);
+        log("started");
         if (predicate.apply(prevWorkResult)) {
-            log.info("{}then route ");
+           log("then route initiated");
             return then.execute(context);
         } else {
+            log("othewise route initiated");
             return otherwise.execute(context);
         }
     }
@@ -70,14 +71,13 @@ public class ConditionalWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler)
-    {
+    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, Function<String, Mono<WorkResult>> stateSupplier, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         this.stateSupplier = stateSupplier;
-        this.then.setHandlers(updateStateHandler, stateSupplier,rrHandler);
-        this.otherwise.setHandlers(updateStateHandler, stateSupplier,rrHandler);
+        this.then.setHandlers(updateStateHandler, stateSupplier, rrHandler);
+        this.otherwise.setHandlers(updateStateHandler, stateSupplier, rrHandler);
     }
-    
+
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();

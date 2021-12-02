@@ -46,6 +46,7 @@ public class ParallelWorkflow extends Workflow {
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
         WorkResult result = new WorkResult(Status.PENDING, context);
+        log("started");
         WorkContext copy = context.clone();
         return Flux.fromIterable(workUnits)
                 .parallel(Runtime.getRuntime().availableProcessors())
