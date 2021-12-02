@@ -33,10 +33,12 @@ public class WorkflowEngine {
     private WorkContext context;
     private Map<String, ExternalTrigger> triggers;
     private Set<String> triggerNames;
-    private transient BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
-    private transient Function<String, Mono<WorkResult>> stateSupplier;
-
-    public WorkflowEngine() {
+    private  BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
+    private  Function<String, Mono<WorkResult>> stateSupplier;
+    private BiFunction<String,Object,Mono> rrHandler;
+    private String id;
+    public WorkflowEngine(String id) {
+        this.id = id;
         this.triggers = new ConcurrentHashMap<>();
         this.triggerNames = new HashSet<>();
         this.updateStateHandler = this::dummyStateUpdater;
@@ -44,9 +46,19 @@ public class WorkflowEngine {
 
     }
 
+    public WorkflowEngine(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler,Function<String, Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler) {
+        this.updateStateHandler = updateStateHandler;
+        this.stateSupplier = stateSupplier;
+        this.rrHandler = rrHandler;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     public Mono<WorkResult> execute(Workflow workFlow, WorkContext context) {
         workFlow.setEngine(this);
-        workFlow.setHandlers(updateStateHandler, stateSupplier);
+        workFlow.setHandlers(updateStateHandler, stateSupplier,rrHandler);
         if (this.mainFlow != null || this.context != null) {
             return Mono.error(() -> new WorkflowException("workflow is already executed "));
         }

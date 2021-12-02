@@ -34,18 +34,12 @@ import reactor.core.publisher.Mono;
 public class WorkUnit extends AbstractWork {
 
     private final Class<? extends Work> workUnit;
-    private final String name;
     private final List<Param> params;
 
     private WorkUnit(String id, String name, Class<? extends Work> work, List<Param> params) {
-        super(id);
-        this.name = name;
+        super(id,name);
         this.workUnit = work;
         this.params = params;
-    }
-
-    public String getName() {
-        return name;
     }
 
     @Override
@@ -70,7 +64,7 @@ public class WorkUnit extends AbstractWork {
             engine.checkTriggerDuplicate(this.getName());
         }
     }
-
+    
     private Mono<WorkResult> emitResultIfCompleted(WorkResult result) {
         if (result.getStatus() == Status.COMPLETED) {
             return Mono.just(result);

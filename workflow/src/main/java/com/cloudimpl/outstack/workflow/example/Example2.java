@@ -40,7 +40,7 @@ public class Example2 {
                 .then(parallel)
                 .build();
         
-        WorkflowEngine engine = new WorkflowEngine();
+        WorkflowEngine engine = new WorkflowEngine("1");
         engine.execute(sequential, new WorkContext()).subscribe();
         
         Thread.sleep(10000000);

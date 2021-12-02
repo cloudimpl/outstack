@@ -30,18 +30,11 @@ import reactor.core.publisher.Mono;
  */
 public class SequentialWorkflow extends Workflow {
 
-    private String name;
     private List<AbstractWork> workUnits;
 
     private SequentialWorkflow(String id, String name, List<AbstractWork> works) {
-        super(id);
-        this.name = name;
+        super(id,name);
         this.workUnits = Collections.unmodifiableList(works);
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     @Override
@@ -63,13 +56,13 @@ public class SequentialWorkflow extends Workflow {
         this.engine = engine;
         workUnits.forEach(w->w.setEngine(engine));
     }
-
+    
     @Override
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier)
+    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler)
     {
         this.updateStateHandler = updateStateHandler;
         this.stateSupplier = stateSupplier;
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier));
+        workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier,rrHandler));
     }
     
     public static final SequentialWorkflow.ExecuteStep name(String name) {

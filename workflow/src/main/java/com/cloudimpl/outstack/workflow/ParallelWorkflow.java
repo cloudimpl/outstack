@@ -36,12 +36,10 @@ import reactor.retry.Retry;
  */
 public class ParallelWorkflow extends Workflow {
 
-    private String name;
     private final List<AbstractWork> workUnits;
 
     public ParallelWorkflow(String id, String name, List<AbstractWork> works) {
-        super(id);
-        this.name = name;
+        super(id,name);
         this.workUnits = Collections.unmodifiableList(works);
     }
 
@@ -65,19 +63,15 @@ public class ParallelWorkflow extends Workflow {
         workUnits.forEach(w -> w.setEngine(engine));
     }
 
+    
     @Override
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier)
+    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler)
     {
         this.updateStateHandler = updateStateHandler;
         this.stateSupplier = stateSupplier;
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier));
+        workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier,rrHandler));
     }
     
-    @Override
-    public String getName() {
-        return name;
-    }
-
     public static ExecuteStep name(String name) {
         Builder builder = new Builder(name);
         return new ExecuteStep(builder);

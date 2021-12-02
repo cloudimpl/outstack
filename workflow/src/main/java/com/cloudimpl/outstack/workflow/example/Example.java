@@ -43,7 +43,7 @@ public class Example {
                                 .execute(WorkUnit.of("work5", Work2.class).withParam("work5-parallel").build())
                                 .build())
                         .build();
-        WorkflowEngine engine  = new WorkflowEngine();
+        WorkflowEngine engine  = new WorkflowEngine("1");
         
         engine.execute(sequence, new WorkContext()).subscribe();
 
@@ -72,7 +72,7 @@ public class Example {
         )
                 .build();
 
-        engine = new WorkflowEngine();
+        engine = new WorkflowEngine("1");
         engine.execute(parallal, new WorkContext()).subscribe();
 
         Thread.sleep(10000000);

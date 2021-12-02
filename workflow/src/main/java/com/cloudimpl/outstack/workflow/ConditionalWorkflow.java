@@ -20,37 +20,34 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwansa
  */
+@Slf4j
 public class ConditionalWorkflow extends Workflow {
 
-    private String name;
     private WorkResult prevWorkResult;
     private final Class<? extends WorkPredicate> predicateType;
     private final AbstractWork then;
     private final AbstractWork otherwise;
 
     public ConditionalWorkflow(String id, String name, Class<? extends WorkPredicate> predicate, AbstractWork then, AbstractWork otherwise) {
-        super(id);
-        this.name = name;
+        super(id,name);
         this.predicateType = predicate;
         this.then = then;
         this.otherwise = otherwise;
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
     public Mono<WorkResult> execute(WorkContext context) {
         WorkPredicate predicate = Util.createObject(this.predicateType, new Util.VarArg<>(), new Util.VarArg<>());
+        log.info("{}: ConditionalWorkflow {}  started",getEngine().getId(),name);
         if (predicate.apply(prevWorkResult)) {
+            log.info("{}then route ");
             return then.execute(context);
         } else {
             return otherwise.execute(context);
@@ -73,12 +70,12 @@ public class ConditionalWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier)
+    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler)
     {
         this.updateStateHandler = updateStateHandler;
         this.stateSupplier = stateSupplier;
-        this.then.setHandlers(updateStateHandler, stateSupplier);
-        this.otherwise.setHandlers(updateStateHandler, stateSupplier);
+        this.then.setHandlers(updateStateHandler, stateSupplier,rrHandler);
+        this.otherwise.setHandlers(updateStateHandler, stateSupplier,rrHandler);
     }
     
     @Override

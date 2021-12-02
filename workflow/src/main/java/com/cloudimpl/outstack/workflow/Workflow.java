@@ -15,9 +15,6 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import com.google.gson.JsonObject;
-import java.util.List;
-import java.util.UUID;
 
 /**
  *
@@ -25,15 +22,8 @@ import java.util.UUID;
  */
 public abstract class Workflow extends AbstractWork{
 
-    public Workflow(String id) {
-        super(id);
+    public Workflow(String id,String name) {
+        super(id,name);
     }
 
-    
-    public abstract String getName();
-    
-    //public abstract ExternalTrigger findExternalTriggerByName(String name);
-   
-  //  protected abstract List<Work> getActiveWork();
-  
 }

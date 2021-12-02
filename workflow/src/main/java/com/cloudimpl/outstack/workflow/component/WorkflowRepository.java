@@ -54,4 +54,5 @@ public class WorkflowRepository {
         return cluster.requestReply(null,domainOwner+"/"+domainContext+"/"+RootEntity.getVersion(WorkflowEntity.class)+"/WorkflowService",WorkflowCreateRequest.builder().withContent(json.toString()).build())
                 .cast(CommandResponse.class).map(cr->(String)cr.getValue());
     }
+    
 }

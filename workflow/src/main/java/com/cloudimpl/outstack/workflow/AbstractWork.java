@@ -16,46 +16,60 @@
 package com.cloudimpl.outstack.workflow;
 
 import com.google.gson.JsonObject;
+import java.text.MessageFormat;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
+@Slf4j
 public abstract class AbstractWork implements Work {
 
     protected final String id;
+    protected final String name;
     protected WorkflowEngine engine;
-    protected   BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler;
-    protected  Function<String,Mono<WorkResult>> stateSupplier;
-    
-    public AbstractWork(String id) {
+    protected BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
+    protected Function<String, Mono<WorkResult>> stateSupplier;
+    protected BiFunction<String, Object, Mono> rrHandler;
+    protected AtomicBoolean canceled = new AtomicBoolean(false);
+
+    public AbstractWork(String id, String name) {
         this.id = id;
+        this.name = name;
     }
 
     public String getId() {
         return id;
     }
-    
-    
-    protected void setEngine(WorkflowEngine engine)
-    {
+
+    public String getName() {
+        return name;
+    }
+
+    protected void setEngine(WorkflowEngine engine) {
         this.engine = engine;
     }
-    
-    protected WorkflowEngine getEngine()
-    {
+
+    protected WorkflowEngine getEngine() {
         return this.engine;
     }
-    
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier)
-    {
+
+    public void log(String format, Object... args) {
+        String msg = MessageFormat.format(format, args);
+        log.info("{}:{}:{} -> {} ", engine.getId(), this.getClass().getSimpleName(), name, msg);
+    }
+
+    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, Function<String, Mono<WorkResult>> stateSupplier, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         this.stateSupplier = stateSupplier;
+        this.rrHandler = rrHandler;
     }
-    
+
     public static AbstractWork fromJson(JsonObject json) {
         String workFlow = json.get("workflowType").getAsString();
         switch (workFlow) {
@@ -68,7 +82,7 @@ public abstract class AbstractWork implements Work {
             case "com.cloudimpl.outstack.workflow.ParallelWorkflow": {
                 return ParallelWorkflow.fromJson(json);
             }
-            case "com.cloudimpl.outstack.workflow.ConditionalWorkflow":{
+            case "com.cloudimpl.outstack.workflow.ConditionalWorkflow": {
                 return ConditionalWorkflow.fromJson(json);
             }
             default: {

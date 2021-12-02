@@ -28,7 +28,8 @@ public interface Work {
     public enum Status {
         PENDING,
         COMPLETED,
-        FAILED
+        FAILED,
+        CANCELLED
     }
     
     
