@@ -15,18 +15,25 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.google.gson.JsonObject;
+import java.util.List;
 import java.util.UUID;
-import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
-public interface Workflow extends Work{
+public abstract class Workflow extends AbstractWork{
 
-    default String id() {
-        return "flow-" + UUID.randomUUID().toString();
+    public Workflow(String id) {
+        super(id);
     }
 
-    Mono<WorkResult> execute(WorkContext context);
+    
+    public abstract String getName();
+    
+    //public abstract ExternalTrigger findExternalTriggerByName(String name);
+   
+  //  protected abstract List<Work> getActiveWork();
+  
 }

@@ -15,27 +15,10 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import java.util.LinkedList;
-import java.util.List;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
 /**
  *
  * @author nuwan
  */
-public class ParrallalWorkflow implements Workflow{
+public interface StatefullWork extends Work{
     
-    private final List<Work> works = new LinkedList<>();
-    
-    @Override
-    public Mono<WorkResult> execute(WorkContext context) {
-      //  Flux.fromIterable(works).parallel().flatMap(wk->wk.execute(context)).sequential().collectList().map(l->)
-      return null;
-    }
-    
-    public Work.Builder execute(Work.Builder builder)
-    {
-        
-    }
 }

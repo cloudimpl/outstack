@@ -15,46 +15,144 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import java.util.function.Predicate;
+import com.cloudimpl.outstack.runtime.util.Util;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwansa
  */
-public class ConditionalWorkflow implements Workflow{
+public class ConditionalWorkflow extends Workflow {
+
+    private String name;
+    private WorkResult prevWorkResult;
+    private final Class<? extends WorkPredicate> predicateType;
+    private final AbstractWork then;
+    private final AbstractWork otherwise;
+
+    public ConditionalWorkflow(String id, String name, Class<? extends WorkPredicate> predicate, AbstractWork then, AbstractWork otherwise) {
+        super(id);
+        this.name = name;
+        this.predicateType = predicate;
+        this.then = then;
+        this.otherwise = otherwise;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
 
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
-        
+        WorkPredicate predicate = Util.createObject(this.predicateType, new Util.VarArg<>(), new Util.VarArg<>());
+        if (predicate.apply(prevWorkResult)) {
+            return then.execute(context);
+        } else {
+            return otherwise.execute(context);
+        }
+    }
+
+    public ConditionalWorkflow.Builder name(String name) {
+        return new Builder(name);
+    }
+
+    protected void setPrevWorkResult(WorkResult workResult) {
+        this.prevWorkResult = workResult;
+    }
+
+    @Override
+    protected void setEngine(WorkflowEngine engine) {
+        this.engine = engine;
+        this.then.setEngine(engine);
+        this.otherwise.setEngine(engine);
+    }
+
+    @Override
+    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier)
+    {
+        this.updateStateHandler = updateStateHandler;
+        this.stateSupplier = stateSupplier;
+        this.then.setHandlers(updateStateHandler, stateSupplier);
+        this.otherwise.setHandlers(updateStateHandler, stateSupplier);
     }
     
-    public ConditionalWorkflow.Builder when(Predicate<Object> predicate)
-    {
-        return new Builder(predicate);
+    @Override
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.addProperty("id", getId());
+        json.addProperty("workflowType", ConditionalWorkflow.class.getName());
+        json.addProperty("name", name);
+        json.addProperty("predicateType", predicateType.getName());
+        json.add("then", then.toJson());
+        json.add("otherwise", otherwise.toJson());
+        return json;
     }
-    
-    public static final class Builder 
-    {
-        private  Predicate<Object> predicate;
-        private WorkCreated then;
-        private WorkCreated otherwise;
-        public Builder(Predicate<Object> predicate) {
-            this.predicate = predicate;
+
+    public static ConditionalWorkflow fromJson(JsonObject json) {
+        return new ConditionalWorkflow(json.get("id").getAsString(), json.get("name").getAsString(), Util.classForName(json.get("predicateType").getAsString()), AbstractWork.fromJson(json.getAsJsonObject("then")), AbstractWork.fromJson(json.getAsJsonObject("otherwise")));
+    }
+
+    public static final class Builder {
+
+        private final String name;
+        private String predicateName;
+        private AbstractWork then;
+        private AbstractWork otherwise;
+
+        public Builder(String name) {
+            this.name = name;
         }
-        
-        public Builder then(Work.Builder builder)
-        {
-            this.then = builder.toEvent();
-            return this;
+
+        public ThenStep when(String workPredicate) {
+            return new ThenStep(this);
         }
-        
-        public Builder otherwise(Work.Builder builder)
-        {
-            this.otherwise = builder.toEvent();
-            return this;
+    }
+
+    public static final class ThenStep {
+
+        private Builder builder;
+
+        public ThenStep(Builder builder) {
+            this.builder = builder;
         }
-        
-        
+
+        public OtherwiseStep then(AbstractWork work) {
+            this.builder.then = work;
+            return new OtherwiseStep(builder);
+        }
+
+    }
+
+    public static final class OtherwiseStep {
+
+        private final Builder builder;
+
+        public OtherwiseStep(Builder builder) {
+            this.builder = builder;
+        }
+
+        public BuildStep otherwise(AbstractWork work) {
+            builder.otherwise = work;
+            return new BuildStep(builder);
+        }
+    }
+
+    public static final class BuildStep {
+
+        private final Builder builder;
+
+        public BuildStep(Builder builder) {
+            this.builder = builder;
+        }
+
+        public ConditionalWorkflow build() {
+            return new ConditionalWorkflow(Work.generateId(), builder.name, WorkPredicate.from(builder.predicateName), builder.then, builder.otherwise);
+        }
+
     }
 }

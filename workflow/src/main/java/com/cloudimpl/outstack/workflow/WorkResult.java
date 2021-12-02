@@ -15,15 +15,14 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import com.cloudimpl.outstack.workflow.domain.WorkEntity;
 /**
  *
  * @author nuwan
  */
 public  class WorkResult {
-    private final WorkEntity.Status status;
+    private final Work.Status status;
     private final WorkContext context;
-    public WorkResult(WorkEntity.Status status,WorkContext context) {
+    public WorkResult(Work.Status status,WorkContext context) {
         this.status = status;
         this.context = context;
     }
@@ -32,9 +31,8 @@ public  class WorkResult {
         return context;
     }
 
-    public WorkEntity.Status getStatus() {
+    public Work.Status getStatus() {
         return status;
     }
     
-     
 }

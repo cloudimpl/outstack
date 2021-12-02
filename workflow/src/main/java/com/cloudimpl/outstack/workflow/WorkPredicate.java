@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 nuwansa.
+ * Copyright 2021 nuwan.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,21 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.core.CloudUtil;
+
 /**
  *
- * @author nuwansa
+ * @author nuwan
  */
-public abstract class AbstractWorkflow implements Workflow{
-    
+public interface WorkPredicate {
+
+    boolean apply(WorkResult result);
+
+    public static String of(Class<? extends WorkPredicate> predicate) {
+        return predicate.getName();
+    }
+
+    public static <T extends WorkPredicate> T from(String predicate) {
+        return CloudUtil.newInstance(CloudUtil.classForName(predicate));
+    }
 }

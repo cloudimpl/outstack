@@ -15,9 +15,8 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import com.cloudimpl.outstack.workflow.domain.WorkEntity;
-import java.util.LinkedList;
-import java.util.List;
+import com.google.gson.JsonObject;
+import java.util.UUID;
 import reactor.core.publisher.Mono;
 
 /**
@@ -26,35 +25,27 @@ import reactor.core.publisher.Mono;
  */
 public interface Work {
 
-    String id();
+    public enum Status {
+        PENDING,
+        COMPLETED,
+        FAILED
+    }
+    
+    
+     Mono<WorkResult> execute(WorkContext context);
 
-    default String name() {
-        return "";
+    default JsonObject toJson() {
+        return null;
     }
 
-    Mono<WorkResult> execute(WorkContext context);
-
-    public static Builder of(Class<? extends Work> cls) {
-        return new Builder().withWork(cls);
+    default Workflow asWorkflow()
+    {
+        return (Workflow)this;
     }
-
-    public static final class Builder {
-
-        private String work;
-        private final List<WorkEntity.Param> params = new LinkedList<>();
-
-        public Builder withWork(Class<? extends Work> cls) {
-            work = cls.getName();
-            return this;
-        }
-
-        public Builder withParam(Object... param) {
-            this.params.add(new WorkEntity.Param(param, param.getClass().getName()));
-            return this;
-        }
-
-        public WorkCreated toEvent() {
-            return new WorkCreated(work, WorkEntity.Status.PENDING, params);
-        }
+    
+    public static String generateId()
+    {
+        return "work-"+UUID.randomUUID().toString();
     }
+    
 }

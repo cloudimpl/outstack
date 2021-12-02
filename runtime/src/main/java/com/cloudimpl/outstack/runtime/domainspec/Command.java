@@ -23,6 +23,8 @@ public abstract class Command implements Input, ICommand {
     private List<Object> _files;
     private Map<String, String> _mapAttr;
     private String _context;
+    private String _workflowId;
+    private String _workflowRoute;
 
     public Command(Builder builder) {
         this._rootId = builder.rootId;
@@ -33,6 +35,8 @@ public abstract class Command implements Input, ICommand {
         this._files = builder.files;
         this._mapAttr = builder.mapAttr;
         this._context = builder.context;
+        this._workflowId = builder.workflowId;
+        this._workflowRoute = builder.workflowRoute;
     }
 
     public final String rootId() {
@@ -100,6 +104,14 @@ public abstract class Command implements Input, ICommand {
         return _commandName;
     }
 
+    public String getWorkflowId() {
+        return _workflowId;
+    }
+
+    public String getWorkflowRoute() {
+        return _workflowRoute;
+    }
+
     @Override
     public final <T extends Command> T unwrap(Class<T> type) {
         return (T) this;
@@ -124,6 +136,8 @@ public abstract class Command implements Input, ICommand {
         protected String commandName;
         protected List<Object> files;
         protected String context;
+        private String workflowId;
+        private String workflowRoute;
         private Map<String, String> mapAttr = new HashMap();
 
         public Builder withRootId(String rootId) {
@@ -161,8 +175,18 @@ public abstract class Command implements Input, ICommand {
             return this;
         }
 
+        public Builder withWorkflowId(String workflowId) {
+            this.workflowId = workflowId;
+            return this;
+        }
+
+        public Builder withWorkflowRoute(String workflowRoute) {
+            this.workflowRoute = workflowRoute;
+            return this;
+        }
+
         public Builder withMapAttr(String key, String value) {
-            if(mapAttr == null) {
+            if (mapAttr == null) {
                 this.mapAttr = new HashMap<>();
             }
             this.mapAttr.put(key, value);

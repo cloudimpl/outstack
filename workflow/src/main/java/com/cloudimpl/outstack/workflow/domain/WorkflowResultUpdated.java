@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 nuwansa.
+ * Copyright 2021 nuwan.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,61 +13,58 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.workflow;
+package com.cloudimpl.outstack.workflow.domain;
 
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import com.cloudimpl.outstack.workflow.domain.WorkEntity;
-import java.util.LinkedList;
-import java.util.List;
+import com.cloudimpl.outstack.workflow.WorkResult;
 
 /**
  *
- * @author nuwansa
+ * @author nuwan
  */
-public class WorkCreated extends Event<WorkEntity>{
+public class WorkflowResultUpdated extends Event<WorkflowEntity>{
+    private final String workflowId;
+    private final String workId;
+    private final WorkResult result;
 
-    private final String name;
-    private final WorkEntity.Status status;
-    private final List<WorkEntity.Param> params;
-
-    public WorkCreated(String name, WorkEntity.Status status,List<WorkEntity.Param> params) {
-        this.name = name;
-        this.status = status;
-        this.params = new LinkedList<>();
+    public WorkflowResultUpdated(String workflowId, String workId, WorkResult result) {
+        this.workflowId = workflowId;
+        this.workId = workId;
+        this.result = result;
     }
 
-    public String getName() {
-        return name;
+    public String getWorkId() {
+        return workId;
     }
 
-    public List<WorkEntity.Param> getParams() {
-        return params;
+    public String getWorkflowId() {
+        return workflowId;
     }
 
-    public WorkEntity.Status getStatus() {
-        return status;
+    public WorkResult getResult() {
+        return result;
     }
     
     @Override
     public Class<? extends Entity> getOwner() {
-        return WorkEntity.class;
+        return WorkflowEntity.class;
     }
 
     @Override
     public Class<? extends RootEntity> getRootOwner() {
-         return WorkEntity.class;
+       return WorkflowEntity.class;
     }
 
     @Override
     public String entityId() {
-        return name;
+        return workflowId;
     }
 
     @Override
     public String rootEntityId() {
-         return name;
+        return workflowId;
     }
     
 }

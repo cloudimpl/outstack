@@ -15,53 +15,54 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.common.RetryUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import reactor.retry.Retry;
 
 /**
  *
  * @author nuwan
  */
-public class SequentialWorkflow extends Workflow {
+public class ParallelWorkflow extends Workflow {
 
     private String name;
-    private List<AbstractWork> workUnits;
+    private final List<AbstractWork> workUnits;
 
-    private SequentialWorkflow(String id, String name, List<AbstractWork> works) {
+    public ParallelWorkflow(String id, String name, List<AbstractWork> works) {
         super(id);
         this.name = name;
         this.workUnits = Collections.unmodifiableList(works);
     }
 
     @Override
-    public String getName() {
-        return name;
-    }
-
-    @Override
     public Mono<WorkResult> execute(WorkContext context) {
-        Mono<WorkResult> ret = null;
-        for (Work flow : workUnits) {
-            if (ret == null) {
-                ret = flow.execute(context);
-            } else {
-                ret = ret.flatMap(r -> flow.execute(r.getContext()));
-            }
-
-        }
-        return ret == null ? Mono.empty() : ret;
+        WorkResult result = new WorkResult(Status.PENDING, context);
+        WorkContext copy = context.clone();
+        return Flux.fromIterable(workUnits)
+                .parallel(Runtime.getRuntime().availableProcessors())
+                .runOn(Schedulers.parallel())
+                .flatMap(wk -> Mono.fromSupplier(() -> wk).flatMap(w -> w.execute(copy.clone())
+                .doOnError(err -> Throwable.class.cast(err).printStackTrace())
+                .retryWhen(RetryUtil.wrap(Retry.onlyIf(c -> result.getStatus() == Status.PENDING).exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60))))))
+                .sequential()
+                .collectList().map(l -> merge(result, l));
     }
 
     @Override
     protected void setEngine(WorkflowEngine engine) {
         this.engine = engine;
-        workUnits.forEach(w->w.setEngine(engine));
+        workUnits.forEach(w -> w.setEngine(engine));
     }
 
     @Override
@@ -72,20 +73,26 @@ public class SequentialWorkflow extends Workflow {
         workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier));
     }
     
-    public static final SequentialWorkflow.ExecuteStep name(String name) {
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public static ExecuteStep name(String name) {
         Builder builder = new Builder(name);
         return new ExecuteStep(builder);
     }
 
-    public static final SequentialWorkflow build() {
-        return null;
+    private WorkResult merge(WorkResult result, List<WorkResult> contextList) {
+        contextList.stream().forEach(c -> result.getContext().merge(c.getContext()));
+        return result;
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("id", getId());
-        json.addProperty("workflowType", SequentialWorkflow.class.getName());
+        json.addProperty("workflowType", ParallelWorkflow.class.getName());
         json.addProperty("name", name);
         JsonArray arr = new JsonArray();
         workUnits.stream().forEach(w -> arr.add(w.toJson()));
@@ -93,25 +100,21 @@ public class SequentialWorkflow extends Workflow {
         return json;
     }
 
-    public static SequentialWorkflow fromJson(JsonObject json) {
+    public static ParallelWorkflow fromJson(JsonObject json) {
         JsonArray arr = json.getAsJsonArray("workUnits");
         List<AbstractWork> workunits = new LinkedList<>();
         arr.forEach(w -> workunits.add(AbstractWork.fromJson(w.getAsJsonObject())));
-        SequentialWorkflow workflow = new SequentialWorkflow(json.get("id").getAsString(), json.get("name").getAsString(), workunits);
+        ParallelWorkflow workflow = new ParallelWorkflow(json.get("id").getAsString(), json.get("name").getAsString(), workunits);
         return workflow;
     }
 
     public static final class Builder {
 
-        private String name;
         private final List<AbstractWork> works = new LinkedList<>();
+        private String name;
 
         public Builder(String name) {
             this.name = name;
-        }
-
-        public String getName() {
-            return name;
         }
 
     }
@@ -124,27 +127,13 @@ public class SequentialWorkflow extends Workflow {
             this.builder = builder;
         }
 
-        public final SequentialWorkflow.ThenStep execute(AbstractWork work) {
-            return new ThenStep(builder).then(work);
-        }
-
-    }
-
-    public static final class ThenStep {
-
-        private final Builder builder;
-
-        public ThenStep(Builder builder) {
-            this.builder = builder;
-        }
-
-        public ThenStep then(AbstractWork work) {
-            this.builder.works.add(work);
+        public ExecuteStep execute(AbstractWork... works) {
+            Arrays.asList(works).forEach(w -> this.builder.works.add(w));
             return this;
         }
 
-        public SequentialWorkflow build() {
-            return new SequentialWorkflow(Work.generateId(), this.builder.name, this.builder.works);
+        public ParallelWorkflow build() {
+            return new ParallelWorkflow(Work.generateId(), this.builder.name, this.builder.works);
         }
     }
 }

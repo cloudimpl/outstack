@@ -10,11 +10,6 @@
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
-            <groupId>error</groupId>
-            <artifactId>error</artifactId>
-            <version>0</version>
-        </dependency>
-        <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>outstack-spring</artifactId>
             <version>${project.version}</version>
