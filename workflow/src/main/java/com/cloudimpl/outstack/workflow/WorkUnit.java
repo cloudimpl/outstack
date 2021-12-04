@@ -18,6 +18,8 @@ package com.cloudimpl.outstack.workflow;
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.google.gson.JsonObject;
+import java.util.Collections;
+import java.util.Map;
 import reactor.core.publisher.Mono;
 
 /**
@@ -86,10 +88,14 @@ public class WorkUnit extends AbstractWork {
         return new Builder(name, work);
     }
 
-    public static WorkUnit waitFor(String name) {
-        return WorkUnit.of(name, new ExternalTrigger()).build();
+    public static WorkUnit waitFor(String name,Map<String,String> labels) {
+        return WorkUnit.of(name, new ExternalTrigger().putLabel(labels)).build();
     }
 
+    public static WorkUnit waitFor(String name) {
+        return waitFor(name, Collections.EMPTY_MAP);
+    }
+    
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();

@@ -17,6 +17,8 @@ package com.cloudimpl.outstack.workflow;
 
 import com.cloudimpl.outstack.runtime.Context;
 import java.lang.ref.Reference;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -33,6 +35,8 @@ public class ExternalTrigger implements StatefullWork {
     private CompletableFuture<WorkStatus> future = new CompletableFuture();
     private WorkContext context;
     private transient WorkUnit workUnit;
+    private Map<String,String> labels = new HashMap<>();
+    
     protected ExternalTrigger() {
     }
 
@@ -41,9 +45,16 @@ public class ExternalTrigger implements StatefullWork {
         this.workUnit = workUnit;
     }
     
+    public ExternalTrigger putLabel(Map<String,String> labels)
+    {
+        this.labels = labels;
+        return this;
+    }
+    
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         this.context = context;
+        this.labels.entrySet().stream().forEach(e->this.context.putLabel(e.getKey(), e.getValue()));
         return Mono.fromFuture(future);
     }
 

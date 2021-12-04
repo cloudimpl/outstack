@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.workflow;
 
 import com.cloudimpl.outstack.common.GsonCodec;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ public class WorkContext {
     private final Map<String, AtomicReference<Work.Status>> mapStatus;
     private transient final List<Commit> commits = new LinkedList<>();
     private transient BiFunction<String, Object, Mono> rrHandler;
-
+    private transient Map<String,String> labels = new HashMap<>();
     protected WorkContext() {
         attr = new ConcurrentHashMap<>();
         mapStatus = new ConcurrentHashMap<>();
@@ -61,6 +62,16 @@ public class WorkContext {
         }
     }
 
+    public String getLabel(String name)
+    {
+        return labels.get(name);
+    }
+    
+    protected void putLabel(String name,String value)
+    {
+        this.labels.put(name, value);
+    }
+    
     protected AtomicReference<Work.Status> getStatus(String id) {
         return this.mapStatus.computeIfAbsent(id, i -> new AtomicReference<>(Work.Status.PENDING));
     }
