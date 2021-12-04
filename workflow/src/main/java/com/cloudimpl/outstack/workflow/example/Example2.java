@@ -19,7 +19,7 @@ import com.cloudimpl.outstack.workflow.ParallelWorkflow;
 import com.cloudimpl.outstack.workflow.SequentialWorkflow;
 import com.cloudimpl.outstack.workflow.Work;
 import com.cloudimpl.outstack.workflow.WorkContext;
-import com.cloudimpl.outstack.workflow.WorkResult;
+import com.cloudimpl.outstack.workflow.WorkStatus;
 import com.cloudimpl.outstack.workflow.WorkUnit;
 import com.cloudimpl.outstack.workflow.WorkflowEngine;
 import reactor.core.publisher.Mono;
@@ -51,9 +51,9 @@ public class Example2 {
     {
 
         @Override
-        public Mono<WorkResult> execute(WorkContext context) {
+        public Mono<WorkStatus> execute(WorkContext context) {
             System.out.println("work1 executed at "+Thread.currentThread().getName());
-            return Mono.just(new WorkResult(Status.COMPLETED, context));
+            return Mono.just(WorkStatus.publish(Status.COMPLETED, context));
         }
         
     }
@@ -67,9 +67,9 @@ public class Example2 {
         }
         
         @Override
-        public Mono<WorkResult> execute(WorkContext context) {
+        public Mono<WorkStatus> execute(WorkContext context) {
             System.out.println(msg+" executed at "+Thread.currentThread().getName());
-            return Mono.just(new WorkResult(Work.Status.COMPLETED, context));
+            return Mono.just(WorkStatus.publish(Work.Status.COMPLETED, context));
         }
         
     }
@@ -83,13 +83,13 @@ public class Example2 {
         }
         
         @Override
-        public Mono<WorkResult> execute(WorkContext context) {
+        public Mono<WorkStatus> execute(WorkContext context) {
             if(true)
             {
                 return Mono.error(()->new RuntimeException("buggy"));
             }
             System.out.println(msg+" executed at "+Thread.currentThread().getName());
-            return Mono.just(new WorkResult(Work.Status.COMPLETED, context));
+            return Mono.just(WorkStatus.publish(Work.Status.COMPLETED, context));
         }
         
     }

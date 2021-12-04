@@ -16,11 +16,14 @@
 package com.cloudimpl.outstack.workflow;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import reactor.core.publisher.Mono;
 
 /**
@@ -33,18 +36,19 @@ public class WorkflowEngine {
     private WorkContext context;
     private Map<String, ExternalTrigger> triggers;
     private Set<String> triggerNames;
-    private BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
+    private BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler;
     private BiFunction<String, Object, Mono> rrHandler;
     private String id;
-
+    private Set<String> activeTriggers;
     public WorkflowEngine(String id) {
         this.id = id;
         this.triggers = new ConcurrentHashMap<>();
         this.triggerNames = new HashSet<>();
         this.updateStateHandler = this::dummyStateUpdater;
+        this.activeTriggers = new ConcurrentSkipListSet<>();
     }
 
-    public WorkflowEngine(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
+    public WorkflowEngine(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         this.rrHandler = rrHandler;
     }
@@ -57,7 +61,7 @@ public class WorkflowEngine {
         this.mainFlow.cancel(context);
     }
 
-    public Mono<WorkResult> execute(Workflow workFlow) {
+    public Mono<WorkStatus> execute(Workflow workFlow) {
         workFlow.setEngine(this);
         workFlow.setHandlers(updateStateHandler, rrHandler);
         if (this.mainFlow != null || this.context != null) {
@@ -76,7 +80,24 @@ public class WorkflowEngine {
         return trigger.trigger(handler);
     }
 
-    private Mono<WorkResult> run() {
+    public <T> Mono<T> executeNext(Function<WorkContext, T> handler) {
+        List<String> active = activeTriggers.stream().collect(Collectors.toList());
+        if(active.isEmpty())
+        {
+            return Mono.error(()->new WorkflowException("no active external trigger found for workflow id {0}", id));
+        }
+        if(active.size() > 1)
+        {
+            return Mono.error(()->new WorkflowException("more than 1 active external trigger found for workflow id {0} - [{1}]", id,active.stream().collect(Collectors.joining(","))));
+        }
+        ExternalTrigger trigger = this.triggers.get(active.get(0));
+        if (trigger == null) {
+            return Mono.error(() -> new WorkflowException("external trigger {0} not found", active.get(0)));
+        }
+        return trigger.trigger(handler);
+    }
+    
+    private Mono<WorkStatus> run() {
         return mainFlow.execute(context);
     }
 
@@ -90,12 +111,22 @@ public class WorkflowEngine {
         }
     }
 
-    private Mono<WorkResult> dummyStateUpdater(String id, WorkResult result) {
+    private Mono<WorkStatus> dummyStateUpdater(String id, WorkStatus result) {
         return Mono.just(result);
     }
 
-    private Mono<WorkResult> dummyStateSupplier(String id) {
+    private Mono<WorkStatus> dummyStateSupplier(String id) {
         return Mono.empty();
     }
 
+    protected void addActiveTrigger(String name)
+    {
+        this.activeTriggers.add(name);
+    }
+    
+    protected void removeActiveTrigger(String name)
+    {
+        this.activeTriggers.remove(name);
+    }
+    
 }

@@ -22,7 +22,7 @@ import com.cloudimpl.outstack.workflow.SequentialWorkflow;
 import com.cloudimpl.outstack.workflow.Work;
 import com.cloudimpl.outstack.workflow.Work.Status;
 import com.cloudimpl.outstack.workflow.WorkContext;
-import com.cloudimpl.outstack.workflow.WorkResult;
+import com.cloudimpl.outstack.workflow.WorkStatus;
 import com.cloudimpl.outstack.workflow.WorkUnit;
 import com.cloudimpl.outstack.workflow.WorkflowEngine;
 import java.util.Arrays;
@@ -61,7 +61,6 @@ public class Example {
                         .execute(WorkUnit.of("work1",new Work2(Arrays.asList("nuwan","sanjeewa"))).build())
                         .then(WorkUnit.of("work2", new Work2("work2")).build())
                         .then(WorkUnit.of("work3", new Work2("work3")).build())
-                        .then(WorkUnit.waitFor("work6"))
                         .then(WorkUnit.waitFor("work6"))
                         .then(ParallelWorkflow.name("parrallal").execute(WorkUnit.of("work4",new Work2("work4-parallel")).build())
                                 .execute(WorkUnit.of("work5", new Work2("work5-parallel"))
@@ -108,9 +107,9 @@ public class Example {
         }
 
         @Override
-        public Mono<WorkResult> execute(WorkContext context) {
+        public Mono<WorkStatus> execute(WorkContext context) {
             System.out.println("work1 " + " executed" + " Thread : " + Thread.currentThread().getName());
-            return Mono.just(new WorkResult(Work.Status.COMPLETED, context));
+            return Mono.just(WorkStatus.publish(Work.Status.COMPLETED, context));
         }
     }
 
@@ -126,12 +125,12 @@ public class Example {
             this.msg = Collections.singletonList(msg);
         }
         @Override
-        public Mono<WorkResult> execute(WorkContext context) {
+        public Mono<WorkStatus> execute(WorkContext context) {
 //            if(msg.equals("work4-parallel"))
 //                return Mono.error(()->new RuntimeException("xxx"));
 
             System.out.println(msg + " executed" + " Thread : " + Thread.currentThread().getName());
-            return Mono.just(new WorkResult(Work.Status.COMPLETED, context));
+            return Mono.just(WorkStatus.publish(Work.Status.COMPLETED, context));
         }
     }
 }

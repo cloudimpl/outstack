@@ -22,25 +22,30 @@ package com.cloudimpl.outstack.workflow;
 public class WorkStatus {
 
     private final Work.Status status;
-    private WorkContext context;
+    private Object data;
 
     private WorkStatus(Work.Status status) {
         this.status = status;
     }
 
     public static WorkStatus publish(Work.Status status) {
+        return publish(status, null);
+    }
+
+    public static WorkStatus publish(Work.Status status, Object data) {
         if (status == Work.Status.PENDING || status == Work.Status.RUNNING) {
             throw new WorkflowException("invalid work status {0} published", status);
         }
-        return new WorkStatus(status);
+        return new WorkStatus(status).setContext(data);
     }
 
-    protected void setContext(WorkContext context) {
-        this.context = context;
+    protected WorkStatus setContext(Object data) {
+        this.data = data;
+        return this;
     }
 
-    public WorkContext getContext() {
-        return context;
+    public <T> T getData() {
+        return (T) data;
     }
 
     public Work.Status getStatus() {

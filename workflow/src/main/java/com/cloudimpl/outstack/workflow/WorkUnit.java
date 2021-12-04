@@ -38,7 +38,7 @@ public class WorkUnit extends AbstractWork {
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context));
         }
 
         Work workItem = GsonCodec.decode(workUnit, content);
@@ -46,14 +46,23 @@ public class WorkUnit extends AbstractWork {
         context.setRRHandler(rrHandler);
         if (workItem instanceof ExternalTrigger) {
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
+            getEngine().addActiveTrigger(getName());
         }
-        Mono<WorkStatus> ret = workItem.execute(context).doOnNext(r->context.getStatus(id).set(Status.COMPLETED));
+        Mono<WorkStatus> ret = workItem.execute(context)
+                .doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING, r.getStatus()));
         if (workItem instanceof StatefullWork) {
             ret = ret.flatMap(r->this.updateStateHandler.apply(getId(), r));
         }
-        return ret;
+        return ret.doOnSubscribe(s->removeActiveTrigger(workItem instanceof ExternalTrigger));
     }
 
+    private void removeActiveTrigger(boolean isTrigger)
+    {
+        if(isTrigger)
+        {
+            getEngine().removeActiveTrigger(getName());
+        }
+    }
     @Override
     protected void setEngine(WorkflowEngine engine) {
         super.setEngine(engine);

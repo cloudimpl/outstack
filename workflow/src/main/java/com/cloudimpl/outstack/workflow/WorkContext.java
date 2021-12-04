@@ -38,9 +38,9 @@ public class WorkContext {
         mapStatus = new ConcurrentHashMap<>();
     }
 
-    private  WorkContext(Map<String, List<String>> contexts) {
+    private  WorkContext(Map<String, List<String>> contexts,Map<String,AtomicReference<Work.Status>> mapStatus) {
         this.attr = contexts;
-        this.mapStatus = new ConcurrentHashMap<>();
+        this.mapStatus = mapStatus;
     }
     
     public void put(String key, boolean value) {
@@ -99,9 +99,9 @@ public class WorkContext {
     }
     
     @Override
-    public WorkContext clone()
+    protected WorkContext clone()
     {
-        return new WorkContext(new ConcurrentHashMap<>(attr));
+        return new WorkContext(new ConcurrentHashMap<>(attr),mapStatus); //mapStatus shared across clone context
     }
     
     public String getString(String key) {

@@ -41,22 +41,22 @@ public class ParallelWorkflow extends Workflow {
     }
 
     @Override
-    public Mono<WorkResult> execute(WorkContext context) {
+    public Mono<WorkStatus> execute(WorkContext context) {
         if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context));
         }
 
-        WorkResult result = new WorkResult(Status.PENDING, context);
         log("started");
-        WorkContext copy = context.clone();
         return Flux.fromIterable(workUnits)
                 .parallel(Runtime.getRuntime().availableProcessors())
                 .runOn(Schedulers.parallel())
-                .flatMap(wk -> retryWrap(wk, context.clone()))
+                .flatMap(wk -> retryWrap(wk, context))
                 .sequential()
+                .doOnNext(rs -> cancelNextIfApplicable(context, rs, null))
                 .collectList()
-                .doOnNext(r->context.getStatus(id).set(Status.COMPLETED))
-                .map(l -> merge(result, l));
+                .doOnNext(r -> context.getStatus(id).compareAndSet(Status.RUNNING, Status.COMPLETED))
+                .map(l -> merge(WorkStatus.publish(context.getStatus(id).get(), context), l));
+                
     }
 
     @Override
@@ -72,7 +72,7 @@ public class ParallelWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler));
     }
@@ -82,8 +82,8 @@ public class ParallelWorkflow extends Workflow {
         return new ExecuteStep(builder);
     }
 
-    private WorkResult merge(WorkResult result, List<WorkResult> contextList) {
-        contextList.stream().forEach(c -> result.getContext().merge(c.getContext()));
+    private WorkStatus merge(WorkStatus result, List<WorkStatus> contextList) {
+        contextList.stream().forEach(c -> ((WorkContext) result.getData()).merge(c.getData()));
         return result;
     }
 

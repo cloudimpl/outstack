@@ -30,7 +30,7 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class ConditionalWorkflow extends Workflow {
 
-    private WorkResult prevWorkResult;
+    private WorkStatus prevWorkResult;
     private final Class<? extends WorkPredicate> predicateType;
     private final AbstractWork then;
     private final AbstractWork otherwise;
@@ -43,15 +43,15 @@ public class ConditionalWorkflow extends Workflow {
     }
 
     @Override
-    public Mono<WorkResult> execute(WorkContext context) {
+    public Mono<WorkStatus> execute(WorkContext context) {
         
         if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get()).setContext(context));
         }
         
         WorkPredicate predicate = Util.createObject(this.predicateType, new Util.VarArg<>(), new Util.VarArg<>());
         log("started");
-        Mono<WorkResult> ret;
+        Mono<WorkStatus> ret;
         if (predicate.apply(prevWorkResult)) {
             log("then route initiated");
             ret =  then.execute(context);
@@ -59,7 +59,7 @@ public class ConditionalWorkflow extends Workflow {
             log("othewise route initiated");
             ret =  otherwise.execute(context);
         }
-        return ret.doOnNext(r->context.getStatus(id).set(Status.COMPLETED));
+        return ret.doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING,r.getStatus()));
     }
 
     @Override
@@ -73,7 +73,7 @@ public class ConditionalWorkflow extends Workflow {
         return new Builder(name);
     }
 
-    protected void setPrevWorkResult(WorkResult workResult) {
+    protected void setPrevWorkResult(WorkStatus workResult) {
         this.prevWorkResult = workResult;
     }
 
@@ -85,7 +85,7 @@ public class ConditionalWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler,  BiFunction<String, Object, Mono> rrHandler) {
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler,  BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         this.then.setHandlers(updateStateHandler, rrHandler);
         this.otherwise.setHandlers(updateStateHandler, rrHandler);

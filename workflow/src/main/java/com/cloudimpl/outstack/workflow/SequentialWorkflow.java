@@ -15,19 +15,13 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import com.cloudimpl.outstack.common.RetryUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import reactor.core.publisher.Mono;
-import reactor.retry.Retry;
-import reactor.retry.RetryContext;
-
 /**
  *
  * @author nuwan
@@ -42,22 +36,22 @@ public class SequentialWorkflow extends Workflow {
     }
 
     @Override
-    public Mono<WorkResult> execute(WorkContext context) {
+    public Mono<WorkStatus> execute(WorkContext context) {
        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context));
         }
         log("started");
-        Mono<WorkResult> ret = null;
-        for (Work flow : workUnits) {
+        Mono<WorkStatus> ret = null;
+        for (AbstractWork flow : workUnits) {
             if (ret == null) {
                 ret = retryWrap(flow, context);
             } else {
-                ret = ret.flatMap(r -> retryWrap(flow, r.getContext().clone()));
+                ret = ret.doOnNext(rs->cancelNextIfApplicable(context, rs, flow)).flatMap(r -> retryWrap(flow, r.getData()));
             } 
         }
-        return ret == null ? Mono.empty() : ret.doOnNext(r->context.getStatus(id).set(Status.COMPLETED));
+        return ret == null ? Mono.empty() : ret.doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING,r.getStatus()));
     }
-
+    
     @Override
     public void cancel(WorkContext context) {
         super.cancel(context);
@@ -71,7 +65,7 @@ public class SequentialWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         this.workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler));
     }
