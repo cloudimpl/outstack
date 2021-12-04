@@ -17,14 +17,7 @@ package com.cloudimpl.outstack.workflow;
 
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.core.CloudUtil;
-import com.cloudimpl.outstack.runtime.util.Util;
-import com.cloudimpl.outstack.workflow.domain.WorkflowEntity;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
 import reactor.core.publisher.Mono;
 
 /**
@@ -37,25 +30,28 @@ public class WorkUnit extends AbstractWork {
     private final String content;
 
     private WorkUnit(String id, String name, Class<? extends Work> work, String content) {
-        super(id,name);
+        super(id, name);
         this.workUnit = work;
         this.content = content;
     }
 
     @Override
-    public Mono<WorkResult> execute(WorkContext context) {
-     
+    public Mono<WorkStatus> execute(WorkContext context) {
+        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
+            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+        }
+
         Work workItem = GsonCodec.decode(workUnit, content);
-        
+
         context.setRRHandler(rrHandler);
         if (workItem instanceof ExternalTrigger) {
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
         }
+        Mono<WorkStatus> ret = workItem.execute(context).doOnNext(r->context.getStatus(id).set(Status.COMPLETED));
         if (workItem instanceof StatefullWork) {
-            return this.stateSupplier.apply(getId()).flatMap(this::emitResultIfCompleted)
-                    .switchIfEmpty(Mono.defer(() -> workItem.execute(context).flatMap(r -> this.updateStateHandler.apply(getId(), r))));
+            ret = ret.flatMap(r->this.updateStateHandler.apply(getId(), r));
         }
-        return workItem.execute(context);
+        return ret;
     }
 
     @Override
@@ -65,19 +61,16 @@ public class WorkUnit extends AbstractWork {
             engine.checkTriggerDuplicate(this.getName());
         }
     }
-    
-    private Mono<WorkResult> emitResultIfCompleted(WorkResult result) {
-        if (result.getStatus() == Status.COMPLETED) {
-            return Mono.just(result);
-        }
-        return Mono.empty();
-    }
 
     public static Builder of(String name, Work work) {
 
-        return new Builder(name, work.getClass(),GsonCodec.encode(work));
+        return new Builder(name, work.getClass(), GsonCodec.encode(work));
     }
 
+    public static WorkUnit waitFor(String name){
+        return WorkUnit.of(name, new ExternalTrigger()).build();
+    }
+    
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
@@ -100,46 +93,14 @@ public class WorkUnit extends AbstractWork {
         private String name;
         private String content;
 
-        public Builder(String name, Class<? extends Work> work,String content) {
+        public Builder(String name, Class<? extends Work> work, String content) {
             this.name = name;
             this.workType = work;
             this.content = content;
         }
-        
+
         public WorkUnit build() {
             return new WorkUnit(Work.generateId(), name, workType, content);
-        }
-    }
-
-    public static final class Param {
-
-        private final Object item;
-        private final String type;
-
-        public Param(Object item, String type) {
-            this.item = item;
-            this.type = type;
-        }
-
-        public Object getItem() {
-            return item;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public JsonObject toJson() {
-            JsonObject json = new JsonObject();
-            json.add("item", GsonCodec.encodeToJson(item));
-            json.addProperty("type", type);
-            return json;
-        }
-
-        public static Param fromJson(JsonObject json) {
-            Class type = CloudUtil.classForName(json.getAsJsonPrimitive("type").getAsString());
-            Object item = GsonCodec.decode(type, json.get("item").toString());
-            return new Param(item, json.getAsJsonPrimitive("type").getAsString());
         }
     }
 }

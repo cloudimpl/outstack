@@ -33,22 +33,19 @@ public class WorkflowEngine {
     private WorkContext context;
     private Map<String, ExternalTrigger> triggers;
     private Set<String> triggerNames;
-    private  BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
-    private  Function<String, Mono<WorkResult>> stateSupplier;
-    private BiFunction<String,Object,Mono> rrHandler;
+    private BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
+    private BiFunction<String, Object, Mono> rrHandler;
     private String id;
+
     public WorkflowEngine(String id) {
         this.id = id;
         this.triggers = new ConcurrentHashMap<>();
         this.triggerNames = new HashSet<>();
         this.updateStateHandler = this::dummyStateUpdater;
-        this.stateSupplier = this::dummyStateSupplier;
-
     }
 
-    public WorkflowEngine(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler,Function<String, Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler) {
+    public WorkflowEngine(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
-        this.stateSupplier = stateSupplier;
         this.rrHandler = rrHandler;
     }
 
@@ -56,18 +53,22 @@ public class WorkflowEngine {
         return id;
     }
 
-    public Mono<WorkResult> execute(Workflow workFlow, WorkContext context) {
+    public void cancel() {
+        this.mainFlow.cancel(context);
+    }
+
+    public Mono<WorkResult> execute(Workflow workFlow) {
         workFlow.setEngine(this);
-        workFlow.setHandlers(updateStateHandler, stateSupplier,rrHandler);
+        workFlow.setHandlers(updateStateHandler, rrHandler);
         if (this.mainFlow != null || this.context != null) {
             return Mono.error(() -> new WorkflowException("workflow is already executed "));
         }
+        this.context = new WorkContext();
         this.mainFlow = workFlow;
-        this.context = context;
         return run();
     }
 
-    public <T> Mono<T> externalTrigger(String name, Function<WorkContext, T> handler) {
+    public <T> Mono<T> execute(String name, Function<WorkContext, T> handler) {
         ExternalTrigger trigger = this.triggers.get(name);
         if (trigger == null) {
             return Mono.error(() -> new WorkflowException("external trigger {0} not found", name));
@@ -80,14 +81,13 @@ public class WorkflowEngine {
     }
 
     protected void registerExternalTrigger(String name, ExternalTrigger trigger) {
-        ExternalTrigger old = triggers.putIfAbsent(name, trigger);
-        if (old != null) {
-            throw new WorkflowException("duplicate name {0} found in external trigger", name);
-        }
+        triggers.put(name, trigger);
     }
 
     protected void checkTriggerDuplicate(String name) {
-        triggerNames.add(name);
+        if (!triggerNames.add(name)) {
+            throw new WorkflowException("duplicate name {0} found in external trigger in workflow {1} ", name,id);
+        }
     }
 
     private Mono<WorkResult> dummyStateUpdater(String id, WorkResult result) {

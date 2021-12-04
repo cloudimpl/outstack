@@ -41,7 +41,7 @@ public class Example2 {
                 .build();
         
         WorkflowEngine engine = new WorkflowEngine("1");
-        engine.execute(sequential, new WorkContext()).subscribe();
+        engine.execute(sequential).subscribe();
         
         Thread.sleep(10000000);
     }

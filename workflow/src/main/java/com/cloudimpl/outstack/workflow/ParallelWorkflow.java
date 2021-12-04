@@ -15,10 +15,8 @@
  */
 package com.cloudimpl.outstack.workflow;
 
-import com.cloudimpl.outstack.common.RetryUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -28,7 +26,6 @@ import java.util.function.Function;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.retry.Retry;
 
 /**
  *
@@ -39,23 +36,33 @@ public class ParallelWorkflow extends Workflow {
     private final List<AbstractWork> workUnits;
 
     public ParallelWorkflow(String id, String name, List<AbstractWork> works) {
-        super(id,name);
+        super(id, name);
         this.workUnits = Collections.unmodifiableList(works);
     }
 
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
+        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
+            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+        }
+
         WorkResult result = new WorkResult(Status.PENDING, context);
         log("started");
         WorkContext copy = context.clone();
         return Flux.fromIterable(workUnits)
                 .parallel(Runtime.getRuntime().availableProcessors())
                 .runOn(Schedulers.parallel())
-                .flatMap(wk -> Mono.fromSupplier(() -> wk).flatMap(w -> w.execute(copy.clone())
-                .doOnError(err -> Throwable.class.cast(err).printStackTrace())
-                .retryWhen(RetryUtil.wrap(Retry.onlyIf(c -> result.getStatus() == Status.PENDING).exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60))))))
+                .flatMap(wk -> retryWrap(wk, context.clone()))
                 .sequential()
-                .collectList().map(l -> merge(result, l));
+                .collectList()
+                .doOnNext(r->context.getStatus(id).set(Status.COMPLETED))
+                .map(l -> merge(result, l));
+    }
+
+    @Override
+    public void cancel(WorkContext context) {
+        super.cancel(context);
+        this.workUnits.forEach(w -> w.cancel(context));
     }
 
     @Override
@@ -64,15 +71,12 @@ public class ParallelWorkflow extends Workflow {
         workUnits.forEach(w -> w.setEngine(engine));
     }
 
-    
     @Override
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler)
-    {
+    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
-        this.stateSupplier = stateSupplier;
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier,rrHandler));
+        workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler));
     }
-    
+
     public static ExecuteStep name(String name) {
         Builder builder = new Builder(name);
         return new ExecuteStep(builder);

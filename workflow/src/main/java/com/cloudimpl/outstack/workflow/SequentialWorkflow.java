@@ -15,14 +15,18 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.common.RetryUtil;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import reactor.core.publisher.Mono;
+import reactor.retry.Retry;
+import reactor.retry.RetryContext;
 
 /**
  *
@@ -30,42 +34,48 @@ import reactor.core.publisher.Mono;
  */
 public class SequentialWorkflow extends Workflow {
 
-    private List<AbstractWork> workUnits;
+    private final List<AbstractWork> workUnits;
 
     private SequentialWorkflow(String id, String name, List<AbstractWork> works) {
-        super(id,name);
+        super(id, name);
         this.workUnits = Collections.unmodifiableList(works);
     }
 
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
+       if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
+            return Mono.just(new WorkResult(context.getStatus(id).get(), context));
+        }
         log("started");
         Mono<WorkResult> ret = null;
         for (Work flow : workUnits) {
             if (ret == null) {
-                ret = flow.execute(context);
+                ret = retryWrap(flow, context);
             } else {
-                ret = ret.flatMap(r -> flow.execute(r.getContext()));
-            }
-
+                ret = ret.flatMap(r -> retryWrap(flow, r.getContext().clone()));
+            } 
         }
-        return ret == null ? Mono.empty() : ret;
+        return ret == null ? Mono.empty() : ret.doOnNext(r->context.getStatus(id).set(Status.COMPLETED));
+    }
+
+    @Override
+    public void cancel(WorkContext context) {
+        super.cancel(context);
+        this.workUnits.forEach(w -> w.cancel(context));
     }
 
     @Override
     protected void setEngine(WorkflowEngine engine) {
         this.engine = engine;
-        workUnits.forEach(w->w.setEngine(engine));
+        this.workUnits.forEach(w -> w.setEngine(engine));
     }
-    
+
     @Override
-    protected void setHandlers(BiFunction<String,WorkResult,Mono<WorkResult>> updateStateHandler,Function<String,Mono<WorkResult>> stateSupplier,BiFunction<String,Object,Mono> rrHandler)
-    {
+    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
-        this.stateSupplier = stateSupplier;
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, stateSupplier,rrHandler));
+        this.workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler));
     }
-    
+
     public static final SequentialWorkflow.ExecuteStep name(String name) {
         Builder builder = new Builder(name);
         return new ExecuteStep(builder);

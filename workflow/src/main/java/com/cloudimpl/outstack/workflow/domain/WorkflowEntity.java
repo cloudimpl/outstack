@@ -23,6 +23,7 @@ import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.workflow.Work.Status;
+import com.cloudimpl.outstack.workflow.WorkContext;
 import com.cloudimpl.outstack.workflow.WorkResult;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
     private String content;
     private Status status;
     private String tenantId;
-    private Map<String, WorkResult> results;
+    private Map<String, WorkContext> results;
 
     public WorkflowEntity(String workflowId, String tenantId) {
         this.workflowId = workflowId;

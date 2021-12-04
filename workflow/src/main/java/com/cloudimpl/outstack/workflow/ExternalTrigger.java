@@ -28,6 +28,11 @@ public  class ExternalTrigger implements StatefullWork {
     private CompletableFuture<WorkResult> future = new CompletableFuture();
     private WorkContext context;
     
+    protected ExternalTrigger()
+    {
+        
+    }
+    
     @Override
     public Mono<WorkResult> execute(WorkContext context) {
         this.context = context;

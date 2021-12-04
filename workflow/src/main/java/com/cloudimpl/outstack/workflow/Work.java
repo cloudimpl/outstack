@@ -29,12 +29,12 @@ public interface Work {
         PENDING,
         RUNNING,
         COMPLETED,
-        FAILED,
-        CANCELLED
+        CANCELLED,
+        TERMINATED
     }
     
     
-     Mono<WorkResult> execute(WorkContext context);
+     Mono<WorkStatus> execute(WorkContext context);
 
     default JsonObject toJson() {
         return null;

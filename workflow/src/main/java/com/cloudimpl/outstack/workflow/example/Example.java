@@ -15,17 +15,22 @@
  */
 package com.cloudimpl.outstack.workflow.example;
 
+import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.workflow.ExternalTrigger;
 import com.cloudimpl.outstack.workflow.ParallelWorkflow;
 import com.cloudimpl.outstack.workflow.SequentialWorkflow;
 import com.cloudimpl.outstack.workflow.Work;
+import com.cloudimpl.outstack.workflow.Work.Status;
 import com.cloudimpl.outstack.workflow.WorkContext;
 import com.cloudimpl.outstack.workflow.WorkResult;
 import com.cloudimpl.outstack.workflow.WorkUnit;
 import com.cloudimpl.outstack.workflow.WorkflowEngine;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import reactor.core.publisher.Mono;
 
 /**
@@ -34,34 +39,50 @@ import reactor.core.publisher.Mono;
  */
 public class Example {
 
+    static class Test
+    {
+        Map<String,AtomicReference<Status>> stats = new HashMap<>();
+        public Test()
+        {
+            stats.put("asfas", new AtomicReference<>(Work.Status.PENDING));
+        }
+        
+        
+    }
     public static void main(String[] args) throws InterruptedException {
+        
+        String data = GsonCodec.encode(new Test());
+        System.out.println(data);
+        Test k = GsonCodec.decode(Test.class, data);
+        System.out.println(k.stats.get("asfas").get());
         SequentialWorkflow sequence
                 = SequentialWorkflow
                         .name("seq1")
                         .execute(WorkUnit.of("work1",new Work2(Arrays.asList("nuwan","sanjeewa"))).build())
                         .then(WorkUnit.of("work2", new Work2("work2")).build())
                         .then(WorkUnit.of("work3", new Work2("work3")).build())
-                        .then(WorkUnit.of("work6", new ExternalTrigger()).build())
+                        .then(WorkUnit.waitFor("work6"))
+                        .then(WorkUnit.waitFor("work6"))
                         .then(ParallelWorkflow.name("parrallal").execute(WorkUnit.of("work4",new Work2("work4-parallel")).build())
                                 .execute(WorkUnit.of("work5", new Work2("work5-parallel"))
                                 .build())
                         .build()).build();
         WorkflowEngine engine  = new WorkflowEngine("1");
         
-        engine.execute(sequence, new WorkContext()).subscribe();
-
-        Thread.sleep(2000);
-        engine.externalTrigger("work6",(t) -> {
-            return Mono.error(()->new RuntimeException("xxx"));
-        }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
-        
-        Thread.sleep(2000);
-         engine.externalTrigger("work6",(t) -> {
+        engine.execute(sequence).subscribe();
+//
+//        Thread.sleep(2000);
+//        engine.externalTrigger("work6",(t) -> {
+//            return Mono.error(()->new RuntimeException("xxx"));
+//        }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
+//        
+        Thread.sleep(5000);
+         engine.execute("work6",(t) -> {
             return "hello";
         }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
         
          
-         engine.externalTrigger("work6",(t) -> {
+         engine.execute("work6",(t) -> {
             return "hello";
         }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
          
@@ -76,7 +97,7 @@ public class Example {
                 .build();
 
         engine = new WorkflowEngine("1");
-        engine.execute(parallal, new WorkContext()).subscribe();
+        engine.execute(parallal).subscribe();
 
         Thread.sleep(10000000);
     }
