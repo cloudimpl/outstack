@@ -80,7 +80,7 @@ public abstract class AbstractWork implements Work {
     }
 
     protected Mono<WorkStatus> retryWrap(Work work, WorkContext context) {
-        return Mono.fromSupplier(() -> work).flatMap(f -> f.execute(context.clone()))
+        return Mono.fromSupplier(() -> work).flatMap(f -> f.execute(context))
                 .doOnError(err -> error(err, "error:"))
                 .retryWhen(RetryUtil.wrap(Retry.onlyIf(c -> isRetryable(c,context)).exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60))));
     }

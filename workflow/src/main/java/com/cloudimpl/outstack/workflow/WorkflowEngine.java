@@ -97,6 +97,10 @@ public class WorkflowEngine {
         return trigger.trigger(handler);
     }
     
+    protected ExternalTrigger getExternalTrigger(String name){
+        return this.triggers.get(name);
+    }
+    
     private Mono<WorkStatus> run() {
         return mainFlow.execute(context);
     }

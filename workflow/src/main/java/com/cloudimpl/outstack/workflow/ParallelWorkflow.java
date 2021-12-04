@@ -43,7 +43,7 @@ public class ParallelWorkflow extends Workflow {
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context)).doOnNext(r->log("done : {0}", r.getStatus()));
         }
 
         log("started");
@@ -55,7 +55,7 @@ public class ParallelWorkflow extends Workflow {
                 .doOnNext(rs -> cancelNextIfApplicable(context, rs, null))
                 .collectList()
                 .doOnNext(r -> context.getStatus(id).compareAndSet(Status.RUNNING, Status.COMPLETED))
-                .map(l -> merge(WorkStatus.publish(context.getStatus(id).get(), context), l));
+                .map(l -> merge(WorkStatus.publish(context.getStatus(id).get(), context), l)).doOnNext(r->log("done : {0}", r.getStatus()));
                 
     }
 

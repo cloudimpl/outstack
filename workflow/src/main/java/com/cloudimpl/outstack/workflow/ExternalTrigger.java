@@ -15,25 +15,32 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.runtime.Context;
 import java.lang.ref.Reference;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
+@Slf4j
 public class ExternalTrigger implements StatefullWork {
 
     private CompletableFuture<WorkStatus> future = new CompletableFuture();
     private WorkContext context;
-
+    private transient WorkUnit workUnit;
     protected ExternalTrigger() {
-
     }
 
+    protected void init(WorkUnit workUnit)
+    {
+        this.workUnit = workUnit;
+    }
+    
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         this.context = context;
@@ -53,6 +60,12 @@ public class ExternalTrigger implements StatefullWork {
         }
     }
 
+    public void cancel(WorkContext context)
+    {
+        workUnit.log("external trigger cancel invoked");
+        this.future.complete(WorkStatus.publish(Status.CANCELLED,context));
+    }
+    
     private <T> T mapOutCome(Object obj, AtomicReference<Status> reference) {
         if (obj instanceof WorkStatus) {
             WorkStatus st = WorkStatus.class.cast(obj);
