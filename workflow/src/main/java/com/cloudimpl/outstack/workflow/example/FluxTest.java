@@ -34,6 +34,9 @@ public class FluxTest {
         flux.add("test1");
         flux.add("test2");
         flux.add("test3");
+        
+        
+        Mono.just("test").doOnNext(s->System.out.println("next: "+s)).filter(s->!s.equals("test")).doOnSuccess(s->System.out.println("xxxxx:"+s)).subscribe();
         Thread.sleep(100000000);
     }
     static Set<String> set = new ConcurrentSkipListSet<>();

@@ -107,6 +107,7 @@ public class WorkflowEngine {
 
     protected void registerExternalTrigger(String name, ExternalTrigger trigger) {
         triggers.put(name, trigger);
+        this.activeTriggers.add(name);
     }
 
     protected void checkTriggerDuplicate(String name) {
@@ -119,18 +120,10 @@ public class WorkflowEngine {
         return Mono.just(result);
     }
 
-    private static Mono<WorkStatus> dummyStateSupplier(String id) {
-        return Mono.empty();
-    }
-
-    protected void addActiveTrigger(String name)
-    {
-        this.activeTriggers.add(name);
-    }
-    
     protected void removeActiveTrigger(String name)
     {
         this.activeTriggers.remove(name);
+        this.triggers.remove(name);
     }
     
 }

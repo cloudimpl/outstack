@@ -48,14 +48,15 @@ public class WorkUnit extends AbstractWork {
         if (workItem instanceof ExternalTrigger) {
             ExternalTrigger.class.cast(workItem).init(this);
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
-            getEngine().addActiveTrigger(getName());
         }
         Mono<WorkStatus> ret = workItem.execute(copy)
                 .doOnNext(r -> copy.getStatus(id).compareAndSet(Status.RUNNING, r.getStatus()));
         if (workItem instanceof StatefullWork) {
             ret = ret.flatMap(r -> this.updateStateHandler.apply(getId(), r));
         }
-        return ret.doOnSuccess(s -> removeActiveTrigger(workItem instanceof ExternalTrigger)).map(r -> WorkStatus.publish(r.getStatus(), copy)).doOnNext(r->log("done : {0}", r.getStatus()));
+        return ret
+                .doOnSuccess(s->removeActiveTrigger(workItem instanceof ExternalTrigger))
+                .map(r -> WorkStatus.publish(r.getStatus(), copy)).doOnNext(r->log("done : {0}", r.getStatus()));
     }
 
     private void removeActiveTrigger(boolean isTrigger) {

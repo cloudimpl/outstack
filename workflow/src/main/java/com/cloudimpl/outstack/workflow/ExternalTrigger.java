@@ -35,26 +35,24 @@ public class ExternalTrigger implements StatefullWork {
     private CompletableFuture<WorkStatus> future = new CompletableFuture();
     private WorkContext context;
     private transient WorkUnit workUnit;
-    private Map<String,String> labels = new HashMap<>();
-    
+    private Map<String, String> labels = new HashMap<>();
+
     protected ExternalTrigger() {
     }
 
-    protected void init(WorkUnit workUnit)
-    {
+    protected void init(WorkUnit workUnit) {
         this.workUnit = workUnit;
     }
-    
-    public ExternalTrigger putLabel(Map<String,String> labels)
-    {
+
+    public ExternalTrigger putLabel(Map<String, String> labels) {
         this.labels = labels;
         return this;
     }
-    
+
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         this.context = context;
-        this.labels.entrySet().stream().forEach(e->this.context.putLabel(e.getKey(), e.getValue()));
+        this.labels.entrySet().stream().forEach(e -> this.context.putLabel(e.getKey(), e.getValue()));
         return Mono.fromFuture(future);
     }
 
@@ -64,19 +62,19 @@ public class ExternalTrigger implements StatefullWork {
         }
         Object out = handler.apply(context);
         AtomicReference<Status> reference = new AtomicReference<>(Status.COMPLETED);
+
         if (out instanceof Mono) {
-            return ((Mono) out).map(o -> mapOutCome(o, reference)).doOnSuccess(o -> future.complete(WorkStatus.publish(reference.get(), context)));
+            return ((Mono) out).map(o -> mapOutCome(o, reference)).doOnSuccess(o -> checkWaitAndPublish(reference, context));
         } else {
-            return Mono.just(out).map(o -> (T) mapOutCome(o, reference)).doOnSuccess(o -> future.complete(WorkStatus.publish(reference.get(), context)));
+            return Mono.just(out).map(o -> (T) mapOutCome(o, reference)).doOnSuccess(o -> checkWaitAndPublish(reference, context));
         }
     }
 
-    public void cancel(WorkContext context)
-    {
+    public void cancel(WorkContext context) {
         workUnit.log("external trigger cancel invoked");
-        this.future.complete(WorkStatus.publish(Status.CANCELLED,context));
+        this.future.complete(WorkStatus.publish(Status.CANCELLED, context));
     }
-    
+
     private <T> T mapOutCome(Object obj, AtomicReference<Status> reference) {
         if (obj instanceof WorkStatus) {
             WorkStatus st = WorkStatus.class.cast(obj);
@@ -84,6 +82,12 @@ public class ExternalTrigger implements StatefullWork {
             return st.getData();
         } else {
             return (T) obj;
+        }
+    }
+
+    private void checkWaitAndPublish(AtomicReference<Status> reference, WorkContext context) {
+        if (reference.get() != Status.WAIT) {
+            future.complete(WorkStatus.publish(reference.get(), context));
         }
     }
 }

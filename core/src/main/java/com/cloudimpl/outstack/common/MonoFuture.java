@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 nuwansa.
+ * Copyright 2021 nuwan.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,42 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.cloudimpl.outstack.workflow;
+package com.cloudimpl.outstack.common;
 
-import com.google.gson.JsonObject;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import reactor.core.publisher.Mono;
 
 /**
  *
- * @author nuwansa
+ * @author nuwan
  */
-public interface Work {
+public class MonoFuture<T> {
 
-    public enum Status {
-        PENDING,
-        RUNNING,
-        WAIT,
-        COMPLETED,
-        CANCELLED,
-        TERMINATED
-    }
-    
-    
-     Mono<WorkStatus> execute(WorkContext context);
+    private final Mono<T> mono;
+    private final CompletableFuture<T> future;
 
-    default JsonObject toJson() {
-        return null;
+    public MonoFuture() {
+        this.future = new CompletableFuture<>();
+        this.mono = Mono.fromFuture(future);
     }
 
-    default Workflow asWorkflow()
-    {
-        return (Workflow)this;
+    public void submit(T t) {
+        future.complete(t);
     }
-    
-    public static String generateId()
-    {
-        return "work-"+UUID.randomUUID().toString();
+
+    public Mono<T> get() {
+        return mono;
     }
-    
+
+    public static <T> MonoFuture<T> create() {
+        return new MonoFuture<>();
+    }
 }
