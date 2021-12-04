@@ -38,7 +38,7 @@ public class SequentialWorkflow extends Workflow {
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context)).doOnNext(r->log("done : {0}", r.getStatus()));
         }
         log("started");
         Mono<WorkStatus> ret = null;
@@ -49,7 +49,7 @@ public class SequentialWorkflow extends Workflow {
                 ret = ret.doOnNext(rs->cancelNextIfApplicable(context, rs, flow)).flatMap(r -> retryWrap(flow, r.getData()));
             } 
         }
-        return ret == null ? Mono.empty() : ret.doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING,r.getStatus()));
+        return ret == null ? Mono.empty() : ret.doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING,r.getStatus())).doOnNext(r->log("done : {0}", r.getStatus()));
     }
     
     @Override

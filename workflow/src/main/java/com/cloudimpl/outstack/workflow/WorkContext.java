@@ -15,11 +15,14 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.common.GsonCodec;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import reactor.core.publisher.Mono;
@@ -31,18 +34,20 @@ import reactor.core.publisher.Mono;
 public class WorkContext {
 
     private final Map<String, List<String>> attr;
-    private final Map<String,AtomicReference<Work.Status>> mapStatus;
-    private transient BiFunction<String,Object,Mono> rrHandler;
+    private final Map<String, AtomicReference<Work.Status>> mapStatus;
+    private transient final List<Commit> commits = new LinkedList<>();
+    private transient BiFunction<String, Object, Mono> rrHandler;
+    private transient Map<String,String> labels = new HashMap<>();
     protected WorkContext() {
         attr = new ConcurrentHashMap<>();
         mapStatus = new ConcurrentHashMap<>();
     }
 
-    private  WorkContext(Map<String, List<String>> contexts,Map<String,AtomicReference<Work.Status>> mapStatus) {
+    private WorkContext(Map<String, List<String>> contexts, Map<String, AtomicReference<Work.Status>> mapStatus) {
         this.attr = contexts;
         this.mapStatus = mapStatus;
     }
-    
+
     public void put(String key, boolean value) {
         put(key, String.valueOf(value));
     }
@@ -52,23 +57,33 @@ public class WorkContext {
         synchronized (list) {
             list.add(value);
         }
+        synchronized (commits) {
+            commits.add(new Commit(key, value));
+        }
     }
 
-    protected AtomicReference<Work.Status> getStatus(String id)
+    public String getLabel(String name)
     {
-        return this.mapStatus.computeIfAbsent(id, i->new AtomicReference<>(Work.Status.PENDING));
+        return labels.get(name);
     }
     
-    protected void setRRHandler(BiFunction<String,Object,Mono> rrHandler)
+    protected void putLabel(String name,String value)
     {
+        this.labels.put(name, value);
+    }
+    
+    protected AtomicReference<Work.Status> getStatus(String id) {
+        return this.mapStatus.computeIfAbsent(id, i -> new AtomicReference<>(Work.Status.PENDING));
+    }
+
+    protected void setRRHandler(BiFunction<String, Object, Mono> rrHandler) {
         this.rrHandler = rrHandler;
     }
-    
-    public BiFunction<String,Object,Mono> getRRHandler()
-    {
+
+    public BiFunction<String, Object, Mono> getRRHandler() {
         return this.rrHandler;
     }
-    
+
     public void put(String key, int value) {
         put(key, String.valueOf(value));
     }
@@ -89,21 +104,21 @@ public class WorkContext {
         return Boolean.valueOf(this.attr.getOrDefault(key, Collections.singletonList("false")).get(0));
     }
 
-    public void merge(WorkContext context)
-    {
-        if( context == null || context == this)
-        {
+    public void merge(WorkContext context) {
+        if (context == null || context == this) {
             throw new WorkflowException("invalid argument");
         }
-        context.attr.entrySet().stream().forEach(e->e.getValue().stream().forEach(v->this.put(e.getKey(),v)));
+        context.commits.forEach(c->this.put(c.getKey(), c.getValue()));
+    //    context.attr.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> this.put(e.getKey(), v)));
     }
-    
+
     @Override
-    protected WorkContext clone()
-    {
-        return new WorkContext(new ConcurrentHashMap<>(attr),mapStatus); //mapStatus shared across clone context
+    protected WorkContext clone() {
+        Map<String, List<String>> attr2 = new ConcurrentHashMap<>();
+        attr.entrySet().forEach(e -> attr2.put(e.getKey(), new LinkedList<>(e.getValue())));
+        return new WorkContext(attr2, mapStatus); //mapStatus shared across clone context
     }
-    
+
     public String getString(String key) {
         List<String> list = this.attr.getOrDefault(key, null);
         if (list == null) {
@@ -128,4 +143,30 @@ public class WorkContext {
     public double getDouble(String key) {
         return Double.valueOf(this.attr.getOrDefault(key, Collections.singletonList("0.0d")).get(0));
     }
+
+    @Override
+    public String toString() {
+        return GsonCodec.encode(this);
+    }
+
+    public static final class Commit {
+
+        private String key;
+        private String value;
+
+        public Commit(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+    }
+
 }

@@ -18,6 +18,8 @@ package com.cloudimpl.outstack.workflow;
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.google.gson.JsonObject;
+import java.util.Collections;
+import java.util.Map;
 import reactor.core.publisher.Mono;
 
 /**
@@ -36,33 +38,32 @@ public class WorkUnit extends AbstractWork {
     }
 
     @Override
-    public Mono<WorkStatus> execute(WorkContext context) {
+    public synchronized Mono<WorkStatus> execute(WorkContext context) {
         if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context));
+            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context)).doOnNext(r->log("done : {0}", r.getStatus()));
         }
-
+        WorkContext copy = context.clone();
         Work workItem = GsonCodec.decode(workUnit, content);
-
-        context.setRRHandler(rrHandler);
+        copy.setRRHandler(rrHandler);
         if (workItem instanceof ExternalTrigger) {
+            ExternalTrigger.class.cast(workItem).init(this);
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
             getEngine().addActiveTrigger(getName());
         }
-        Mono<WorkStatus> ret = workItem.execute(context)
-                .doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING, r.getStatus()));
+        Mono<WorkStatus> ret = workItem.execute(copy)
+                .doOnNext(r -> copy.getStatus(id).compareAndSet(Status.RUNNING, r.getStatus()));
         if (workItem instanceof StatefullWork) {
-            ret = ret.flatMap(r->this.updateStateHandler.apply(getId(), r));
+            ret = ret.flatMap(r -> this.updateStateHandler.apply(getId(), r));
         }
-        return ret.doOnSubscribe(s->removeActiveTrigger(workItem instanceof ExternalTrigger));
+        return ret.doOnSuccess(s -> removeActiveTrigger(workItem instanceof ExternalTrigger)).map(r -> WorkStatus.publish(r.getStatus(), copy)).doOnNext(r->log("done : {0}", r.getStatus()));
     }
 
-    private void removeActiveTrigger(boolean isTrigger)
-    {
-        if(isTrigger)
-        {
+    private void removeActiveTrigger(boolean isTrigger) {
+        if (isTrigger) {
             getEngine().removeActiveTrigger(getName());
         }
     }
+
     @Override
     protected void setEngine(WorkflowEngine engine) {
         super.setEngine(engine);
@@ -71,13 +72,28 @@ public class WorkUnit extends AbstractWork {
         }
     }
 
-    public static Builder of(String name, Work work) {
-
-        return new Builder(name, work.getClass(), GsonCodec.encode(work));
+    @Override
+    public synchronized void cancel(WorkContext context) {
+        super.cancel(context);
+        if (workUnit.isAssignableFrom(ExternalTrigger.class)) {
+            ExternalTrigger trigger = getEngine().getExternalTrigger(getName());
+            if (trigger != null) {
+                trigger.cancel(context);
+            }
+        }
     }
 
-    public static WorkUnit waitFor(String name){
-        return WorkUnit.of(name, new ExternalTrigger()).build();
+    public static Builder of(String name, Work work) {
+
+        return new Builder(name, work);
+    }
+
+    public static WorkUnit waitFor(String name,Map<String,String> labels) {
+        return WorkUnit.of(name, new ExternalTrigger().putLabel(labels)).build();
+    }
+
+    public static WorkUnit waitFor(String name) {
+        return waitFor(name, Collections.EMPTY_MAP);
     }
     
     @Override
@@ -98,18 +114,17 @@ public class WorkUnit extends AbstractWork {
 
     public static class Builder {
 
-        private Class<? extends Work> workType;
+        private Work work;
         private String name;
-        private String content;
 
-        public Builder(String name, Class<? extends Work> work, String content) {
+        public Builder(String name, Work work) {
             this.name = name;
-            this.workType = work;
-            this.content = content;
+            this.work = work;
         }
 
         public WorkUnit build() {
-            return new WorkUnit(Work.generateId(), name, workType, content);
+
+            return new WorkUnit(Work.generateId(), name, work.getClass(), GsonCodec.encode(work));
         }
     }
 }

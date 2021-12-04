@@ -52,4 +52,10 @@ public class WorkStatus {
         return status;
     }
 
+    @Override
+    public String toString() {
+        return "WorkStatus{" + "status=" + status + ", data=" + data + '}';
+    }
+
+    
 }
