@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import reactor.core.publisher.Mono;
 
@@ -29,14 +30,17 @@ import reactor.core.publisher.Mono;
  */
 public class WorkContext {
 
-    private final Map<String, List<String>> contexts;
+    private final Map<String, List<String>> attr;
+    private final Map<String,AtomicReference<Work.Status>> mapStatus;
     private transient BiFunction<String,Object,Mono> rrHandler;
-    public WorkContext() {
-        contexts = new ConcurrentHashMap<>();
+    protected WorkContext() {
+        attr = new ConcurrentHashMap<>();
+        mapStatus = new ConcurrentHashMap<>();
     }
 
-    private  WorkContext(Map<String, List<String>> contexts) {
-        this.contexts = contexts;
+    private  WorkContext(Map<String, List<String>> contexts,Map<String,AtomicReference<Work.Status>> mapStatus) {
+        this.attr = contexts;
+        this.mapStatus = mapStatus;
     }
     
     public void put(String key, boolean value) {
@@ -44,12 +48,17 @@ public class WorkContext {
     }
 
     public void put(String key, String value) {
-        List<String> list = this.contexts.computeIfAbsent(key, k -> new LinkedList<>());
+        List<String> list = this.attr.computeIfAbsent(key, k -> new LinkedList<>());
         synchronized (list) {
             list.add(value);
         }
     }
 
+    protected AtomicReference<Work.Status> getStatus(String id)
+    {
+        return this.mapStatus.computeIfAbsent(id, i->new AtomicReference<>(Work.Status.PENDING));
+    }
+    
     protected void setRRHandler(BiFunction<String,Object,Mono> rrHandler)
     {
         this.rrHandler = rrHandler;
@@ -77,7 +86,7 @@ public class WorkContext {
     }
 
     public boolean getBoolean(String key) {
-        return Boolean.valueOf(this.contexts.getOrDefault(key, Collections.singletonList("false")).get(0));
+        return Boolean.valueOf(this.attr.getOrDefault(key, Collections.singletonList("false")).get(0));
     }
 
     public void merge(WorkContext context)
@@ -86,17 +95,17 @@ public class WorkContext {
         {
             throw new WorkflowException("invalid argument");
         }
-        context.contexts.entrySet().stream().forEach(e->e.getValue().stream().forEach(v->this.put(e.getKey(),v)));
+        context.attr.entrySet().stream().forEach(e->e.getValue().stream().forEach(v->this.put(e.getKey(),v)));
     }
     
     @Override
-    public WorkContext clone()
+    protected WorkContext clone()
     {
-        return new WorkContext(new ConcurrentHashMap<>(contexts));
+        return new WorkContext(new ConcurrentHashMap<>(attr),mapStatus); //mapStatus shared across clone context
     }
     
     public String getString(String key) {
-        List<String> list = this.contexts.getOrDefault(key, null);
+        List<String> list = this.attr.getOrDefault(key, null);
         if (list == null) {
             return null;
         } else {
@@ -105,18 +114,18 @@ public class WorkContext {
     }
 
     public int getInt(String key) {
-        return Integer.valueOf(this.contexts.getOrDefault(key, Collections.singletonList("0")).get(0));
+        return Integer.valueOf(this.attr.getOrDefault(key, Collections.singletonList("0")).get(0));
     }
 
     public long getLong(String key) {
-        return Long.valueOf(this.contexts.getOrDefault(key, Collections.singletonList("0L")).get(0));
+        return Long.valueOf(this.attr.getOrDefault(key, Collections.singletonList("0L")).get(0));
     }
 
     public float getFloat(String key) {
-        return Float.valueOf(this.contexts.getOrDefault(key, Collections.singletonList("0.0f")).get(0));
+        return Float.valueOf(this.attr.getOrDefault(key, Collections.singletonList("0.0f")).get(0));
     }
 
     public double getDouble(String key) {
-        return Double.valueOf(this.contexts.getOrDefault(key, Collections.singletonList("0.0d")).get(0));
+        return Double.valueOf(this.attr.getOrDefault(key, Collections.singletonList("0.0d")).get(0));
     }
 }

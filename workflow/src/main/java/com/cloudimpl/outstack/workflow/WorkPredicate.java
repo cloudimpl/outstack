@@ -23,7 +23,7 @@ import com.cloudimpl.outstack.core.CloudUtil;
  */
 public interface WorkPredicate {
 
-    boolean apply(WorkResult result);
+    boolean apply(WorkStatus result);
 
     public static String of(Class<? extends WorkPredicate> predicate) {
         return predicate.getName();

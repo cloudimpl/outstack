@@ -63,7 +63,7 @@ public class WorkflowRepository {
                 .doOnNext(s -> workFlows.put(s, AbstractWork.fromJson(json).asWorkflow()));
     }
 
-    public void startWorkflow(String id, WorkContext context) {
+    public void startWorkflow(String id) {
         Workflow workflow = workFlows.remove(id);
         if (workflow == null) {
             throw new WorkflowException("workflow {0} not found", id);
@@ -71,20 +71,20 @@ public class WorkflowRepository {
         WorkflowEngine engine = new WorkflowEngine(id);
         this.engines.put(id, engine);
         log.info("workflow {} started", id);
-        engine.execute(workflow, context)
+        engine.execute(workflow)
                 .doOnTerminate(() -> removeEngine(id, false))
                 .doOnCancel(() -> removeEngine(id, true))
                 .doOnError(e -> log.error("workflow error for id :" + id, e))
                 .subscribe();
     }
 
-    public <T> Mono<T> externalTrigger(String id,String name,Function<WorkContext, T> handler){
+    public <T> Mono<T> execute(String id,String name,Function<WorkContext, T> handler){
         WorkflowEngine engine = engines.get(id);
         if(engine == null)
         {
             throw new WorkflowException("workflow engine {0} not found", id);
         }
-        return engine.externalTrigger(name, handler);
+        return engine.execute(name, handler);
     }
     
     private void removeEngine(String id, boolean cancel) {

@@ -47,7 +47,7 @@ public class SerializeTest {
         System.out.println("json: "+json);
         Workflow work = (Workflow) AbstractWork.fromJson(json);
         WorkflowEngine engine = new WorkflowEngine("1");
-        engine.execute(work, new WorkContext()).subscribe();
+        engine.execute(work).subscribe();
         Thread.sleep(10000);
     }
 }

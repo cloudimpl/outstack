@@ -18,7 +18,7 @@ package com.cloudimpl.outstack.workflow.domain;
 import com.cloudimpl.outstack.runtime.domainspec.Entity;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
-import com.cloudimpl.outstack.workflow.WorkResult;
+import com.cloudimpl.outstack.workflow.WorkContext;
 
 /**
  *
@@ -27,12 +27,12 @@ import com.cloudimpl.outstack.workflow.WorkResult;
 public class WorkflowResultUpdated extends Event<WorkflowEntity>{
     private final String workflowId;
     private final String workId;
-    private final WorkResult result;
+    private final WorkContext context;
 
-    public WorkflowResultUpdated(String workflowId, String workId, WorkResult result) {
+    public WorkflowResultUpdated(String workflowId, String workId, WorkContext context) {
         this.workflowId = workflowId;
         this.workId = workId;
-        this.result = result;
+        this.context = context;
     }
 
     public String getWorkId() {
@@ -43,8 +43,8 @@ public class WorkflowResultUpdated extends Event<WorkflowEntity>{
         return workflowId;
     }
 
-    public WorkResult getResult() {
-        return result;
+    public WorkContext getContext() {
+        return context;
     }
     
     @Override

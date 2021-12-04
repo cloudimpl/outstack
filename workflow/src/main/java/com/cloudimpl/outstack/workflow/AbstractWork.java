@@ -15,14 +15,19 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.common.RetryUtil;
+import com.cloudimpl.outstack.runtime.Context;
 import com.google.gson.JsonObject;
 import java.text.MessageFormat;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
+import reactor.retry.Retry;
+import reactor.retry.RetryContext;
 
 /**
  *
@@ -34,10 +39,9 @@ public abstract class AbstractWork implements Work {
     protected final String id;
     protected final String name;
     protected WorkflowEngine engine;
-    protected BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler;
-    protected Function<String, Mono<WorkResult>> stateSupplier;
+    protected BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler;
     protected BiFunction<String, Object, Mono> rrHandler;
-
+    
     public AbstractWork(String id, String name) {
         this.id = id;
         this.name = name;
@@ -59,9 +63,15 @@ public abstract class AbstractWork implements Work {
         return this.engine;
     }
 
-    public void cancel()
+    public void cancel(WorkContext context)
     {
-       // this.canceled.set(true);
+        context.getStatus(id).compareAndSet(Status.PENDING, Status.CANCELLED);
+        context.getStatus(id).compareAndSet(Status.RUNNING, Status.CANCELLED);
+    }
+    
+    public boolean isCancelled(WorkContext context)
+    {
+        return context.getStatus(id).get() == Status.CANCELLED;
     }
     
     public void log(String format, Object... args) {
@@ -69,9 +79,36 @@ public abstract class AbstractWork implements Work {
         log.info("workflow {}:{}:{} -> {} ", engine.getId(), this.getClass().getSimpleName(), name, msg);
     }
 
-    protected void setHandlers(BiFunction<String, WorkResult, Mono<WorkResult>> updateStateHandler, Function<String, Mono<WorkResult>> stateSupplier, BiFunction<String, Object, Mono> rrHandler) {
+    protected Mono<WorkStatus> retryWrap(Work work, WorkContext context) {
+        return Mono.fromSupplier(() -> work).flatMap(f -> f.execute(context.clone()))
+                .doOnError(err -> error(err, "error:"))
+                .retryWhen(RetryUtil.wrap(Retry.onlyIf(c -> isRetryable(c,context)).exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60))));
+    }
+    
+    protected void cancelNextIfApplicable(WorkContext context,WorkStatus status,AbstractWork nextWork)
+    {
+        if(status.getStatus() == Status.CANCELLED && nextWork != null)
+        {
+            nextWork.cancel(context);
+        }
+        if(status.getStatus() == Status.TERMINATED)
+        {
+            getEngine().cancel();
+        }
+    }
+    
+    private boolean isRetryable(RetryContext retryContext,WorkContext context) {
+        return !isCancelled(context);
+    }
+    
+    public void error(Throwable thr,String format,Object... args)
+    {
+        String msg = MessageFormat.format(format, args);
+        log.error("workflow "+engine.getId()+":"+this.getClass().getSimpleName()+":"+name+" -> "+msg,thr);
+    }
+    
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
-        this.stateSupplier = stateSupplier;
         this.rrHandler = rrHandler;
     }
 
