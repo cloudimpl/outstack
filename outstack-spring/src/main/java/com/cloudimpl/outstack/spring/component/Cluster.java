@@ -180,6 +180,10 @@ public class Cluster {
         return this.node.requestReply(serviceName, msg);
     }
 
+    public <T> Mono<T> requestReply(String serviceName, Object msg) {
+        return requestReply(null, serviceName, msg);
+    }
+    
     public <T> Flux<T> requestStream(String serviceName, Object msg) {
         return this.requestStream(null, serviceName, msg);
     }
