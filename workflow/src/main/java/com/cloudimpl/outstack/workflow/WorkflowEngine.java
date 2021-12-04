@@ -44,11 +44,11 @@ public class WorkflowEngine {
         this.id = id;
         this.triggers = new ConcurrentHashMap<>();
         this.triggerNames = new HashSet<>();
-        this.updateStateHandler = this::dummyStateUpdater;
+        this.updateStateHandler = WorkflowEngine::dummyStateUpdater;
         this.activeTriggers = new ConcurrentSkipListSet<>();
     }
 
-    public WorkflowEngine(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
+    public WorkflowEngine(String id,BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
         this.updateStateHandler = updateStateHandler;
         this.rrHandler = rrHandler;
     }
@@ -115,11 +115,11 @@ public class WorkflowEngine {
         }
     }
 
-    private Mono<WorkStatus> dummyStateUpdater(String id, WorkStatus result) {
+    private static Mono<WorkStatus> dummyStateUpdater(String id, WorkStatus result) {
         return Mono.just(result);
     }
 
-    private Mono<WorkStatus> dummyStateSupplier(String id) {
+    private static Mono<WorkStatus> dummyStateSupplier(String id) {
         return Mono.empty();
     }
 

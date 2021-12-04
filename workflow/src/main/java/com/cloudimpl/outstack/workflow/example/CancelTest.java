@@ -63,7 +63,7 @@ public class CancelTest {
             return Mono.just("hello");
         }).subscribe();
         Thread.sleep(5000);
-        engine.executeNext((c) -> {
+        engine.execute("work4",(c) -> {
             c.put("1", "work4");
             return Mono.just("hello");
         }).subscribe();
