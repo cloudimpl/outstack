@@ -23,7 +23,7 @@ public class WorkStatus {
 
     private final Work.Status status;
     private Object data;
-
+    private String id;
     private WorkStatus(Work.Status status) {
         this.status = status;
     }

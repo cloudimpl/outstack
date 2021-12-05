@@ -151,7 +151,7 @@ public abstract class Command implements Input, ICommand {
             return this;
         }
 
-        public Builder withContext(String context) {
+        public Builder withWotkContext(String context) {
             this.context = context;
             return this;
         }

@@ -26,6 +26,7 @@ import com.cloudimpl.outstack.workflow.Work.Status;
 import com.cloudimpl.outstack.workflow.WorkContext;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -45,7 +46,7 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
         this.workflowId = workflowId;
         this.tenantId = tenantId;
         this.status = Status.PENDING;
-        this.results = new HashMap<>();
+        this.results = new LinkedHashMap<>();
     }
 
     @Override

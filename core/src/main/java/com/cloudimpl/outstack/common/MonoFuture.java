@@ -15,20 +15,23 @@
  */
 package com.cloudimpl.outstack.common;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 import reactor.core.publisher.Mono;
 
 /**
  *
  * @author nuwan
  */
-public class MonoFuture<P,T> {
+public class MonoFuture<T> {
 
     private final Mono<T> mono;
     private final CompletableFuture<T> future;
-    private final P payload;
-    private MonoFuture(P payload) {
-        this.payload = payload;
+    private final List<Object> params;
+    private MonoFuture(Object[] params) {
+        this.params = Arrays.asList(params).stream().collect(Collectors.toList());
         this.future = new CompletableFuture<>();
         this.mono = Mono.fromFuture(future);
     }
@@ -41,12 +44,12 @@ public class MonoFuture<P,T> {
         return mono;
     }
 
-    public P getPayload()
+    public <P> P getParam(int index)
     {
-        return this.payload;
+        return (P)this.params.get(index);
     }
     
-    public static <P,T> MonoFuture<P,T> create(P payload) {
-        return new MonoFuture<>(payload);
+    public static <T> MonoFuture<T> create(Object... args) {
+        return new MonoFuture<>(args);
     }
 }

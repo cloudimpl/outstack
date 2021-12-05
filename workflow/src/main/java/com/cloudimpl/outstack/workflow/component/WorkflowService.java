@@ -32,6 +32,7 @@ public class WorkflowService extends SpringService<WorkflowEntity> {
 
     static {
         $(CreateWorkflow.class);
+        $(UpdateWorkflow.class);
     }
 
     public WorkflowService(EventRepositoryFactory factory) {

@@ -21,11 +21,13 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.spring.component.Cluster;
 import com.cloudimpl.outstack.workflow.AbstractWork;
 import com.cloudimpl.outstack.workflow.WorkContext;
+import com.cloudimpl.outstack.workflow.WorkStatus;
 import com.cloudimpl.outstack.workflow.Workflow;
 import com.cloudimpl.outstack.workflow.WorkflowEngine;
 import com.cloudimpl.outstack.workflow.WorkflowException;
 import com.cloudimpl.outstack.workflow.domain.WorkflowCreateRequest;
 import com.cloudimpl.outstack.workflow.domain.WorkflowEntity;
+import com.cloudimpl.outstack.workflow.domain.WorkflowUpdateRequest;
 import com.google.gson.JsonObject;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,19 +58,19 @@ public class WorkflowRepository {
     private final Map<String, Workflow> workFlows = new ConcurrentHashMap<>();
     private final Map<String, WorkflowEngine> engines = new ConcurrentHashMap<>();
 
-    public Mono<String> register(Workflow workflow) {
+    public Mono<String> startWorkFlow(Workflow workflow) {
         JsonObject json = workflow.toJson();
         return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", WorkflowCreateRequest.builder().withContent(json.toString()).build())
                 .cast(CommandResponse.class).map(cr -> (String) cr.getValue())
-                .doOnNext(s -> workFlows.put(s, AbstractWork.fromJson(json).asWorkflow()));
+                .doOnNext(s -> workFlows.put(s, AbstractWork.fromJson(json).asWorkflow())).doOnNext(s->init(s));
     }
 
-    public void startWorkflow(String id) {
+    private void init(String id) {
         Workflow workflow = workFlows.remove(id);
         if (workflow == null) {
             throw new WorkflowException("workflow {0} not found", id);
         }
-        WorkflowEngine engine = new WorkflowEngine(id);
+        WorkflowEngine engine = new WorkflowEngine(id,this::updateState,cluster::requestReply);
         this.engines.put(id, engine);
         log.info("workflow {} started", id);
         engine.execute(workflow)
@@ -97,5 +99,15 @@ public class WorkflowRepository {
         if (engine != null) {
             //TODO cancel engine
         }
+    }
+    
+    private Mono<WorkStatus> updateState(String workflowId,String id,WorkStatus status)
+    {
+         WorkflowUpdateRequest req = WorkflowUpdateRequest.builder()
+                .withWorkflowId(workflowId)
+                .withWorkId(id)
+                .withWotkContext(status.getData())
+                .withCommandName(UpdateWorkflow.class.getSimpleName()).withRootId(workflowId).withId(workflowId).build();
+        return cluster.requestReply(domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", req).map(r->status);
     }
 }
