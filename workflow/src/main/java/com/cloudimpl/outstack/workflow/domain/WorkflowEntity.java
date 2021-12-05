@@ -21,13 +21,16 @@ import com.cloudimpl.outstack.runtime.domainspec.DomainEventException;
 import com.cloudimpl.outstack.runtime.domainspec.EntityMeta;
 import com.cloudimpl.outstack.runtime.domainspec.Event;
 import com.cloudimpl.outstack.runtime.domainspec.ITenantOptional;
+import com.cloudimpl.outstack.runtime.domainspec.Id;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.workflow.Work.Status;
 import com.cloudimpl.outstack.workflow.WorkContext;
+import com.cloudimpl.outstack.workflow.WorkStatus;
 import com.google.gson.JsonObject;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  *
@@ -36,6 +39,7 @@ import java.util.Map;
 @EntityMeta(plural = "workflows", version = "v1")
 public class WorkflowEntity extends RootEntity implements ITenantOptional {
 
+    @Id
     private String workflowId;
     private String content;
     private Status status;
@@ -67,6 +71,14 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
         return tenantId;
     }
 
+    public Optional<WorkStatus> getStatus(String workId) {
+        WorkContext ctx = results.get(workId);
+        if (ctx == null) {
+            return Optional.of(WorkStatus.publish(ctx.getStatus(workId).get(), ctx));
+        }
+        return Optional.empty();
+    }
+
     private void applyEvent(WorkflowCreated evt) {
         this.workflowId = evt.getWorkflowId();
         this.content = evt.getContent();
@@ -77,6 +89,10 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
         this.results.put(evt.getWorkId(), evt.getContext());
     }
 
+    private void applyEvent(WorkflowCompleted evt) {
+        this.status = evt.getStatus();
+    }
+
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
@@ -84,8 +100,12 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
                 applyEvent((WorkflowCreated) event);
                 break;
             }
-            case "WorkflowResultUpdated":{
-                applyEvent((WorkflowResultUpdated)event);
+            case "WorkflowResultUpdated": {
+                applyEvent((WorkflowResultUpdated) event);
+                break;
+            }
+            case "WorkflowCompleted": {
+                applyEvent((WorkflowCompleted) event);
                 break;
             }
             default: {

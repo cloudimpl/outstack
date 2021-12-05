@@ -18,6 +18,7 @@ package com.cloudimpl.outstack.workflow;
 import com.cloudimpl.outstack.runtime.util.Util;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,6 @@ import reactor.core.publisher.Mono;
 @Slf4j
 public class ConditionalWorkflow extends Workflow {
 
-    private WorkStatus prevWorkResult;
     private final Class<? extends WorkPredicate> predicateType;
     private final AbstractWork then;
     private final AbstractWork otherwise;
@@ -45,36 +45,13 @@ public class ConditionalWorkflow extends Workflow {
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         
-        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(WorkStatus.publish(context.getStatus(id).get()).setContext(context));
-        }
-        
         WorkPredicate predicate = Util.createObject(this.predicateType, new Util.VarArg<>(), new Util.VarArg<>());
         log("started");
-        Mono<WorkStatus> ret;
-        if (predicate.apply(prevWorkResult)) {
-            log("then route initiated");
-            ret =  then.execute(context);
-        } else {
-            log("othewise route initiated");
-            ret =  otherwise.execute(context);
-        }
-        return ret.doOnNext(r->context.getStatus(id).compareAndSet(Status.RUNNING,r.getStatus()));
+        return Mono.just(predicate.apply(context)).filter(b->b).flatMap(b->then.execute(context)).switchIfEmpty(Mono.defer(()->Mono.just(otherwise).flatMap(o->o.execute(context))));
     }
-
-    @Override
-    public void cancel(WorkContext context) {
-        super.cancel(context);
-        this.then.cancel(context);
-        this.otherwise.cancel(context);
-    }
-
+    
     public ConditionalWorkflow.Builder name(String name) {
         return new Builder(name);
-    }
-
-    protected void setPrevWorkResult(WorkStatus workResult) {
-        this.prevWorkResult = workResult;
     }
 
     @Override
@@ -85,10 +62,10 @@ public class ConditionalWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler,  BiFunction<String, Object, Mono> rrHandler) {
-        this.updateStateHandler = updateStateHandler;
-        this.then.setHandlers(updateStateHandler, rrHandler);
-        this.otherwise.setHandlers(updateStateHandler, rrHandler);
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler,  BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
+        super.setHandlers(updateStateHandler, rrHandler, workStatusLoader);
+        this.then.setHandlers(updateStateHandler, rrHandler,workStatusLoader);
+        this.otherwise.setHandlers(updateStateHandler, rrHandler,workStatusLoader);
     }
 
     @Override
@@ -107,6 +84,7 @@ public class ConditionalWorkflow extends Workflow {
         return new ConditionalWorkflow(json.get("id").getAsString(), json.get("name").getAsString(), Util.classForName(json.get("predicateType").getAsString()), AbstractWork.fromJson(json.getAsJsonObject("then")), AbstractWork.fromJson(json.getAsJsonObject("otherwise")));
     }
 
+    
     public static final class Builder {
 
         private final String name;

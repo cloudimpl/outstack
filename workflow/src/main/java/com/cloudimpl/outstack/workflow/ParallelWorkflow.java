@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import reactor.core.publisher.Flux;
@@ -42,27 +43,16 @@ public class ParallelWorkflow extends Workflow {
 
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
-        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context)).doOnNext(r->log("done : {0}", r.getStatus()));
-        }
-
+        WorkContext copy = context.clone(false);
         log("started");
         return Flux.fromIterable(workUnits)
                 .parallel(Runtime.getRuntime().availableProcessors())
                 .runOn(Schedulers.parallel())
-                .flatMap(wk -> retryWrap(wk, context))
+                .flatMap(wk -> retryWrap(wk, copy))
                 .sequential()
-                .doOnNext(rs -> cancelNextIfApplicable(context, rs, null))
                 .collectList()
-                .doOnNext(r -> context.getStatus(id).compareAndSet(Status.RUNNING, Status.COMPLETED))
-                .map(l -> merge(WorkStatus.publish(context.getStatus(id).get(), context), l)).doOnNext(r->log("done : {0}", r.getStatus()));
-                
-    }
+                .map(l -> merge(WorkStatus.publish(Status.COMPLETED, copy), l)).doOnNext(r -> log("done : {0}", r.getStatus()));
 
-    @Override
-    public void cancel(WorkContext context) {
-        super.cancel(context);
-        this.workUnits.forEach(w -> w.cancel(context));
     }
 
     @Override
@@ -72,9 +62,9 @@ public class ParallelWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
-        this.updateStateHandler = updateStateHandler;
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler));
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
+        super.setHandlers(updateStateHandler, rrHandler, workStatusLoader);
+        workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler,workStatusLoader));
     }
 
     public static ExecuteStep name(String name) {

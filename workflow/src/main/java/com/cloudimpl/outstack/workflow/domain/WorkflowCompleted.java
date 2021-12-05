@@ -25,27 +25,21 @@ import com.cloudimpl.outstack.workflow.WorkContext;
  *
  * @author nuwan
  */
-public class WorkflowResultUpdated extends Event<WorkflowEntity>{
+public class WorkflowCompleted extends Event<WorkflowEntity>{
     private final String workflowId;
-    private final String workId;
-    private final WorkContext context;
+    private final Work.Status status;
 
-    public WorkflowResultUpdated(String workflowId, String workId, WorkContext context) {
+    public WorkflowCompleted(String workflowId, Work.Status status) {
         this.workflowId = workflowId;
-        this.workId = workId;
-        this.context = context;
-    }
-
-    public String getWorkId() {
-        return workId;
+        this.status = status;
     }
 
     public String getWorkflowId() {
         return workflowId;
     }
 
-    public WorkContext getContext() {
-        return context;
+    public Work.Status getStatus() {
+        return status;
     }
     
     @Override

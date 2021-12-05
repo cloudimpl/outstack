@@ -56,18 +56,25 @@ public class ExternalTrigger implements StatefullWork {
         return Mono.fromFuture(future);
     }
 
-    public synchronized <T, U> Mono<T> trigger(Function<WorkContext, U> handler) {
+    public synchronized <T> Mono<T> triggerAsync(Function<WorkContext, Mono<Object>> handler) {
         if (this.context == null) {
             return Mono.error(new WorkflowException("External trigger {0} not active yet", this.getClass().getName()));
         }
-        Object out = handler.apply(context);
+        Mono<Object> out = handler.apply(context);
         AtomicReference<Status> reference = new AtomicReference<>(Status.COMPLETED);
 
-        if (out instanceof Mono) {
-            return ((Mono) out).map(o -> mapOutCome(o, reference)).doOnSuccess(o -> checkWaitAndPublish(reference, context));
-        } else {
-            return Mono.just(out).map(o -> (T) mapOutCome(o, reference)).doOnSuccess(o -> checkWaitAndPublish(reference, context));
+        return out.map(o -> (T) mapOutCome(o, reference)).doOnSuccess(o -> future.complete(WorkStatus.publish(reference.get(), context)));
+    }
+
+    public synchronized <T> T trigger(Function<WorkContext, Object> handler) {
+        if (this.context == null) {
+            throw new WorkflowException("External trigger {0} not active yet", this.getClass().getName());
         }
+        Object out = handler.apply(context);
+        AtomicReference<Status> reference = new AtomicReference<>(Status.COMPLETED);
+        T ret = mapOutCome(out, reference);
+        checkWaitAndPublish(reference, context);
+        return ret;
     }
 
     public void cancel(WorkContext context) {

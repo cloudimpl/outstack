@@ -18,6 +18,8 @@ package com.cloudimpl.outstack.workflow.component;
 import com.cloudimpl.outstack.runtime.CommandResponse;
 import com.cloudimpl.outstack.runtime.EntityCommandHandler;
 import com.cloudimpl.outstack.runtime.EntityContext;
+import com.cloudimpl.outstack.workflow.domain.WorkflowCompleteRequest;
+import com.cloudimpl.outstack.workflow.domain.WorkflowCompleted;
 import com.cloudimpl.outstack.workflow.domain.WorkflowEntity;
 import com.cloudimpl.outstack.workflow.domain.WorkflowResultUpdated;
 import com.cloudimpl.outstack.workflow.domain.WorkflowUpdateRequest;
@@ -26,12 +28,12 @@ import com.cloudimpl.outstack.workflow.domain.WorkflowUpdateRequest;
  *
  * @author nuwan
  */
-public class UpdateWorkflow extends EntityCommandHandler<WorkflowEntity, WorkflowUpdateRequest, WorkflowEntity> {
+public class CompleteWorkflow extends EntityCommandHandler<WorkflowEntity, WorkflowCompleteRequest, WorkflowEntity> {
 
     @Override
-    protected WorkflowEntity execute(EntityContext<WorkflowEntity> context, WorkflowUpdateRequest command) {
+    protected WorkflowEntity execute(EntityContext<WorkflowEntity> context, WorkflowCompleteRequest command) {
         return context.<WorkflowEntity>asRootContext()
-                .update(command.getWorkflowId(), new WorkflowResultUpdated(command.getWorkflowId(), command.getWorkId(), command.getWorkContext()));
+                .update(command.getWorkflowId(), new WorkflowCompleted(command.getWorkflowId(), command.getStatus()));
     }
 
 }

@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.core.CloudUtil;
 import com.google.gson.JsonObject;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import reactor.core.publisher.Mono;
 
 /**
@@ -33,16 +34,18 @@ public class WorkUnit extends AbstractWork {
 
     private WorkUnit(String id, String name, Class<? extends Work> work, String content) {
         super(id, name);
+        System.out.println("workuni : " + id + " " + name);
         this.workUnit = work;
         this.content = content;
     }
 
     @Override
     public synchronized Mono<WorkStatus> execute(WorkContext context) {
-        if (!context.getStatus(id).compareAndSet(Status.PENDING, Status.RUNNING)) {
-            return Mono.just(WorkStatus.publish(context.getStatus(id).get(), context)).doOnNext(r->log("done : {0}", r.getStatus()));
+        Optional<WorkStatus> status = loadWorkStatus();
+        if (status.isPresent()) {
+            return Mono.just(status.get());
         }
-        WorkContext copy = context.clone();
+        WorkContext copy = isStateful() ? context.clone(false) : context.clone(true);
         Work workItem = GsonCodec.decode(workUnit, content);
         copy.setRRHandler(rrHandler);
         if (workItem instanceof ExternalTrigger) {
@@ -50,13 +53,29 @@ public class WorkUnit extends AbstractWork {
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
         }
         Mono<WorkStatus> ret = workItem.execute(copy)
-                .doOnNext(r -> copy.getStatus(id).compareAndSet(Status.RUNNING, r.getStatus()));
+                .doOnNext(r -> copy.getStatus(id).set(r.getStatus()));
         if (workItem instanceof StatefullWork) {
-            ret = ret.flatMap(r -> this.updateStateHandler.apply(getId(), r));
+            ret = ret.flatMap(r -> this.updateStateHandler.apply(getId(), WorkStatus.publish(r.getStatus(), copy)));
         }
         return ret
-                .doOnSuccess(s->removeActiveTrigger(workItem instanceof ExternalTrigger))
-                .map(r -> WorkStatus.publish(r.getStatus(), copy)).doOnNext(r->log("done : {0}", r.getStatus()));
+                .doOnSuccess(s -> removeActiveTrigger(workItem instanceof ExternalTrigger))
+                .map(r -> WorkStatus.publish(isStateful() ? r.getStatus() : Status.COMPLETED, copy))
+                .doOnNext(r -> log("done : {0}", r.getStatus()))
+                .doOnNext(r -> cancelRestIfApplicable(r));
+    }
+
+    private Optional<WorkStatus> loadWorkStatus() {
+        return this.workStatusLoader.apply(getId());
+    }
+
+    private void cancelRestIfApplicable(WorkStatus status) {
+        if (status.getStatus() == Status.CANCELLED) {
+            getEngine().cancel();
+        }
+    }
+
+    private boolean isStateful() {
+        return StatefullWork.class.isAssignableFrom(workUnit);
     }
 
     private void removeActiveTrigger(boolean isTrigger) {
@@ -68,19 +87,8 @@ public class WorkUnit extends AbstractWork {
     @Override
     protected void setEngine(WorkflowEngine engine) {
         super.setEngine(engine);
-        if (workUnit.isAssignableFrom(ExternalTrigger.class)) {
+        if (ExternalTrigger.class.isAssignableFrom(workUnit)) {
             engine.checkTriggerDuplicate(this.getName());
-        }
-    }
-
-    @Override
-    public synchronized void cancel(WorkContext context) {
-        super.cancel(context);
-        if (workUnit.isAssignableFrom(ExternalTrigger.class)) {
-            ExternalTrigger trigger = getEngine().getExternalTrigger(getName());
-            if (trigger != null) {
-                trigger.cancel(context);
-            }
         }
     }
 
@@ -89,14 +97,14 @@ public class WorkUnit extends AbstractWork {
         return new Builder(name, work);
     }
 
-    public static WorkUnit waitFor(String name,Map<String,String> labels) {
+    public static WorkUnit waitFor(String name, Map<String, String> labels) {
         return WorkUnit.of(name, new ExternalTrigger().putLabel(labels)).build();
     }
 
     public static WorkUnit waitFor(String name) {
         return waitFor(name, Collections.EMPTY_MAP);
     }
-    
+
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();

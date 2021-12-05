@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.runtime.Context;
 import com.google.gson.JsonObject;
 import java.text.MessageFormat;
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
@@ -40,6 +41,7 @@ public abstract class AbstractWork implements Work {
     protected final String name;
     protected WorkflowEngine engine;
     protected BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler;
+    protected Function<String, Optional<WorkStatus>> workStatusLoader;
     protected BiFunction<String, Object, Mono> rrHandler;
     
     public AbstractWork(String id, String name) {
@@ -63,16 +65,11 @@ public abstract class AbstractWork implements Work {
         return this.engine;
     }
 
-    public void cancel(WorkContext context)
+    public Mono<WorkStatus> run(WorkContext context)
     {
-        context.getStatus(id).compareAndSet(Status.PENDING, Status.CANCELLED);
-        context.getStatus(id).compareAndSet(Status.RUNNING, Status.CANCELLED);
+        return execute(context);
     }
-    
-    public boolean isCancelled(WorkContext context)
-    {
-        return context.getStatus(id).get() == Status.CANCELLED;
-    }
+  
     
     public void log(String format, Object... args) {
         String msg = MessageFormat.format(format, args);
@@ -85,20 +82,9 @@ public abstract class AbstractWork implements Work {
                 .retryWhen(RetryUtil.wrap(Retry.onlyIf(c -> isRetryable(c,context)).exponentialBackoffWithJitter(Duration.ofSeconds(5), Duration.ofSeconds(60))));
     }
     
-    protected void cancelNextIfApplicable(WorkContext context,WorkStatus status,AbstractWork nextWork)
-    {
-        if(status.getStatus() == Status.CANCELLED && nextWork != null)
-        {
-            nextWork.cancel(context);
-        }
-        if(status.getStatus() == Status.TERMINATED)
-        {
-            getEngine().cancel();
-        }
-    }
     
     private boolean isRetryable(RetryContext retryContext,WorkContext context) {
-        return !isCancelled(context);
+        return getEngine().getStatus() == Status.RUNNING;
     }
     
     public void error(Throwable thr,String format,Object... args)
@@ -107,9 +93,10 @@ public abstract class AbstractWork implements Work {
         log.error("workflow "+engine.getId()+":"+this.getClass().getSimpleName()+":"+name+" -> "+msg,thr);
     }
     
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
         this.updateStateHandler = updateStateHandler;
         this.rrHandler = rrHandler;
+        this.workStatusLoader = workStatusLoader;
     }
 
     public static AbstractWork fromJson(JsonObject json) {

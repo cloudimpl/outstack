@@ -76,13 +76,13 @@ public class Example {
 //        }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
 //        
         Thread.sleep(5000);
-         engine.execute("work6",(t) -> {
-            return "hello";
+         engine.executeAsync("work6",(t) -> {
+            return Mono.just("hello");
         }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
         
          
-         engine.execute("work6",(t) -> {
-            return "hello";
+         engine.executeAsync("work6",(t) -> {
+            return Mono.just("hello");
         }).doOnError(err->Throwable.class.cast(err).printStackTrace()).doOnNext(s->System.out.println("s: "+s)).subscribe();
          
          

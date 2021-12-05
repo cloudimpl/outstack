@@ -48,6 +48,11 @@ public class WorkStatus {
         return (T) data;
     }
 
+    public WorkContext getAsContext()
+    {
+        return (WorkContext)data;
+    }
+    
     public Work.Status getStatus() {
         return status;
     }

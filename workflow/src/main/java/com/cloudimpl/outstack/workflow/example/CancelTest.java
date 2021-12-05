@@ -17,6 +17,7 @@ package com.cloudimpl.outstack.workflow.example;
 
 import com.cloudimpl.outstack.workflow.ParallelWorkflow;
 import com.cloudimpl.outstack.workflow.SequentialWorkflow;
+import com.cloudimpl.outstack.workflow.StatefullWork;
 import com.cloudimpl.outstack.workflow.Work;
 import com.cloudimpl.outstack.workflow.WorkContext;
 import com.cloudimpl.outstack.workflow.WorkStatus;
@@ -58,20 +59,26 @@ public class CancelTest {
         WorkflowEngine engine = new WorkflowEngine("2");
         engine.execute(seq).doOnNext(s -> System.out.println(s)).subscribe();
         Thread.sleep(5000);
-        engine.executeNext((c) -> {
+        engine.executeAsyncNext((c) -> {
             c.put("1", "work3");
-            return Mono.just("hello");
+            return Mono.just(WorkStatus.publish(Work.Status.CANCELLED,"hello"));
         }).subscribe();
+        Thread.sleep(1000);
+       // engine.cancel();
         Thread.sleep(5000);
-        engine.execute("work4",(c) -> {
+        engine.executeAsync("work4",(c) -> {
             c.put("1", "work4");
             return Mono.just("hello");
         }).subscribe();
-        engine.cancel();
-         Thread.sleep(5000);
+         engine.executeAsync("work5",(c) -> {
+            c.put("1", "work5");
+            return Mono.just("hello");
+        }).subscribe();
+        //engine.cancel();
+         Thread.sleep(500000000);
     }
 
-    public static final class DynamicWork implements Work {
+    public static final class DynamicWork implements StatefullWork {
 
         private String msg;
 

@@ -37,15 +37,20 @@ public class WorkContext {
     private final Map<String, AtomicReference<Work.Status>> mapStatus;
     private transient final List<Commit> commits = new LinkedList<>();
     private transient BiFunction<String, Object, Mono> rrHandler;
-    private transient Map<String,String> labels = new HashMap<>();
+    private transient Map<String, String> labels = new HashMap<>();
+    private transient boolean immutable;
+
     protected WorkContext() {
         attr = new ConcurrentHashMap<>();
         mapStatus = new ConcurrentHashMap<>();
+        this.immutable = false;
     }
 
-    private WorkContext(Map<String, List<String>> contexts, Map<String, AtomicReference<Work.Status>> mapStatus) {
+    private WorkContext(boolean immutable, Map<String, List<String>> contexts, Map<String, AtomicReference<Work.Status>> mapStatus) {
+        this.immutable = immutable;
         this.attr = contexts;
-        this.mapStatus = mapStatus;
+        this.mapStatus = new ConcurrentHashMap<>();
+        mapStatus.entrySet().forEach(e -> this.mapStatus.put(e.getKey(), new AtomicReference<>(e.getValue().get())));
     }
 
     public void put(String key, boolean value) {
@@ -53,6 +58,9 @@ public class WorkContext {
     }
 
     public void put(String key, String value) {
+        if (immutable) {
+            throw new WorkflowException("context is not mutable");
+        }
         List<String> list = this.attr.computeIfAbsent(key, k -> new LinkedList<>());
         synchronized (list) {
             list.add(value);
@@ -62,17 +70,15 @@ public class WorkContext {
         }
     }
 
-    public String getLabel(String name)
-    {
+    public String getLabel(String name) {
         return labels.get(name);
     }
-    
-    protected void putLabel(String name,String value)
-    {
+
+    protected void putLabel(String name, String value) {
         this.labels.put(name, value);
     }
-    
-    protected AtomicReference<Work.Status> getStatus(String id) {
+
+    public AtomicReference<Work.Status> getStatus(String id) {
         return this.mapStatus.computeIfAbsent(id, i -> new AtomicReference<>(Work.Status.PENDING));
     }
 
@@ -104,21 +110,6 @@ public class WorkContext {
         return Boolean.valueOf(this.attr.getOrDefault(key, Collections.singletonList("false")).get(0));
     }
 
-    public void merge(WorkContext context) {
-        if (context == null || context == this) {
-            throw new WorkflowException("invalid argument");
-        }
-        context.commits.forEach(c->this.put(c.getKey(), c.getValue()));
-    //    context.attr.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> this.put(e.getKey(), v)));
-    }
-
-    @Override
-    protected WorkContext clone() {
-        Map<String, List<String>> attr2 = new ConcurrentHashMap<>();
-        attr.entrySet().forEach(e -> attr2.put(e.getKey(), new LinkedList<>(e.getValue())));
-        return new WorkContext(attr2, mapStatus); //mapStatus shared across clone context
-    }
-
     public String getString(String key) {
         List<String> list = this.attr.getOrDefault(key, null);
         if (list == null) {
@@ -142,6 +133,21 @@ public class WorkContext {
 
     public double getDouble(String key) {
         return Double.valueOf(this.attr.getOrDefault(key, Collections.singletonList("0.0d")).get(0));
+    }
+
+    public void merge(WorkContext context) {
+        if (context == null || context == this) {
+            throw new WorkflowException("invalid argument");
+        }
+        context.commits.forEach(c -> this.put(c.getKey(), c.getValue()));
+        context.mapStatus.entrySet().forEach(e->this.mapStatus.put(e.getKey(), e.getValue()));
+        //    context.attr.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> this.put(e.getKey(), v)));
+    }
+
+    protected WorkContext clone(boolean mutable) {
+        Map<String, List<String>> attr2 = new ConcurrentHashMap<>();
+        attr.entrySet().forEach(e -> attr2.put(e.getKey(), new LinkedList<>(e.getValue())));
+        return new WorkContext(mutable, attr2, mapStatus); //mapStatus shared across clone context
     }
 
     @Override

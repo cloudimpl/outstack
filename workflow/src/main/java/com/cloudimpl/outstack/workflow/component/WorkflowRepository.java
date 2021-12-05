@@ -15,28 +15,40 @@
  */
 package com.cloudimpl.outstack.workflow.component;
 
+import com.cloudimpl.outstack.common.RetryUtil;
 import com.cloudimpl.outstack.coreImpl.CloudEngine;
 import com.cloudimpl.outstack.runtime.CommandResponse;
+import com.cloudimpl.outstack.runtime.ResultSet;
+import com.cloudimpl.outstack.runtime.domainspec.Command;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
+import com.cloudimpl.outstack.runtime.domainspec.QueryByIdRequest;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.spring.component.Cluster;
+import com.cloudimpl.outstack.spring.service.iam.TenantProvider;
 import com.cloudimpl.outstack.workflow.AbstractWork;
+import com.cloudimpl.outstack.workflow.Work;
 import com.cloudimpl.outstack.workflow.WorkContext;
 import com.cloudimpl.outstack.workflow.WorkStatus;
 import com.cloudimpl.outstack.workflow.Workflow;
 import com.cloudimpl.outstack.workflow.WorkflowEngine;
 import com.cloudimpl.outstack.workflow.WorkflowException;
+import com.cloudimpl.outstack.workflow.domain.WorkflowCompleteRequest;
 import com.cloudimpl.outstack.workflow.domain.WorkflowCreateRequest;
 import com.cloudimpl.outstack.workflow.domain.WorkflowEntity;
 import com.cloudimpl.outstack.workflow.domain.WorkflowUpdateRequest;
 import com.google.gson.JsonObject;
+import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.retry.Retry;
 
 /**
  *
@@ -49,6 +61,8 @@ public class WorkflowRepository {
     @Autowired
     private Cluster cluster;
 
+    @Autowired
+    private TenantProvider tenantProvider;
     @Value("{outstack.domainOwner}")
     private String domainOwner;
 
@@ -57,20 +71,33 @@ public class WorkflowRepository {
 
     private final Map<String, Workflow> workFlows = new ConcurrentHashMap<>();
     private final Map<String, WorkflowEngine> engines = new ConcurrentHashMap<>();
+    private final Map<String, WorkflowEntity> entityCache = new ConcurrentHashMap<>();
 
-    public Mono<String> startWorkFlow(Workflow workflow) {
-        JsonObject json = workflow.toJson();
-        return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", WorkflowCreateRequest.builder().withContent(json.toString()).build())
-                .cast(CommandResponse.class).map(cr -> (String) cr.getValue())
-                .doOnNext(s -> workFlows.put(s, AbstractWork.fromJson(json).asWorkflow())).doOnNext(s->init(s));
+    @PostConstruct
+    private void init() {
+        log.info("initializing WorkflowRepository");
+        tenantProvider.subscribeToTenants("WorkflowRepository").flatMap(tenant -> loadTenantWorkflows(tenant)).subscribe();
     }
 
-    private void init(String id) {
+    public Mono<String> startWorkFlow(String tenantId, Workflow workflow) {
+        JsonObject json = workflow.toJson();
+        return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", WorkflowCreateRequest
+                .builder()
+                .withContent(json.toString())
+                .withCommandName(CreateWorkflow.class.getSimpleName())
+                .withTenantId(tenantId)
+                .build())
+                .cast(WorkflowEntity.class)
+                .doOnNext(s -> entityCache.put(s.entityId(), s))
+                .doOnNext(s -> workFlows.put(s.entityId(), AbstractWork.fromJson(json).asWorkflow())).doOnNext(s -> init(s.entityId(), tenantId)).map(s -> s.entityId());
+    }
+
+    private void init(String id, String tenantId) {
         Workflow workflow = workFlows.remove(id);
         if (workflow == null) {
             throw new WorkflowException("workflow {0} not found", id);
         }
-        WorkflowEngine engine = new WorkflowEngine(id,this::updateState,cluster::requestReply);
+        WorkflowEngine engine = new WorkflowEngine(id, tenantId, this::updateState, cluster::requestReply, this::loadWorkStatus);
         this.engines.put(id, engine);
         log.info("workflow {} started", id);
         engine.execute(workflow)
@@ -80,15 +107,49 @@ public class WorkflowRepository {
                 .subscribe();
     }
 
-    public <T> Mono<T> execute(String id,String name,Function<WorkContext, T> handler){
+    private Mono loadTenantWorkflows(String tenantId) {
+        log.info("loading workflow for tenantId {}",tenantId);
+        return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", QueryByIdRequest.builder().withQueryName("ListWorkflowEntity").withPagingReq(Query.PagingRequest.EMPTY).withTenantId(tenantId).build())
+                .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(3), Duration.ofSeconds(60))))
+                .cast(ResultSet.class)
+                .flatMapIterable(rs -> rs.getItems(WorkflowEntity.class))
+                .filter(e -> WorkflowEntity.class.cast(e).getStatus() == Work.Status.PENDING)
+                .doOnNext(e->log.info("loading workflow {}",WorkflowEntity.class.cast(e).entityId()))
+                .doOnNext(s -> entityCache.put(WorkflowEntity.class.cast(s).entityId(), WorkflowEntity.class.cast(s))).then();
+    }
+
+    public <T> Mono<T> executeAsync(String id, String name, Function<WorkContext, Mono<Object>> handler) {
         WorkflowEngine engine = engines.get(id);
-        if(engine == null)
-        {
+        if (engine == null) {
+            throw new WorkflowException("workflow engine {0} not found", id);
+        }
+        return engine.executeAsync(name, handler);
+    }
+
+    public <T> T execute(String id, String name, Function<WorkContext, Object> handler) {
+        WorkflowEngine engine = engines.get(id);
+        if (engine == null) {
             throw new WorkflowException("workflow engine {0} not found", id);
         }
         return engine.execute(name, handler);
     }
-    
+
+    public <T> Mono<T> executeAsyncNext(String id, Function<WorkContext, Mono<Object>> handler) {
+        WorkflowEngine engine = engines.get(id);
+        if (engine == null) {
+            throw new WorkflowException("workflow engine {0} not found", id);
+        }
+        return engine.executeAsyncNext(handler);
+    }
+
+    public <T> T executeNext(String id, Function<WorkContext, Object> handler) {
+        WorkflowEngine engine = engines.get(id);
+        if (engine == null) {
+            throw new WorkflowException("workflow engine {0} not found", id);
+        }
+        return engine.executeNext(handler);
+    }
+
     private void removeEngine(String id, boolean cancel) {
         if (cancel) {
             log.info("workflow {} terminated . (canceled)", id);
@@ -96,18 +157,37 @@ public class WorkflowRepository {
             log.info("workflow {} terminated .", id);
         }
         WorkflowEngine engine = engines.remove(id);
+        this.entityCache.remove(id);
         if (engine != null) {
             //TODO cancel engine
         }
     }
-    
-    private Mono<WorkStatus> updateState(String workflowId,String id,WorkStatus status)
-    {
-         WorkflowUpdateRequest req = WorkflowUpdateRequest.builder()
-                .withWorkflowId(workflowId)
-                .withWorkId(id)
-                .withWotkContext(status.getData())
-                .withCommandName(UpdateWorkflow.class.getSimpleName()).withRootId(workflowId).withId(workflowId).build();
-        return cluster.requestReply(domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", req).map(r->status);
+
+    private Mono<WorkStatus> updateState(String workflowId, String id, String tenantId, WorkStatus status) {
+        Command req;
+        if (id.equals(workflowId)) {
+            req = WorkflowCompleteRequest.builder()
+                    .withWorkflowId(workflowId)
+                    .withStatus(status.getStatus())
+                    .withTenantId(tenantId)
+                    .withCommandName(CompleteWorkflow.class.getSimpleName()).withRootId(workflowId).withId(workflowId).build();
+        } else {
+            req = WorkflowUpdateRequest.builder()
+                    .withWorkflowId(workflowId)
+                    .withWorkId(id)
+                    .withTenantId(tenantId)
+                    .withWotkContext(status.getData())
+                    .withCommandName(UpdateWorkflow.class.getSimpleName()).withRootId(workflowId).withId(workflowId).build();
+        }
+
+        return cluster.requestReply(domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", req)
+                .cast(WorkflowEntity.class)
+                .doOnNext(s -> entityCache.put(s.entityId(), s))
+                .map(r -> status);
+    }
+
+    private Optional<WorkStatus> loadWorkStatus(String workflowId, String workId) {
+        WorkflowEntity e = entityCache.get(workflowId);
+        return e.getStatus(workId);
     }
 }
