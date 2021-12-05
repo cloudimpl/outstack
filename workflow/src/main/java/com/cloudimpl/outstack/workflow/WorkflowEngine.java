@@ -15,6 +15,11 @@
  */
 package com.cloudimpl.outstack.workflow;
 
+import com.cloudimpl.outstack.common.FluxProcessor;
+import com.cloudimpl.outstack.common.MonoFuture;
+import com.cloudimpl.outstack.common.RetryUtil;
+import static com.cloudimpl.outstack.workflow.example.FluxTest.work;
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +30,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import reactor.core.publisher.Mono;
+import reactor.retry.Retry;
 
 /**
  *
@@ -40,15 +46,15 @@ public class WorkflowEngine {
     private BiFunction<String, Object, Mono> rrHandler;
     private String id;
     private Set<String> activeTriggers;
+    private FluxProcessor<MonoFuture> dbWriter;
     public WorkflowEngine(String id) {
-        this.id = id;
-        this.triggers = new ConcurrentHashMap<>();
-        this.triggerNames = new HashSet<>();
-        this.updateStateHandler = WorkflowEngine::dummyStateUpdater;
-        this.activeTriggers = new ConcurrentSkipListSet<>();
+        this(id, WorkflowEngine::dummyStateUpdater, null);
     }
 
     public WorkflowEngine(String id,BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler) {
+        this.id = id;
+        this.triggers = new ConcurrentHashMap<>();
+        this.triggerNames = new HashSet<>();
         this.updateStateHandler = updateStateHandler;
         this.rrHandler = rrHandler;
     }
@@ -69,6 +75,8 @@ public class WorkflowEngine {
         }
         this.context = new WorkContext();
         this.mainFlow = workFlow;
+        //dbWriter = new FluxProcessor<>("workflow engine "+id);
+        //dbWriter.flux("workflow engine "+id).flatMap(s ->retryWrap(s),1).doOnNext(s->System.out.println("out : "+s)).subscribe();
         return run();
     }
 
@@ -116,7 +124,7 @@ public class WorkflowEngine {
         }
     }
 
-    private static Mono<WorkStatus> dummyStateUpdater(String id, WorkStatus result) {
+    public static Mono<WorkStatus> dummyStateUpdater(String id, WorkStatus result) {
         return Mono.just(result);
     }
 
@@ -126,4 +134,10 @@ public class WorkflowEngine {
         this.triggers.remove(name);
     }
     
+//     private  Mono<String> retryWrap(MonoFuture future)
+//    {
+//        return Mono.defer(()->this.updateStateHandler.apply(id, u))
+//                .doOnError(err->System.out.println("errr: "+err.getMessage()))
+//               .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(3), Duration.ofSeconds(60))));
+//    }
 }
