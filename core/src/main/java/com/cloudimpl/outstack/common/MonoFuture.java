@@ -22,12 +22,13 @@ import reactor.core.publisher.Mono;
  *
  * @author nuwan
  */
-public class MonoFuture<T> {
+public class MonoFuture<P,T> {
 
     private final Mono<T> mono;
     private final CompletableFuture<T> future;
-
-    public MonoFuture() {
+    private final P payload;
+    private MonoFuture(P payload) {
+        this.payload = payload;
         this.future = new CompletableFuture<>();
         this.mono = Mono.fromFuture(future);
     }
@@ -40,7 +41,12 @@ public class MonoFuture<T> {
         return mono;
     }
 
-    public static <T> MonoFuture<T> create() {
-        return new MonoFuture<>();
+    public P getPayload()
+    {
+        return this.payload;
+    }
+    
+    public static <P,T> MonoFuture<P,T> create(P payload) {
+        return new MonoFuture<>(payload);
     }
 }
