@@ -15,6 +15,7 @@
  */
 package com.cloudimpl.outstack.workflow.component;
 
+import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.common.RetryUtil;
 import com.cloudimpl.outstack.coreImpl.CloudEngine;
 import com.cloudimpl.outstack.runtime.CommandResponse;
@@ -63,10 +64,10 @@ public class WorkflowRepository {
 
     @Autowired
     private TenantProvider tenantProvider;
-    @Value("{outstack.domainOwner}")
+    @Value("${outstack.domainOwner}")
     private String domainOwner;
 
-    @Value("{outstack.domainContext}")
+    @Value("${outstack.domainContext}")
     private String domainContext;
 
     private final Map<String, Workflow> workFlows = new ConcurrentHashMap<>();
@@ -98,7 +99,12 @@ public class WorkflowRepository {
             throw new WorkflowException("workflow {0} not found", id);
         }
         WorkflowEngine engine = new WorkflowEngine(id, tenantId, this::updateState, cluster::requestReply, this::loadWorkStatus);
-        this.engines.put(id, engine);
+        WorkflowEngine old = this.engines.putIfAbsent(id, engine);
+        if(old != null)
+        {
+             log.warn("workflow {} already exist , ignored", id);
+             return;
+        }
         log.info("workflow {} started", id);
         engine.execute(workflow)
                 .doOnTerminate(() -> removeEngine(id, false))
@@ -108,14 +114,22 @@ public class WorkflowRepository {
     }
 
     private Mono loadTenantWorkflows(String tenantId) {
-        log.info("loading workflow for tenantId {}",tenantId);
+        log.info("loading workflow for tenantId {}", tenantId);
         return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", QueryByIdRequest.builder().withQueryName("ListWorkflowEntity").withPagingReq(Query.PagingRequest.EMPTY).withTenantId(tenantId).build())
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(3), Duration.ofSeconds(60))))
                 .cast(ResultSet.class)
                 .flatMapIterable(rs -> rs.getItems(WorkflowEntity.class))
                 .filter(e -> WorkflowEntity.class.cast(e).getStatus() == Work.Status.PENDING)
-                .doOnNext(e->log.info("loading workflow {}",WorkflowEntity.class.cast(e).entityId()))
-                .doOnNext(s -> entityCache.put(WorkflowEntity.class.cast(s).entityId(), WorkflowEntity.class.cast(s))).then();
+                .doOnNext(e -> log.info("loading workflow {}", WorkflowEntity.class.cast(e).entityId()))
+                .doOnNext(s -> entityCache.put(WorkflowEntity.class.cast(s).entityId(), WorkflowEntity.class.cast(s)))
+                .doOnNext(s->autoStartWorkFlow(WorkflowEntity.class.cast(s)))
+                .then();
+    }
+
+    private void autoStartWorkFlow(WorkflowEntity e) {
+        Workflow workFlow = AbstractWork.fromJson(GsonCodec.toJsonObject(e.getContent())).asWorkflow();
+        workFlows.put(e.entityId(), workFlow);
+        init();
     }
 
     public <T> Mono<T> executeAsync(String id, String name, Function<WorkContext, Mono<Object>> handler) {
