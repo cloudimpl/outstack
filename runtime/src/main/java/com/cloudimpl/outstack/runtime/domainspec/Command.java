@@ -160,9 +160,9 @@ public abstract class Command implements Input, ICommand {
             this.files = files;
             return this;
         }
-
+        
         public Builder withMapAttr(String key, String value) {
-            if(mapAttr == null) {
+            if (mapAttr == null) {
                 this.mapAttr = new HashMap<>();
             }
             this.mapAttr.put(key, value);

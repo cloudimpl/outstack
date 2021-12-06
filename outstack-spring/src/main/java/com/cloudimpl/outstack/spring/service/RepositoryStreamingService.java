@@ -81,6 +81,9 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
     }
 
     private boolean onRootEventListener(RepoStreamingReq.ResourceInfo info, Entity entity) {
+        if(!info.getEntityType().equals(entity.getClass().getName())){
+            return false;
+        }
         if (info.getTenantId() != null && info.getTenantId().equals("*")) {
             if (info.getEntityId().equals("*")) {
                 return true;
