@@ -68,7 +68,7 @@ public class WorkflowUpdateRequest extends Command {
             return this;
         }
 
-        public Builder withContext(WorkContext context) {
+        public Builder withWorkContext(WorkContext context) {
             this.context = context;
             return this;
         }

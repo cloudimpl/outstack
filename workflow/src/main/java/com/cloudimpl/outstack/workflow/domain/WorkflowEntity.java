@@ -73,7 +73,7 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
 
     public Optional<WorkStatus> getStatus(String workId) {
         WorkContext ctx = results.get(workId);
-        if (ctx == null) {
+        if (ctx != null) {
             return Optional.of(WorkStatus.publish(ctx.getStatus(workId).get(), ctx));
         }
         return Optional.empty();
@@ -96,7 +96,7 @@ public class WorkflowEntity extends RootEntity implements ITenantOptional {
     @Override
     protected void apply(Event event) {
         switch (event.getClass().getSimpleName()) {
-            case "WorkCreated": {
+            case "WorkflowCreated": {
                 applyEvent((WorkflowCreated) event);
                 break;
             }

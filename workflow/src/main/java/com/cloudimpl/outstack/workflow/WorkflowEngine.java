@@ -214,7 +214,7 @@ public class WorkflowEngine {
 
     private Mono<WorkStatus> writeToDB(String id, WorkStatus result) {
         return Mono.defer(() -> this.updateStateHandler.apply(this.id, id, tenantId, result))
-                .doOnError(err -> System.out.println("errr: " + err.getMessage()))
+                .doOnError(err -> log.error("Error writing to DB for workflow "+this.id ,err))
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(3), Duration.ofSeconds(60))));
 
     }

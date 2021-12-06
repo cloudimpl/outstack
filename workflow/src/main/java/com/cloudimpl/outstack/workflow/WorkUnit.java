@@ -61,7 +61,7 @@ public class WorkUnit extends AbstractWork {
                 .doOnSuccess(s -> removeActiveTrigger(workItem instanceof ExternalTrigger))
                 .map(r -> WorkStatus.publish(isStateful() ? r.getStatus() : Status.COMPLETED, copy))
                 .doOnNext(r -> log("done : {0}", r.getStatus()))
-                .doOnNext(r -> cancelRestIfApplicable(r));
+                .doOnNext(r -> cancelRestIfApplicable(r)).doOnError(e -> error(e,"WorkUnit {0} error",getName()));
     }
 
     private Optional<WorkStatus> loadWorkStatus() {

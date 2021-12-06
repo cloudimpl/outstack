@@ -87,6 +87,7 @@ public class WorkflowRepository {
                 .withContent(json.toString())
                 .withCommandName(CreateWorkflow.class.getSimpleName())
                 .withTenantId(tenantId)
+                .withVersion("v1")
                 .build())
                 .cast(WorkflowEntity.class)
                 .doOnNext(s -> entityCache.put(s.entityId(), s))
@@ -115,7 +116,7 @@ public class WorkflowRepository {
 
     private Mono loadTenantWorkflows(String tenantId) {
         log.info("loading workflow for tenantId {}", tenantId);
-        return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowService", QueryByIdRequest.builder().withQueryName("ListWorkflowEntity").withPagingReq(Query.PagingRequest.EMPTY).withTenantId(tenantId).build())
+        return cluster.requestReply(null, domainOwner + "/" + domainContext + "/" + RootEntity.getVersion(WorkflowEntity.class) + "/WorkflowQueryService", QueryByIdRequest.builder().withQueryName("ListWorkflowEntity").withPagingReq(Query.PagingRequest.EMPTY).withTenantId(tenantId).withVersion("v1").build())
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(3), Duration.ofSeconds(60))))
                 .cast(ResultSet.class)
                 .flatMapIterable(rs -> rs.getItems(WorkflowEntity.class))
@@ -123,13 +124,14 @@ public class WorkflowRepository {
                 .doOnNext(e -> log.info("loading workflow {}", WorkflowEntity.class.cast(e).entityId()))
                 .doOnNext(s -> entityCache.put(WorkflowEntity.class.cast(s).entityId(), WorkflowEntity.class.cast(s)))
                 .doOnNext(s->autoStartWorkFlow(WorkflowEntity.class.cast(s)))
+                .doOnError((err)->log.error("Error loading workflows", err))
                 .then();
     }
 
     private void autoStartWorkFlow(WorkflowEntity e) {
         Workflow workFlow = AbstractWork.fromJson(GsonCodec.toJsonObject(e.getContent())).asWorkflow();
         workFlows.put(e.entityId(), workFlow);
-        init();
+        init(e.entityId(),e.getTenantId());
     }
 
     public <T> Mono<T> executeAsync(String id, String name, Function<WorkContext, Mono<Object>> handler) {
@@ -184,13 +186,15 @@ public class WorkflowRepository {
                     .withWorkflowId(workflowId)
                     .withStatus(status.getStatus())
                     .withTenantId(tenantId)
+                    .withVersion("v1")
                     .withCommandName(CompleteWorkflow.class.getSimpleName()).withRootId(workflowId).withId(workflowId).build();
         } else {
             req = WorkflowUpdateRequest.builder()
+                    .withWorkContext(status.getData())
                     .withWorkflowId(workflowId)
                     .withWorkId(id)
                     .withTenantId(tenantId)
-                    .withWotkContext(status.getData())
+                    .withVersion("v1")
                     .withCommandName(UpdateWorkflow.class.getSimpleName()).withRootId(workflowId).withId(workflowId).build();
         }
 

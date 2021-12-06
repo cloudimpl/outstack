@@ -29,13 +29,12 @@ import java.util.UUID;
  *
  * @author nuwan
  */
-public class CreateWorkflow extends EntityCommandHandler<WorkflowEntity, WorkflowCreateRequest, CommandResponse> {
+public class CreateWorkflow extends EntityCommandHandler<WorkflowEntity, WorkflowCreateRequest, WorkflowEntity> {
 
     @Override
-    protected CommandResponse execute(EntityContext<WorkflowEntity> context, WorkflowCreateRequest command) {
+    protected WorkflowEntity execute(EntityContext<WorkflowEntity> context, WorkflowCreateRequest command) {
         String id = "flow-" + UUID.randomUUID().toString();
-        WorkflowEntity entity = context.create(id, new WorkflowCreated(id, command.getContent(), Work.Status.PENDING));
-        return new CommandResponse("OK", id);
+        return context.create(id, new WorkflowCreated(id, command.getContent(), Work.Status.PENDING));
     }
 
 }
