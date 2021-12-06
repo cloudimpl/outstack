@@ -64,7 +64,7 @@ public class WorkflowUpdateRequest extends Command {
         }
 
         public Builder withWorkId(String id) {
-            this.workflowId = id;
+            this.workId = id;
             return this;
         }
 
