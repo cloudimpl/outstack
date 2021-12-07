@@ -34,21 +34,41 @@ public class ExternalTrigger implements StatefullWork {
 
     private CompletableFuture<WorkStatus> future = new CompletableFuture();
     private WorkContext context;
-    private transient WorkUnit workUnit;
+    protected transient WorkUnit workUnit;
     private Map<String, String> labels = new HashMap<>();
-
+    private final boolean isGate;
     protected ExternalTrigger() {
+        this.isGate = false;
+    }
+    
+    protected ExternalTrigger(boolean isGate) {
+        this.isGate = isGate;
     }
 
     protected void init(WorkUnit workUnit) {
         this.workUnit = workUnit;
     }
 
+    protected void setFuture(CompletableFuture<WorkStatus> future)
+    {
+        this.future = future;
+    }
+    
     public ExternalTrigger putLabel(Map<String, String> labels) {
         this.labels = labels;
         return this;
     }
 
+    public boolean isGate()
+    {
+        return this.isGate;
+    }
+
+    protected WorkUnit getWorkUnit() {
+        return workUnit;
+    }
+    
+    
     @Override
     public Mono<WorkStatus> execute(WorkContext context) {
         this.context = context;
@@ -57,23 +77,25 @@ public class ExternalTrigger implements StatefullWork {
     }
 
     public synchronized <T> Mono<T> triggerAsync(Function<WorkContext, Mono<Object>> handler) {
-        if (this.context == null) {
+        if (!isGate && this.context == null) {
             return Mono.error(new WorkflowException("External trigger {0} not active yet", this.getClass().getName()));
         }
-        Mono<Object> out = handler.apply(context);
+        WorkContext ctx = this.context == null ? new WorkContext().clone(true) : this.context;
+        Mono<Object> out = handler.apply(ctx);
         AtomicReference<Status> reference = new AtomicReference<>(Status.COMPLETED);
 
-        return out.map(o -> (T) mapOutCome(o, reference)).doOnSuccess(o -> future.complete(WorkStatus.publish(reference.get(), context)));
+        return out.map(o -> (T) mapOutCome(o, reference)).doOnSuccess(o -> future.complete(WorkStatus.publish(reference.get(), ctx)));
     }
 
     public synchronized <T> T trigger(Function<WorkContext, Object> handler) {
-        if (this.context == null) {
+        if (!isGate && this.context == null) {
             throw new WorkflowException("External trigger {0} not active yet", this.getClass().getName());
         }
-        Object out = handler.apply(context);
+        WorkContext ctx = this.context == null ? new WorkContext().clone(true) : this.context;
+        Object out = handler.apply(ctx);
         AtomicReference<Status> reference = new AtomicReference<>(Status.COMPLETED);
         T ret = mapOutCome(out, reference);
-        checkWaitAndPublish(reference, context);
+        checkWaitAndPublish(reference, ctx);
         return ret;
     }
 

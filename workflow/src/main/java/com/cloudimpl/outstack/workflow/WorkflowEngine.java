@@ -143,21 +143,26 @@ public class WorkflowEngine {
 
     public <T> Mono<T> executeAsyncNext(Function<WorkContext, Mono<Object>> handler) {
         List<String> active = activeTriggers.stream().collect(Collectors.toList());
+
         if (active.isEmpty()) {
-            throw new WorkflowException("no active external trigger found for workflow id {0}", id);
+            return Mono.error(() -> new WorkflowException("no active external trigger found for workflow id {0}", id));
         }
         if (active.size() > 1) {
-            throw new WorkflowException("more than 1 active external trigger found for workflow id {0} - [{1}]", id, active.stream().collect(Collectors.joining(",")));
+            return Mono.error(() -> new WorkflowException("more than 1 active external trigger found for workflow id {0} - [{1}]", id, active.stream().collect(Collectors.joining(","))));
         }
         ExternalTrigger trigger = this.triggers.get(active.get(0));
         if (trigger == null) {
-            throw new WorkflowException("external trigger {0} not found", active.get(0));
+            return Mono.error(() -> new WorkflowException("external trigger {0} not found", active.get(0)));
+        }
+        if (trigger.isGate()) {
+            return Mono.error(() -> new WorkflowException("gate trigger {0} not support anonymous execution", active.get(0)));
         }
         return trigger.triggerAsync(handler);
     }
 
     public <T> T executeNext(Function<WorkContext, Object> handler) {
         List<String> active = activeTriggers.stream().collect(Collectors.toList());
+
         if (active.isEmpty()) {
             throw new WorkflowException("no active external trigger found for workflow id {0}", id);
         }
@@ -167,6 +172,9 @@ public class WorkflowEngine {
         ExternalTrigger trigger = this.triggers.get(active.get(0));
         if (trigger == null) {
             throw new WorkflowException("external trigger {0} not found", active.get(0));
+        }
+        if (trigger.isGate()) {
+            throw new WorkflowException("gate trigger {0} not support anonymous execution", active.get(0));
         }
         return trigger.trigger(handler);
     }
@@ -214,7 +222,7 @@ public class WorkflowEngine {
 
     private Mono<WorkStatus> writeToDB(String id, WorkStatus result) {
         return Mono.defer(() -> this.updateStateHandler.apply(this.id, id, tenantId, result))
-                .doOnError(err -> log.error("Error writing to DB for workflow "+this.id ,err))
+                .doOnError(err -> log.error("Error writing to DB for workflow " + this.id, err))
                 .retryWhen(RetryUtil.wrap(Retry.any().exponentialBackoffWithJitter(Duration.ofSeconds(3), Duration.ofSeconds(60))));
 
     }

@@ -53,6 +53,11 @@ public class WorkContext {
         mapStatus.entrySet().forEach(e -> this.mapStatus.put(e.getKey(), new AtomicReference<>(e.getValue().get())));
     }
 
+    public boolean isImmutable() {
+        return immutable;
+    }
+
+    
     public void put(String key, boolean value) {
         put(key, String.valueOf(value));
     }
@@ -144,10 +149,10 @@ public class WorkContext {
         //    context.attr.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> this.put(e.getKey(), v)));
     }
 
-    protected WorkContext clone(boolean mutable) {
+    protected WorkContext clone(boolean immutable) {
         Map<String, List<String>> attr2 = new ConcurrentHashMap<>();
         attr.entrySet().forEach(e -> attr2.put(e.getKey(), new LinkedList<>(e.getValue())));
-        return new WorkContext(mutable, attr2, mapStatus); //mapStatus shared across clone context
+        return new WorkContext(immutable, attr2, mapStatus); //mapStatus shared across clone context
     }
 
     @Override

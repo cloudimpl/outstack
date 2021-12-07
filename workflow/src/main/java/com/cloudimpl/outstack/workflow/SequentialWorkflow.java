@@ -68,10 +68,6 @@ public class SequentialWorkflow extends Workflow {
         return new ExecuteStep(builder);
     }
 
-    public static final SequentialWorkflow build() {
-        return null;
-    }
-
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();

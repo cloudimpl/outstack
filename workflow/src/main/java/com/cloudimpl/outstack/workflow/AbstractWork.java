@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.runtime.Context;
 import com.google.gson.JsonObject;
 import java.text.MessageFormat;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -93,6 +94,11 @@ public abstract class AbstractWork implements Work {
         log.error("workflow "+engine.getId()+":"+this.getClass().getSimpleName()+":"+name+" -> "+msg,thr);
     }
     
+    protected WorkStatus merge(WorkStatus result, List<WorkStatus> contextList) {
+        contextList.stream().forEach(c -> ((WorkContext) result.getData()).merge(c.getData()));
+        return result;
+    }
+
     protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
         this.updateStateHandler = updateStateHandler;
         this.rrHandler = rrHandler;
@@ -111,8 +117,11 @@ public abstract class AbstractWork implements Work {
             case "com.cloudimpl.outstack.workflow.ParallelWorkflow": {
                 return ParallelWorkflow.fromJson(json);
             }
-            case "com.cloudimpl.outstack.workflow.ConditionalWorkflow": {
-                return ConditionalWorkflow.fromJson(json);
+            case "com.cloudimpl.outstack.workflow.PredicateWorkflow": {
+                return PredicateWorkflow.fromJson(json);
+            }
+            case "com.cloudimpl.outstack.workflow.AtleastWorkFlow": {
+                return AtleastWorkFlow.fromJson(json);
             }
             default: {
                 throw new WorkflowException("unknown workflow type {}", workFlow);

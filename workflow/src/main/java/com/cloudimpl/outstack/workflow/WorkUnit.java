@@ -16,11 +16,13 @@
 package com.cloudimpl.outstack.workflow;
 
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.common.MonoFuture;
 import com.cloudimpl.outstack.core.CloudUtil;
 import com.google.gson.JsonObject;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import reactor.core.publisher.Mono;
 
 /**
@@ -31,6 +33,7 @@ public class WorkUnit extends AbstractWork {
 
     private final Class<? extends Work> workUnit;
     private final String content;
+    protected CompletableFuture<WorkStatus> gateFuture;
 
     private WorkUnit(String id, String name, Class<? extends Work> work, String content) {
         super(id, name);
@@ -53,6 +56,7 @@ public class WorkUnit extends AbstractWork {
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);
         }
         Mono<WorkStatus> ret = workItem.execute(copy)
+                .doOnNext(s -> mergeIfPossible(copy, s.getData()))
                 .doOnNext(r -> copy.getStatus(id).set(r.getStatus()));
         if (workItem instanceof StatefullWork) {
             ret = ret.flatMap(r -> this.updateStateHandler.apply(getId(), WorkStatus.publish(r.getStatus(), copy)));
@@ -61,7 +65,13 @@ public class WorkUnit extends AbstractWork {
                 .doOnSuccess(s -> removeActiveTrigger(workItem instanceof ExternalTrigger))
                 .map(r -> WorkStatus.publish(isStateful() ? r.getStatus() : Status.COMPLETED, copy))
                 .doOnNext(r -> log("done : {0}", r.getStatus()))
-                .doOnNext(r -> cancelRestIfApplicable(r)).doOnError(e -> error(e,"WorkUnit {0} error",getName()));
+                .doOnNext(r -> cancelRestIfApplicable(r)).doOnError(e -> error(e, "WorkUnit {0} error", getName()));
+    }
+
+    private void mergeIfPossible(WorkContext dest, WorkContext source) {
+        if (!dest.isImmutable() && source != null && dest != source) {
+            dest.merge(source);
+        }
     }
 
     private Optional<WorkStatus> loadWorkStatus() {
@@ -90,6 +100,12 @@ public class WorkUnit extends AbstractWork {
         if (ExternalTrigger.class.isAssignableFrom(workUnit)) {
             engine.checkTriggerDuplicate(this.getName());
         }
+        if (GateTrigger.class.isAssignableFrom(workUnit)) {
+            this.gateFuture = new CompletableFuture<>();
+            GateTrigger gate = new GateTrigger();
+            gate.init(this);
+            getEngine().registerExternalTrigger(getName(), (ExternalTrigger) gate);
+        }
     }
 
     public static Builder of(String name, Work work) {
@@ -103,6 +119,14 @@ public class WorkUnit extends AbstractWork {
 
     public static WorkUnit waitFor(String name) {
         return waitFor(name, Collections.EMPTY_MAP);
+    }
+
+    public static WorkUnit gateFor(String name, Map<String, String> labels) {
+        return WorkUnit.of(name, new GateTrigger().putLabel(labels)).build();
+    }
+
+    public static WorkUnit gateFor(String name) {
+        return gateFor(name, Collections.EMPTY_MAP);
     }
 
     @Override

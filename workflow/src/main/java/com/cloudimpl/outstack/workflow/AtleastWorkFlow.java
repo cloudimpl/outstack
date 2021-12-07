@@ -18,7 +18,6 @@ package com.cloudimpl.outstack.workflow;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -32,13 +31,15 @@ import reactor.core.scheduler.Schedulers;
  *
  * @author nuwan
  */
-public class ParallelWorkflow extends Workflow {
+public class AtleastWorkFlow extends Workflow {
 
     private final List<AbstractWork> workUnits;
+    private final int take;
 
-    private ParallelWorkflow(String id, String name, List<AbstractWork> works) {
+    private AtleastWorkFlow(String id, String name, List<AbstractWork> workUnits, int take) {
         super(id, name);
-        this.workUnits = Collections.unmodifiableList(works);
+        this.workUnits = workUnits;
+        this.take = take;
     }
 
     @Override
@@ -50,9 +51,9 @@ public class ParallelWorkflow extends Workflow {
                 .runOn(Schedulers.parallel())
                 .flatMap(wk -> retryWrap(wk, copy))
                 .sequential()
+                .take(take)
                 .collectList()
                 .map(l -> merge(WorkStatus.publish(Status.COMPLETED, copy), l)).doOnNext(r -> log("done : {0}", r.getStatus()));
-
     }
 
     @Override
@@ -62,62 +63,78 @@ public class ParallelWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler, Function<String, Optional<WorkStatus>> workStatusLoader) {
         super.setHandlers(updateStateHandler, rrHandler, workStatusLoader);
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler,workStatusLoader));
+        workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler, workStatusLoader));
     }
 
-    public static ExecuteStep name(String name) {
-        Builder builder = new Builder(name);
-        return new ExecuteStep(builder);
+    protected static AtleastWorkFlow.AtleastStep name(String name) {
+        AtleastWorkFlow.Builder builder = new AtleastWorkFlow.Builder(name);
+        return new AtleastWorkFlow.AtleastStep(builder);
     }
 
     @Override
     public JsonObject toJson() {
         JsonObject json = new JsonObject();
         json.addProperty("id", getId());
-        json.addProperty("workflowType", ParallelWorkflow.class.getName());
+        json.addProperty("workflowType", AtleastWorkFlow.class.getName());
         json.addProperty("name", name);
+        json.addProperty("take", take);
         JsonArray arr = new JsonArray();
         workUnits.stream().forEach(w -> arr.add(w.toJson()));
         json.add("workUnits", arr);
         return json;
     }
 
-    public static ParallelWorkflow fromJson(JsonObject json) {
+    public static AtleastWorkFlow fromJson(JsonObject json) {
         JsonArray arr = json.getAsJsonArray("workUnits");
         List<AbstractWork> workunits = new LinkedList<>();
         arr.forEach(w -> workunits.add(AbstractWork.fromJson(w.getAsJsonObject())));
-        ParallelWorkflow workflow = new ParallelWorkflow(json.get("id").getAsString(), json.get("name").getAsString(), workunits);
+        AtleastWorkFlow workflow = new AtleastWorkFlow(json.get("id").getAsString(), json.get("name").getAsString(), workunits, json.get("take").getAsInt());
         return workflow;
     }
 
     public static final class Builder {
 
         private final List<AbstractWork> works = new LinkedList<>();
+        private int take = 0;
         private String name;
 
-        public Builder(String name) {
+        private Builder(String name) {
             this.name = name;
         }
 
     }
 
-    public static final class ExecuteStep {
+    public static final class AtleastStep {
 
         private final Builder builder;
 
-        public ExecuteStep(Builder builder) {
+        private AtleastStep(Builder builder) {
             this.builder = builder;
         }
 
-        public ExecuteStep execute(AbstractWork... works) {
-            Arrays.asList(works).forEach(w -> this.builder.works.add(w));
+        public FromStep take(int take) {
+            this.builder.take = take;
+            return new FromStep(builder);
+        }
+    }
+
+    public static final class FromStep {
+
+        private final Builder builder;
+
+        private FromStep(Builder builder) {
+            this.builder = builder;
+        }
+
+        public FromStep from(AbstractWork... work) {
+            Arrays.asList(work).forEach(w -> this.builder.works.add(w));
             return this;
         }
 
-        public ParallelWorkflow build() {
-            return new ParallelWorkflow(Work.generateId(), this.builder.name, this.builder.works);
+        public AtleastWorkFlow build() {
+            return new AtleastWorkFlow(Work.generateId(), builder.name, builder.works, builder.take);
         }
     }
 }
