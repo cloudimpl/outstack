@@ -244,12 +244,12 @@ public abstract class AbstractController {
     protected Mono<Object> getRootEntity(ServerHttpRequest httpRequest, String context, String version,
             String rootEntity, String rootId, String contentType, String tenantId, Pageable pageable,
             Map<String, String> reqParam) {
-        String search = reqParam.get("search");
+        String search = validateSearchQuery(reqParam.get("search"));
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, null);
+                removePagingParam(reqParam), search, null);
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType);
@@ -274,13 +274,13 @@ public abstract class AbstractController {
             String rootEntity, String rootId, String contentType, String tenantId,
             Pageable pageable,
             Map<String, String> reqParam) {
-        String search = reqParam.get("search");
-        String orderBy = reqParam.get("orderBy");
+        String search = validateSearchQuery(reqParam.get("search"));
+        String orderBy = validateOrderByQuery(reqParam.get("orderBy"));
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
+                removePagingParam(reqParam), search, orderBy);
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
         String query = DomainModelDecoder.decode(contentType).orElseGet(() -> "Get" + rootType + "Events");
@@ -305,13 +305,13 @@ public abstract class AbstractController {
             String rootEntity, String rootId, String childEntity, String childId,
             String contentType, String tenantId, Pageable pageable,
             Map<String, String> reqParam) {
-        String search = reqParam.get("search");
-        String orderBy = reqParam.get("orderBy");
+        String search = validateSearchQuery(reqParam.get("search"));
+        String orderBy = validateOrderByQuery(reqParam.get("orderBy"));
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
+                removePagingParam(reqParam), search, orderBy);
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
                 .orElseThrow(() -> new ResourceNotFoundException("resource {0}/{1}/{2} not found",
@@ -341,13 +341,13 @@ public abstract class AbstractController {
             String rootEntity, String rootId, String childEntity, String childId,
             String contentType, String tenantId, Pageable pageable,
             Map<String, String> reqParam) {
-        String search = reqParam.get("search");
-        String orderBy = reqParam.get("orderBy");
+        String search = validateSearchQuery(reqParam.get("search"));
+        String orderBy = validateOrderByQuery(reqParam.get("orderBy"));
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
+                removePagingParam(reqParam), search,orderBy);
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
@@ -380,13 +380,13 @@ public abstract class AbstractController {
     protected Mono<Object> listChildEntity(ServerHttpRequest httpRequest, String context, String version,
             String rootEntity, String rootId, String childEntity, String contentType,
             String tenantId, Pageable pageable, Map<String, String> reqParam) {
-        String search = reqParam.get("search");
-        String orderBy = reqParam.get("orderBy");
+        String search = validateSearchQuery(reqParam.get("search"));
+        String orderBy = validateOrderByQuery(reqParam.get("orderBy"));
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
+                removePagingParam(reqParam), search, orderBy);
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         SpringServiceDescriptor.EntityDescriptor child = serviceDesc.getEntityDescriptorByPlural(childEntity)
@@ -415,14 +415,14 @@ public abstract class AbstractController {
             String rootEntity, String contentType, String tenantId, Pageable pageable,
             Map<String, String> reqParam) {
 
-        String search = reqParam.get("search");
-        String orderBy = reqParam.get("orderBy");
+        String search = validateSearchQuery(reqParam.get("search"));
+        String orderBy = validateOrderByQuery(reqParam.get("orderBy"));
 
         Query.PagingRequest pagingReq = new Query.PagingRequest(pageable.getPageNumber(), pageable.getPageSize(),
                 pageable.getSort().get()
                         .map(o -> new Query.Order(o.getProperty(), o.getDirection() == Sort.Direction.ASC
                         ? Query.Direction.ASC : Query.Direction.DESC)).collect(Collectors.toList()),
-                removePagingParam(reqParam), search != null ? RestQLParser.parse(search).toJson().toString() : null, orderBy != null ? RestQLParser.parseOrderBy(orderBy).toJson().toString() : null);
+                removePagingParam(reqParam), search, orderBy);
 
         SpringServiceDescriptor serviceDesc = getServiceQueryDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -612,5 +612,24 @@ public abstract class AbstractController {
         params.remove("search");
         params.remove("orderBy");
         return params;
+    }
+
+    protected String validateSearchQuery(String search) {
+        if (search == null) {
+            return null;
+        } else {
+            RestQLParser.parse(search);
+            return search;
+        }
+    }
+
+    protected String validateOrderByQuery(String orderBy) {
+        if (orderBy == null) {
+            return null;
+        } else {
+            RestQLParser.parseOrderBy(orderBy);
+            return orderBy;
+        }
+
     }
 }
