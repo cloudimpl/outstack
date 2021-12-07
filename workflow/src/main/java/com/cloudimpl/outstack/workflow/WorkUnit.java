@@ -33,7 +33,6 @@ public class WorkUnit extends AbstractWork {
 
     private final Class<? extends Work> workUnit;
     private final String content;
-    private MonoFuture<WorkStatus> watchFuture;
     protected CompletableFuture<WorkStatus> gateFuture;
 
     private WorkUnit(String id, String name, Class<? extends Work> work, String content) {
