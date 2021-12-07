@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -130,6 +131,9 @@ public class WorkflowEngine {
         if (trigger == null) {
             return Mono.error(() -> new WorkflowException("external trigger {0} not found", name));
         }
+        if (trigger.isGate()) {
+            throw new WorkflowException("wait trigger {0} not found .found {1}", name, trigger.getClass().getName());
+        }
         return trigger.triggerAsync(handler);
     }
 
@@ -138,7 +142,40 @@ public class WorkflowEngine {
         if (trigger == null) {
             throw new WorkflowException("external trigger {0} not found", name);
         }
+        if (trigger.isGate()) {
+            throw new WorkflowException("wait trigger {0} not found .found {1}", name, trigger.getClass().getName());
+        }
         return trigger.trigger(handler);
+    }
+
+    public void openGate(String name, Consumer<WorkContext> consumer) {
+        ExternalTrigger trigger = this.triggers.get(name);
+        if (trigger == null) {
+            throw new WorkflowException("gate trigger {0} not found", name);
+        }
+        if (!trigger.isGate()) {
+            throw new WorkflowException("gate trigger {0} not found .found {1}", name, trigger.getClass().getName());
+        }
+        Function<WorkContext, Object> fun = c -> {
+            consumer.accept(c);
+            return "";
+        };
+        trigger.trigger(fun);
+    }
+
+    public Mono<Void> openGateAsync(String name, Consumer<WorkContext> consumer) {
+        ExternalTrigger trigger = this.triggers.get(name);
+        if (trigger == null) {
+            return Mono.error(() -> new WorkflowException("get trigger {0} not found", name));
+        }
+        if (!trigger.isGate()) {
+            return Mono.error(() -> new WorkflowException("gate trigger {0} not found .found {1}", name, trigger.getClass().getName()));
+        }
+        Function<WorkContext, Mono<Object>> fun = c -> {
+            consumer.accept(c);
+            return Mono.just(true);
+        };
+        return trigger.triggerAsync(fun).then();
     }
 
     public <T> Mono<T> executeAsyncNext(Function<WorkContext, Mono<Object>> handler) {
