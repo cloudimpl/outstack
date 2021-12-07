@@ -53,7 +53,7 @@ public class ConditionalTest {
         engine.execute(seq2).subscribe();
 
         try {
-            engine.execute("work2", ctx -> "hello");
+            engine.openGate("work2", ctx -> {});
 
         } catch (Throwable ex) {
             ex.printStackTrace();
