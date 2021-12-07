@@ -22,6 +22,7 @@ import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.rstack.dsl.restql.RestQLNode;
+import com.cloudimpl.rstack.dsl.restql.RestQLParser;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
@@ -249,13 +250,13 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            RestQLNode qlNode = RestQLParser.parse(filter);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
 
         if (orderBy != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(orderBy));
+            RestQLNode qlNode = RestQLParser.parseOrderBy(orderBy);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         } else {
@@ -288,7 +289,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         createTenantIfNotExist(tableName, tenantId);
         String filterSql = null;
         if (filter != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            RestQLNode qlNode = RestQLParser.parse(filter);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
@@ -386,13 +387,13 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            RestQLNode qlNode = RestQLParser.parse(filter);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
 
         if (orderBy != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(orderBy));
+            RestQLNode qlNode = RestQLParser.parseOrderBy(orderBy);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
@@ -425,7 +426,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
 
         String filterSql = null;
         if (filter != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            RestQLNode qlNode = RestQLParser.parse(filter); 
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
@@ -456,7 +457,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         String filterSql = null;
 
         if (filter != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            RestQLNode qlNode = RestQLParser.parse(filter); 
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
@@ -491,13 +492,13 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(filter));
+            RestQLNode qlNode = RestQLParser.parse(filter); 
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
 
         if (orderBy != null) {
-            RestQLNode qlNode = RestQLNode.fromJson(GsonCodec.toJsonObject(orderBy));
+            RestQLNode qlNode = RestQLParser.parseOrderBy(orderBy);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             orderBySql = sqlNode.eval(qlNode);
         }
