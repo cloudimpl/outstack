@@ -19,26 +19,16 @@ package com.cloudimpl.outstack.workflow;
  *
  * @author nuwan
  */
-public class ConditionalWorkflow {
+public class GateTrigger extends ExternalTrigger{
 
-    public static Builder name(String name) {
-        return new Builder(name);
+    public GateTrigger() {
+        super(true);
+    }
+    
+    @Override
+    protected void init(WorkUnit workUnit) {
+        this.workUnit = workUnit;
+        this.setFuture(this.workUnit.gateFuture);
     }
 
-    public static final class Builder {
-
-        private final String name;
-
-        public Builder(String name) {
-            this.name = name;
-        }
-
-        public PredicateWorkflow.ThenStep when(Class<? extends WorkPredicate> predicateType) {
-            return PredicateWorkflow.name(name).when(predicateType.getName());
-        }
-
-        public AtleastWorkFlow.FromStep take(int take) {
-            return AtleastWorkFlow.name(name).take(take);
-        }
-    }
 }

@@ -48,7 +48,7 @@ public class WorkStatus {
         return (T) data;
     }
 
-    public WorkContext getAsContext()
+    public WorkContext getAsWorkContext()
     {
         return (WorkContext)data;
     }
