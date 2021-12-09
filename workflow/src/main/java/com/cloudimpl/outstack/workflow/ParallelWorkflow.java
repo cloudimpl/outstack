@@ -23,6 +23,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -62,9 +63,9 @@ public class ParallelWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
-        super.setHandlers(updateStateHandler, rrHandler, workStatusLoader);
-        workUnits.forEach(w -> w.setHandlers(updateStateHandler, rrHandler,workStatusLoader));
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, Consumer<Object> autoWireHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
+        super.setHandlers(updateStateHandler, autoWireHandler, workStatusLoader);
+        workUnits.forEach(w -> w.setHandlers(updateStateHandler, autoWireHandler,workStatusLoader));
     }
 
     public static ExecuteStep name(String name) {

@@ -22,10 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
-import reactor.core.publisher.Mono;
 
 /**
  *
@@ -36,7 +33,6 @@ public class WorkContext {
     private final Map<String, List<String>> attr;
     private final Map<String, AtomicReference<Work.Status>> mapStatus;
     private transient final List<Commit> commits = new LinkedList<>();
-    private transient BiFunction<String, Object, Mono> rrHandler;
     private transient Map<String, String> labels = new HashMap<>();
     private transient boolean immutable;
 
@@ -86,15 +82,7 @@ public class WorkContext {
     public AtomicReference<Work.Status> getStatus(String id) {
         return this.mapStatus.computeIfAbsent(id, i -> new AtomicReference<>(Work.Status.PENDING));
     }
-
-    protected void setRRHandler(BiFunction<String, Object, Mono> rrHandler) {
-        this.rrHandler = rrHandler;
-    }
-
-    public BiFunction<String, Object, Mono> getRRHandler() {
-        return this.rrHandler;
-    }
-
+    
     public void put(String key, int value) {
         put(key, String.valueOf(value));
     }
