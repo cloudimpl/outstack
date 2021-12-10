@@ -35,6 +35,7 @@ import com.cloudimpl.outstack.runtime.repo.RepoStreamingReq;
 import com.cloudimpl.outstack.runtime.repo.RepoStreamingReq.ResourceInfo;
 import com.cloudimpl.outstack.runtime.repo.StreamEvent;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -161,10 +162,11 @@ public class RepositoryStreamingService implements Function<CloudMessage, Flux> 
 
     private Collection<StreamEvent> getResources(ResourceInfo resourceInfo) {
         if (resourceInfo.getChildType() == null) {
-            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllByRootType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
+            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllByRootType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getTenantId(),
+                    new Query.PagingRequest(0, Integer.MAX_VALUE, Collections.EMPTY_LIST, Collections.EMPTY_MAP, resourceInfo.getSearchParam(), null)).getItems().stream().
                     map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());
         } else {
-            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllChildByType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getEntityId(), CloudUtil.classForName(resourceInfo.getChildType()), resourceInfo.getTenantId(), Query.PagingRequest.EMPTY).getItems().stream().
+            return (Collection<StreamEvent>) getEventRepo(resourceInfo.getEntityType()).getAllChildByType(CloudUtil.classForName(resourceInfo.getEntityType()), resourceInfo.getEntityId(), CloudUtil.classForName(resourceInfo.getChildType()), resourceInfo.getTenantId(), new Query.PagingRequest(0, Integer.MAX_VALUE, Collections.EMPTY_LIST, Collections.EMPTY_MAP, resourceInfo.getSearchParam(), null)).getItems().stream().
                     map(r -> new StreamEvent(StreamEvent.Action.ADD, r)).collect(Collectors.toList());
         }
     }

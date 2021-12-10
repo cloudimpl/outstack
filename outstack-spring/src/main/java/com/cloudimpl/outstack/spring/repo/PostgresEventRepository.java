@@ -244,7 +244,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
-        if (paging.getOrderBy() == null) {
+        if (paging.getSearchFilter()== null) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
@@ -258,7 +258,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
-        if (paging.getOrderBy() == null) {
+        if (paging.getSearchFilter() == null) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
@@ -307,7 +307,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<C> items = rs.getItems().stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
-        if (paging.getOrderBy() == null) {
+        if (paging.getSearchFilter() == null) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
@@ -322,7 +322,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
         ResultSet<String> rs = factory.executeQuery(fn);
         List<C> items = rs.getItems().stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
-        if (paging.getOrderBy() == null) {
+        if (paging.getSearchFilter() == null) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }

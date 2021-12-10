@@ -28,45 +28,57 @@ import java.util.stream.Collectors;
  */
 public class RepoStreamingReq {
 
-    private final Map<String,List<ResourceInfo>> mapResources;
+    private final Map<String, List<ResourceInfo>> mapResources;
     private final List<ResourceInfo> initialDownload;
-    
-    public RepoStreamingReq(List<ResourceInfo> initialDownload,List<ResourceInfo> resourceList) {
-        mapResources = resourceList.stream().collect(Collectors.groupingBy(r->r.getEntityType(), Collectors.toList()));
+
+    public RepoStreamingReq(List<ResourceInfo> initialDownload, List<ResourceInfo> resourceList) {
+        mapResources = resourceList.stream().collect(Collectors.groupingBy(r -> r.getEntityType(), Collectors.toList()));
         this.initialDownload = new LinkedList<>(initialDownload);
     }
 
-    public Optional<List<ResourceInfo>> getResources(String entityType)
-    {
+    public Optional<List<ResourceInfo>> getResources(String entityType) {
         return Optional.ofNullable(mapResources.get(entityType));
     }
-    
-    public List<ResourceInfo> getInitialDownloadResources()
-    {
+
+    public List<ResourceInfo> getInitialDownloadResources() {
         return this.initialDownload;
     }
-    
-    public static final class ResourceInfo
-    {
+
+    public static final class ResourceInfo {
+
         private final String entityType;
         private final String entityId;
         private final String tenantId;
         private final String childType;
         private final String childId;
-
+        private final String searchParam;
         public ResourceInfo(String entityType, String entityId, String tenantId) {
-            this(entityType,entityId,null,null,tenantId);
+            this(entityType, entityId, null, null, tenantId);
         }
-        public ResourceInfo(String entityType, String entityId, String childType,String childId,String tenantId) {
+
+        public ResourceInfo(String entityType, String entityId, String tenantId, String searchParam) {
+            this(entityType, entityId, null, null, tenantId, searchParam);
+        }
+
+        public ResourceInfo(String entityType, String entityId, String childType, String childId, String tenantId) {
+            this(entityType, entityId, childType, childId, tenantId, null);
+        }
+
+        public ResourceInfo(String entityType, String entityId, String childType, String childId, String tenantId, String searchParam) {
             this.entityType = entityType;
             this.entityId = entityId;
             this.childType = childType;
             this.childId = childId;
             this.tenantId = tenantId;
+            this.searchParam = searchParam;
         }
 
         public String getEntityId() {
             return entityId;
+        }
+
+        public String getSearchParam() {
+            return searchParam;
         }
 
         public String getEntityType() {
