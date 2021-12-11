@@ -46,9 +46,9 @@ public class Example {
         {
             stats.put("asfas", new AtomicReference<>(Work.Status.PENDING));
         }
-        
-        
+
     }
+    
     public static void main(String[] args) throws InterruptedException {
         
         String data = GsonCodec.encode(new Test());

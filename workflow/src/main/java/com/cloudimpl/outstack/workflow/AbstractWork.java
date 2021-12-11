@@ -16,15 +16,13 @@
 package com.cloudimpl.outstack.workflow;
 
 import com.cloudimpl.outstack.common.RetryUtil;
-import com.cloudimpl.outstack.runtime.Context;
 import com.google.gson.JsonObject;
 import java.text.MessageFormat;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -43,7 +41,7 @@ public abstract class AbstractWork implements Work {
     protected WorkflowEngine engine;
     protected BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler;
     protected Function<String, Optional<WorkStatus>> workStatusLoader;
-    protected BiFunction<String, Object, Mono> rrHandler;
+    protected Consumer<Object> autoWireHandler;
     
     public AbstractWork(String id, String name) {
         this.id = id;
@@ -99,9 +97,9 @@ public abstract class AbstractWork implements Work {
         return result;
     }
 
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler, Consumer<Object> autoWireHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
         this.updateStateHandler = updateStateHandler;
-        this.rrHandler = rrHandler;
+        this.autoWireHandler = autoWireHandler;
         this.workStatusLoader = workStatusLoader;
     }
 

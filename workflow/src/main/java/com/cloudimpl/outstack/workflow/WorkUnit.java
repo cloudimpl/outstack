@@ -50,7 +50,9 @@ public class WorkUnit extends AbstractWork {
         }
         WorkContext copy = isStateful() ? context.clone(false) : context.clone(true);
         Work workItem = GsonCodec.decode(workUnit, content);
-        copy.setRRHandler(rrHandler);
+        if (autoWireHandler != null) {
+            autoWireHandler.accept(workItem);
+        }
         if (workItem instanceof ExternalTrigger) {
             ExternalTrigger.class.cast(workItem).init(this);
             getEngine().registerExternalTrigger(getName(), (ExternalTrigger) workItem);

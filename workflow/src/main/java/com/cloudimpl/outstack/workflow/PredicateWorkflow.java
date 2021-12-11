@@ -20,6 +20,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
@@ -62,10 +63,10 @@ public class PredicateWorkflow extends Workflow {
     }
 
     @Override
-    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler,  BiFunction<String, Object, Mono> rrHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
-        super.setHandlers(updateStateHandler, rrHandler, workStatusLoader);
-        this.then.setHandlers(updateStateHandler, rrHandler,workStatusLoader);
-        this.otherwise.setHandlers(updateStateHandler, rrHandler,workStatusLoader);
+    protected void setHandlers(BiFunction<String, WorkStatus, Mono<WorkStatus>> updateStateHandler,  Consumer<Object> autoWireHandler,Function<String, Optional<WorkStatus>> workStatusLoader) {
+        super.setHandlers(updateStateHandler, autoWireHandler, workStatusLoader);
+        this.then.setHandlers(updateStateHandler, autoWireHandler,workStatusLoader);
+        this.otherwise.setHandlers(updateStateHandler, autoWireHandler,workStatusLoader);
     }
 
     @Override

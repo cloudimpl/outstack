@@ -99,7 +99,7 @@ public class WorkflowRepository {
         if (workflow == null) {
             throw new WorkflowException("workflow {0} not found", id);
         }
-        WorkflowEngine engine = new WorkflowEngine(id, tenantId, this::updateState, cluster::requestReply, this::loadWorkStatus);
+        WorkflowEngine engine = new WorkflowEngine(id, tenantId, this::updateState, Cluster.autoWireInstance(), this::loadWorkStatus);
         WorkflowEngine old = this.engines.putIfAbsent(id, engine);
         if(old != null)
         {

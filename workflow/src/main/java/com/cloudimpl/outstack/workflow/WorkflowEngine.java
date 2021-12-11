@@ -18,10 +18,6 @@ package com.cloudimpl.outstack.workflow;
 import com.cloudimpl.outstack.common.FluxProcessor;
 import com.cloudimpl.outstack.common.MonoFuture;
 import com.cloudimpl.outstack.common.RetryUtil;
-import com.cloudimpl.outstack.workflow.component.UpdateWorkflow;
-import com.cloudimpl.outstack.workflow.domain.WorkflowResultUpdated;
-import com.cloudimpl.outstack.workflow.domain.WorkflowUpdateRequest;
-import static com.cloudimpl.outstack.workflow.example.FluxTest.work;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +34,6 @@ import lombok.extern.slf4j.Slf4j;
 import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
-import reactor.function.Function3;
 import reactor.function.Function4;
 import reactor.retry.Retry;
 
@@ -56,7 +51,6 @@ public class WorkflowEngine {
 
     private Function4<String, String, String, WorkStatus, Mono<WorkStatus>> updateStateHandler;
     private BiFunction<String, String, Optional<WorkStatus>> workStatusLoader;
-    private BiFunction<String, Object, Mono> rrHandler;
     private String id;
     private Set<String> activeTriggers;
     private FluxProcessor<MonoFuture> dbWriter;
@@ -64,19 +58,19 @@ public class WorkflowEngine {
     private String tenantId;
     private Work.Status status;
     private Disposable workflowHnd;
-
+    private Consumer<Object> autoWireHandler;
     public WorkflowEngine(String id) {
-        this(id, null, WorkflowEngine::dummyStateUpdater, null, WorkflowEngine::dummyWorkStatusLoader);
+        this(id, null, WorkflowEngine::dummyStateUpdater, s->{}, WorkflowEngine::dummyWorkStatusLoader);
     }
 
-    public WorkflowEngine(String id, String tenantId, Function4<String, String, String, WorkStatus, Mono<WorkStatus>> updateStateHandler, BiFunction<String, Object, Mono> rrHandler, BiFunction<String, String, Optional<WorkStatus>> workStatusLoader) {
+    public WorkflowEngine(String id, String tenantId, Function4<String, String, String, WorkStatus, Mono<WorkStatus>> updateStateHandler, Consumer<Object> autoWireHandler, BiFunction<String, String, Optional<WorkStatus>> workStatusLoader) {
         this.id = id;
         this.tenantId = tenantId;
         this.triggers = new ConcurrentHashMap<>();
         this.triggerNames = new HashSet<>();
         this.activeTriggers = new ConcurrentSkipListSet<>();
         this.updateStateHandler = updateStateHandler;
-        this.rrHandler = rrHandler;
+        this.autoWireHandler = autoWireHandler;
         this.status = Work.Status.PENDING;
         this.workStatusLoader = workStatusLoader;
     }
@@ -87,7 +81,7 @@ public class WorkflowEngine {
 
     public Mono<WorkStatus> execute(Workflow workFlow) {
         workFlow.setEngine(this);
-        workFlow.setHandlers(this::stateUpdater, rrHandler, this::workStatusLoader);
+        workFlow.setHandlers(this::stateUpdater, autoWireHandler, this::workStatusLoader);
         if (this.mainFlow != null || this.context != null) {
             return Mono.error(() -> new WorkflowException("workflow is already executed "));
         }
