@@ -384,6 +384,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     protected com.cloudimpl.outstack.runtime.ResultSet<String> getRootEntityByType(Connection conn, String tableName, String rootEntityType, List<String> tenantIds, String filter, String orderBy, int pageNum, int pageSize) {
+        orderBy = orderBy == null ? "_meta.createdDate" : orderBy;
         String filterSql = null;
         String orderBySql = null;
         if (filter != null) {
@@ -487,6 +488,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
     }
 
     protected com.cloudimpl.outstack.runtime.ResultSet<String> getChildEntityByType(Connection conn, String tableName, String rootEntityType, String rootId, String entityType, List<String> tenantIds, String filter, String orderBy, int pageNum, int pageSize) {
+        orderBy = orderBy == null ? "_meta.createdDate" : orderBy;
         tenantIds.forEach(tenantId -> createTenantIfNotExist(tableName, tenantId));
         String tenantQuery = "(" + tenantIds.stream().map(t -> "tenantId = ?").collect(Collectors.joining(" or ")) + ")";
         String filterSql = null;
