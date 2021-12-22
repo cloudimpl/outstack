@@ -334,7 +334,7 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         String t = tenantId != null ? tenantId : "nonTenant";
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, rootId, tenantId));
 
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, this.rootType.getSimpleName(), rootId,paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, this.rootType.getSimpleName(), rootId, paging);
         ResultSet<String> rs = factory.executeQuery(fn);
         List items = rs.getItems().stream().map(s -> GsonCodec.decode(s)).collect(Collectors.toList());
         return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
@@ -344,14 +344,14 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> ResultSet<Event<C>> getEventsByChildId(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
-        if (!EntityIdHelper.isTechnicalId(childId)) {
+        if (!EntityIdHelper.isTechnicalId(childId) && !childId.equals("*")) {
             childId = getChildById(rootType, id, childType, childId, tenantId).get().id();
         }
 
         String trn = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));
 
         String childTid = childId;
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, childType.getSimpleName(), childTid,paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getEvents(conn, tableName + "Events", t, trn, childType.getSimpleName(), childTid, paging);
         ResultSet<String> rs = factory.executeQuery(fn);
         List items = rs.getItems().stream().map(s -> GsonCodec.decode(s)).filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
         return new ResultSet<>(rs.getTotalItems(), rs.getTotalPages(), rs.getCurrentPage(), items);
