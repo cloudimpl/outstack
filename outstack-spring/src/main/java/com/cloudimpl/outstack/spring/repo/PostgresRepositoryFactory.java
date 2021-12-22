@@ -257,8 +257,6 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         if(includeEventOwners == null){
             includeEventOwners = eventOwner;
         }else {
-            includeEventOwners = Arrays.stream(includeEventOwners.split(","))
-                    .collect(Collectors.joining(","));
             eventOwnerId = "*";
         }
 
