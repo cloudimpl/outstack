@@ -20,6 +20,7 @@ import com.cloudimpl.outstack.core.ComponentProvider;
 import com.cloudimpl.outstack.runtime.EventRepositoryFactory;
 import com.cloudimpl.outstack.runtime.EventRepositoy;
 import com.cloudimpl.outstack.runtime.ResourceHelper;
+import com.cloudimpl.outstack.runtime.domainspec.Query;
 import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.rstack.dsl.restql.RestQLNode;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
@@ -35,6 +36,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -245,10 +247,21 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
-    protected com.cloudimpl.outstack.runtime.ResultSet<String> getEvents(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, String filter, String orderBy, int pageNum, int pageSize) {
+    protected com.cloudimpl.outstack.runtime.ResultSet<String> getEvents(Connection conn, String tableName, String tenantId, String trn, String eventOwner, String eventOwnerId, Query.PagingRequest paging) {
         createTenantIfNotExist(tableName, tenantId);
         String filterSql = null;
         String orderBySql = null;
+        String filter = paging.getSearchFilter();
+        String orderBy = paging.getOrderBy();
+        String includeEventOwners = paging.getParams().get("includeOwners");
+        if(includeEventOwners == null){
+            includeEventOwners = eventOwner;
+        }else {
+            includeEventOwners = Arrays.stream(includeEventOwners.split(","))
+                    .collect(Collectors.joining(","));
+            eventOwnerId = "*";
+        }
+
         if (filter != null) {
             RestQLNode qlNode = RestQLParser.parse(filter);
             PostgresSqlNode sqlNode = new PostgresSqlNode();
@@ -262,14 +275,17 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         } else {
             orderBy = "eventSeq desc";
         }
-        long total = getTotalEventsCount(conn, tableName, tenantId, trn, eventOwner, eventOwnerId, filter);
-        String sqlQuery = "select json from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ? and eventOwnerId = ? " + (filterSql != null ? " and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + pageSize + " offset " + (pageNum * pageSize) : "");
+
+        long total = getTotalEventsCount(conn, tableName, tenantId, trn, includeEventOwners, eventOwnerId, filter);
+        String sqlQuery = "select json from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ANY(?) " + (eventOwnerId.equals("*")? "" : " and eventOwnerId = ? ") + (filterSql != null ? " and " + filterSql : "") + (orderBySql != null ? " order By " + orderBySql : "") + (orderBy != null ? " limit " + paging.pageSize() + " offset " + (paging.pageNum() * paging.pageSize()) : "");
         log.info("getEvents : " + sqlQuery);
         try (PreparedStatement stmt = conn.prepareStatement(sqlQuery)) {
             stmt.setString(1, trn);
             stmt.setString(2, tenantId);
-            stmt.setString(3, eventOwner);
-            stmt.setString(4, eventOwnerId);
+            stmt.setArray(3, conn.createArrayOf("text", Arrays.stream(includeEventOwners.split(",")).toArray()));
+            if(!eventOwnerId.equals("*")) {
+                stmt.setString(4, eventOwnerId);
+            }
 
             try (ResultSet rs = stmt.executeQuery()) {
                 System.out.println("fetch size : " + rs.getFetchSize());
@@ -277,7 +293,7 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
                 while (rs.next()) {
                     list.add(rs.getString("json"));
                 }
-                return new com.cloudimpl.outstack.runtime.ResultSet<>(total, (int) Math.ceil(((double) total) / pageSize), pageNum, list);
+                return new com.cloudimpl.outstack.runtime.ResultSet<>(total, (int) Math.ceil(((double) total) / paging.pageSize()), paging.pageNum(), list);
             }
 
         } catch (SQLException ex) {
@@ -293,12 +309,14 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
             PostgresSqlNode sqlNode = new PostgresSqlNode();
             filterSql = sqlNode.eval(qlNode);
         }
-        String sqlQuery = "select count(*) as totalCount  from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ? and eventOwnerId = ? " + (filterSql != null ? " and " + filterSql : "");
+        String sqlQuery = "select count(*) as totalCount  from " + tableName + " where trn = ? and tenantId = ? and eventOwner = ANY(?) " + (eventOwnerId.equals("*")? "" : " and eventOwnerId = ? ") + (filterSql != null ? " and " + filterSql : "");
         try (PreparedStatement stmt = conn.prepareStatement(sqlQuery)) {
             stmt.setString(1, trn);
             stmt.setString(2, tenantId);
-            stmt.setString(3, eventOwner);
-            stmt.setString(4, eventOwnerId);
+            stmt.setArray(3, conn.createArrayOf("text", Arrays.stream(eventOwner.split(",")).toArray()));
+            if(!eventOwnerId.equals("*")) {
+                stmt.setString(4, eventOwnerId);
+            }
 
             try (ResultSet rs = stmt.executeQuery()) {
                 System.out.println("fetch size : " + rs.getFetchSize());
