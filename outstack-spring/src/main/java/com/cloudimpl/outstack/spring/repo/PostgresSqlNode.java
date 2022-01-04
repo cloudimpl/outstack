@@ -75,6 +75,16 @@ public class PostgresSqlNode implements RestQLNode {
             return "json->>'" + field + "'";
         } else if (fields.length == 2) {
             return "json->'" + fields[0] + "'->>'" + fields[1] + "'";
+        } else if (fields.length > 2) {
+            String param = "json";
+            for (int i = 0; i < fields.length; i++) {
+                if (i == fields.length - 1) {
+                    param = param + "->>'" + fields[i] + "'";
+                } else {
+                    param = param + "->'" + fields[i]+ "'";
+                }
+            }
+            return param;
         }
         throw new RuntimeException("invalid field format");
     }
