@@ -240,11 +240,12 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     @Override
     public ResultSet<T> getAllByRootType(Class<T> rootType, String tenantId, Query.PagingRequest paging) {
         String t = tenantId != null ? tenantId : "nonTenant";
-
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        int pageNum = !paging.getParams().isEmpty() ? 0 : paging.pageNum();
+        int pageSize = !paging.getParams().isEmpty() ? Integer.MAX_VALUE : paging.pageSize();
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), pageNum, pageSize);
         ResultSet<String> rs = factory.executeQuery(fn);
         List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
-        if (paging.getSearchFilter()== null) {
+        if (paging.getSearchFilter()== null && !paging.getParams().isEmpty()) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
@@ -253,12 +254,13 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
 
     @Override
     public ResultSet<T> getAllByRootType(Class<T> rootType, Collection<String> tenantIds, Query.PagingRequest paging) {
-
+        int pageNum = !paging.getParams().isEmpty() ? 0 : paging.pageNum();
+        int pageSize = !paging.getParams().isEmpty() ? Integer.MAX_VALUE : paging.pageSize();
         List<String> tenantIdList = tenantIds.stream().map(t -> t==null? "nonTenant": t).collect(Collectors.toList());
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getRootEntityByType(conn, tableName, rootType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), pageNum, pageSize);
         ResultSet<String> rs = factory.executeQuery(fn);
         List<T> items = rs.getItems().stream().map(s -> GsonCodec.decode(rootType, s)).collect(Collectors.toList());
-        if (paging.getSearchFilter() == null) {
+        if (paging.getSearchFilter() == null && !paging.getParams().isEmpty()) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
@@ -303,11 +305,12 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, String tenantId, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         String t = tenantId != null ? tenantId : "nonTenant";
-
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        int pageNum = !paging.getParams().isEmpty() ? 0 : paging.pageNum();
+        int pageSize = !paging.getParams().isEmpty() ? Integer.MAX_VALUE : paging.pageSize();
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), Collections.singletonList(t), paging.getSearchFilter(), paging.getOrderBy(), pageNum, pageSize);
         ResultSet<String> rs = factory.executeQuery(fn);
         List<C> items = rs.getItems().stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
-        if (paging.getSearchFilter() == null) {
+        if (paging.getSearchFilter() == null && !paging.getParams().isEmpty()) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
@@ -318,11 +321,12 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
     public <C extends ChildEntity<T>> ResultSet<C> getAllChildByType(Class<T> rootType, String id, Class<C> childType, Collection<String> tenantIds, Query.PagingRequest paging) {
         EntityIdHelper.validateTechnicalId(id);
         List<String> tenantIdList = tenantIds.stream().map(t -> t==null? "nonTenant": t).collect(Collectors.toList());
-
-        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), paging.pageNum(), paging.pageSize());
+        int pageNum = !paging.getParams().isEmpty() ? 0 : paging.pageNum();
+        int pageSize = !paging.getParams().isEmpty() ? Integer.MAX_VALUE : paging.pageSize();
+        Function<Connection, ResultSet<String>> fn = conn -> factory.getChildEntityByType(conn, tableName, rootType.getSimpleName(), id, childType.getSimpleName(), tenantIdList, paging.getSearchFilter(), paging.getOrderBy(), pageNum, pageSize);
         ResultSet<String> rs = factory.executeQuery(fn);
         List<C> items = rs.getItems().stream().map(s -> GsonCodec.decode(childType, s)).collect(Collectors.toList());
-        if (paging.getSearchFilter() == null) {
+        if (paging.getSearchFilter() == null && !paging.getParams().isEmpty()) {
             items = items.stream().filter(i -> EventRepoUtil.onFilter(i, paging.getParams())).collect(Collectors.toList());
             return EventRepoUtil.onPageable(items, paging);
         }
