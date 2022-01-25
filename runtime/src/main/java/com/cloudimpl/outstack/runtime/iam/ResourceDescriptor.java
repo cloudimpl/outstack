@@ -43,6 +43,7 @@ public class ResourceDescriptor {
         TENANT_ID
     }
 
+    private final static String PREFIX_ID = "ignoreCase#";
     private final ResourceScope resourceScope;
     private final TenantScope tenantScope;
     private final String version;
@@ -112,8 +113,8 @@ public class ResourceDescriptor {
     }
 
     private boolean validateIdIgnoreCase(String inputId, String id){
-        if (id.startsWith("ignoreCase#")){
-            String idIgnoreCase = id.substring(11);
+        if (id.startsWith(PREFIX_ID)){
+            String idIgnoreCase = id.substring(PREFIX_ID.length());
             return inputId.equalsIgnoreCase(idIgnoreCase);
         }
         return inputId.equals(id);
