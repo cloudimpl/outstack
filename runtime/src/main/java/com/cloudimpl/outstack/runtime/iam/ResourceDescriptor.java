@@ -43,6 +43,7 @@ public class ResourceDescriptor {
         TENANT_ID
     }
 
+    private final static String PREFIX_ID = "ignoreCase#";
     private final ResourceScope resourceScope;
     private final TenantScope tenantScope;
     private final String version;
@@ -85,19 +86,19 @@ public class ResourceDescriptor {
                 if (input.getRootId() == null || input.getChildType() == null) {
                     return false;
                 }
-                return input.getRootId().equals(rootId) && input.getChildType().equals(this.childType);
+                return validateIdIgnoreCase(input.getRootId(), this.rootId) && input.getChildType().equals(this.childType);
             }
             case ROOT_ID_ONLY: {
                 if (input.getRootId() == null) {
                     return false;
                 }
-                return input.getRootId().equals(this.rootId);
+                return validateIdIgnoreCase(input.getRootId(), this.rootId);
             }
             case ROOT_ID_CHILD_ID_ONLY: {
                 if (input.getRootId() == null || input.getChildType() == null || input.getId() == null) {
                     return false;
                 }
-                return input.getRootId().equals(rootId) && input.getChildType().equals(this.childType) && input.getId().equals(this.childId);
+                return validateIdIgnoreCase(input.getRootId(), this.rootId) && input.getChildType().equals(this.childType) && input.getId().equals(this.childId);
             }
             case ALL_ROOT_ID_CHILD_ID_ONLY: {
                 if (input.getRootId() == null || input.getChildType() == null || input.getId() == null) {
@@ -109,6 +110,14 @@ public class ResourceDescriptor {
                 return false;
             }
         }
+    }
+
+    private boolean validateIdIgnoreCase(String inputId, String id){
+        if (id.startsWith(PREFIX_ID)){
+            String idIgnoreCase = id.substring(PREFIX_ID.length());
+            return inputId.equalsIgnoreCase(idIgnoreCase);
+        }
+        return inputId.equals(id);
     }
 
     private boolean validateTenantScope(Map<String, Object> attr) {
