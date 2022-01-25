@@ -85,19 +85,19 @@ public class ResourceDescriptor {
                 if (input.getRootId() == null || input.getChildType() == null) {
                     return false;
                 }
-                return validateIgnoreCase(input.getRootId(), this.rootId) && input.getChildType().equals(this.childType);
+                return validateIdIgnoreCase(input.getRootId(), this.rootId) && input.getChildType().equals(this.childType);
             }
             case ROOT_ID_ONLY: {
                 if (input.getRootId() == null) {
                     return false;
                 }
-                return validateIgnoreCase(input.getRootId(), this.rootId);
+                return validateIdIgnoreCase(input.getRootId(), this.rootId);
             }
             case ROOT_ID_CHILD_ID_ONLY: {
                 if (input.getRootId() == null || input.getChildType() == null || input.getId() == null) {
                     return false;
                 }
-                return validateIgnoreCase(input.getRootId(), this.rootId) && input.getChildType().equals(this.childType) && input.getId().equals(this.childId);
+                return validateIdIgnoreCase(input.getRootId(), this.rootId) && input.getChildType().equals(this.childType) && input.getId().equals(this.childId);
             }
             case ALL_ROOT_ID_CHILD_ID_ONLY: {
                 if (input.getRootId() == null || input.getChildType() == null || input.getId() == null) {
@@ -111,7 +111,7 @@ public class ResourceDescriptor {
         }
     }
 
-    private boolean validateIgnoreCase(String inputId, String id){
+    private boolean validateIdIgnoreCase(String inputId, String id){
         if(id.contains("ignoreCase#")){
             String[] split = id.split("#");
             if ( split.length > 1 ) {
