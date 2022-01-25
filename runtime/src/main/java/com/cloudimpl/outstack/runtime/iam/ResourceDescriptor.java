@@ -112,12 +112,9 @@ public class ResourceDescriptor {
     }
 
     private boolean validateIdIgnoreCase(String inputId, String id){
-        if(id.contains("ignoreCase#")){
-            String[] split = id.split("#");
-            if ( split.length > 1 ) {
-                return inputId.equalsIgnoreCase(split[1]);
-            }
-            return false;
+        if (id.startsWith("ignoreCase#")){
+            String idIgnoreCase = id.substring(11);
+            return inputId.equalsIgnoreCase(idIgnoreCase);
         }
         return inputId.equals(id);
     }
