@@ -32,6 +32,9 @@ public class PostgresSqlNode implements RestQLNode {
             } else{
                 return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":(rel.getOp() == RelNode.Op.NOT_LIKE?" NOT ILIKE ":rel.getOp().getOp())) + (String) rel.getConstNode().eval(this);
             }
+        }else if(node instanceof FieldCheckNode) {
+            FieldCheckNode fieldNode = FieldCheckNode.class.cast(node);
+            return convertToJsonField(fieldNode.getFieldName()) + (fieldNode.isCheckExist() ? " is not null " : " is null ");
         } else if (node instanceof BinNode) {
             BinNode binNode = BinNode.class.cast(node);
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
@@ -65,6 +68,7 @@ public class PostgresSqlNode implements RestQLNode {
     }
 
     public static String convertToJsonField(String field) {
+        field = field.trim();
         if(field.equals("_eventType"))
         {
             return field.substring(1);
