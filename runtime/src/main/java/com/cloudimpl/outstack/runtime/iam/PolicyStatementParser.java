@@ -59,7 +59,7 @@ public class PolicyStatementParser {
         if (resources.isEmpty()) {
             throw new PolicyStatementException("policy statement resources are empty");
         }
-        return new PolicyStatementCreated(stmt.getSid(),domainOwner,domainContext, stmt.getEffect(), cmdActions,queryActions, resources,stmt.getTags());
+        return new PolicyStatementCreated(stmt.getSid(),domainOwner,domainContext, stmt.getEffect(), cmdActions,queryActions, resources,stmt.getTags(), stmt.isValidateAction());
     }
 
     public static void validate(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, PolicyStatementCreated event) {
@@ -67,7 +67,7 @@ public class PolicyStatementParser {
         if (rootType == null) {
             rootType = "*";
         }
-        validateActions(resourceHelper,context, rootType, event.getCmdActions(),event.getQueryActions());
+        validateActions(resourceHelper,context, rootType, event.getCmdActions(),event.getQueryActions(),event.isValidateAction());
     }
 
     private static String validateCrossResourceUsage(ResourceHelper resourceHelper,RootEntityContext<PolicyStatement> context, Collection<ResourceDescriptor> resources) {
@@ -108,7 +108,7 @@ public class PolicyStatementParser {
         return rootType;
     }
 
-    private static void validateActions(ResourceHelper helper,RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions) {
+    private static void validateActions(ResourceHelper helper,RootEntityContext<PolicyStatement> context, String rootType, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, boolean validateAction) {
        
         List<String> cmdActionList = new LinkedList<>();
         List<String> queryActionList = new LinkedList<>();
@@ -124,7 +124,9 @@ public class PolicyStatementParser {
                     if (rootType.contains("*")) {
                         throw new PolicyValidationError("action definitions not allowed for wild card resource type");
                     }
-                    cmdActionList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource command action " + action.getName() + " not found"));
+                    if(validateAction) {
+                        cmdActionList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource command action " + action.getName() + " not found"));
+                    }
                     break;
                 }
                 default: {
@@ -139,7 +141,9 @@ public class PolicyStatementParser {
                     if (rootType.contains("*")) {
                         throw new PolicyValidationError("action definitions not allowed for wild card resource type");
                     }
-                    queryActionList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource query action " + action.getName() + " not found"));
+                    if(validateAction) {
+                        queryActionList.stream().filter(s -> s.equalsIgnoreCase(action.getName())).findAny().orElseThrow(() -> new PolicyValidationError("resource query action " + action.getName() + " not found"));
+                    }
                     break;
                 }
                 default: {

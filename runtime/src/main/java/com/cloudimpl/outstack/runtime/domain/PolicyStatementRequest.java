@@ -38,6 +38,7 @@ public class PolicyStatementRequest extends Command {
     private final Collection<String> queryActions;
     private final Collection<String> resources;
     private final Collection<String> tags;
+    private final boolean validateAction;
 
     public PolicyStatementRequest(Builder builder) {
         super(builder);
@@ -50,6 +51,7 @@ public class PolicyStatementRequest extends Command {
         this.queryActions = Collections.unmodifiableCollection(builder.queryActions);
         this.resources = Collections.unmodifiableCollection(builder.resources);
         this.tags = Collections.unmodifiableCollection(builder.tags);
+        this.validateAction = builder.validateAction;
     }
 
     public Collection<String> getCmdActions() {
@@ -89,6 +91,10 @@ public class PolicyStatementRequest extends Command {
         return domainOwner;
     }
 
+    public boolean isValidateAction() {
+        return validateAction;
+    }
+
     public static Builder builder()
     {
         return new Builder();
@@ -105,6 +111,7 @@ public class PolicyStatementRequest extends Command {
         private Collection<String> queryActions = new LinkedList<>();
         private Collection<String> resources = new LinkedList<>();
         private Collection<String> tags = new LinkedList<>();
+        private boolean validateAction;
         
         public Builder withSid(String sid)
         {
@@ -157,6 +164,12 @@ public class PolicyStatementRequest extends Command {
         public Builder withTag(String tag)
         {
             this.tags.add(tag);
+            return this;
+        }
+
+        public Builder withValidateAction(boolean validateAction)
+        {
+            this.validateAction = validateAction;
             return this;
         }
         

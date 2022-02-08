@@ -36,7 +36,8 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
     private final Collection<ActionDescriptor> queryActions;
     private final Collection<ResourceDescriptor> resources;
     private final Collection<String> tags;
-    public PolicyStatementCreated(String sid,String domainOwner,String domainContext,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources,Collection<String> tags) {
+    private final boolean validateAction;
+    public PolicyStatementCreated(String sid,String domainOwner,String domainContext,PolicyStatement.EffectType effect, Collection<ActionDescriptor> cmdActions,Collection<ActionDescriptor> queryActions, Collection<ResourceDescriptor> resources,Collection<String> tags, boolean validateAction) {
         this.sid = sid;
         this.domainOwner = domainOwner;
         this.domainContext = domainContext;
@@ -45,6 +46,7 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
         this.queryActions = queryActions;
         this.resources = resources;
         this.tags = tags;
+        this.validateAction = validateAction;
     }
 
     public String getSid() {
@@ -78,6 +80,10 @@ public class PolicyStatementCreated extends Event<PolicyStatement> {
 
     public Collection<ResourceDescriptor> getResources() {
         return resources;
+    }
+
+    public boolean isValidateAction() {
+        return validateAction;
     }
 
     public boolean isTenantStatement()
