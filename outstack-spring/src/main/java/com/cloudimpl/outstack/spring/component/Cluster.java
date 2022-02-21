@@ -150,6 +150,11 @@ public class Cluster {
         return serviceDescriptorContextMan;
     }
 
+    public static Cluster getInstance()
+    {
+        return this.instance;
+    }
+    
     public <T> Mono<T> requestReply(ServerHttpRequest httpRequest, String serviceName, Object msg) {
         if (msg instanceof CommandWrapper) {
             CommandWrapper wrapper = CommandWrapper.class.cast(msg);
