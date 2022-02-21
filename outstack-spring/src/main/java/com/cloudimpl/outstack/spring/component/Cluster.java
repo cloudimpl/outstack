@@ -152,7 +152,7 @@ public class Cluster {
 
     public static Cluster getInstance()
     {
-        return this.instance;
+        return Cluster.instance;
     }
     
     public <T> Mono<T> requestReply(ServerHttpRequest httpRequest, String serviceName, Object msg) {
