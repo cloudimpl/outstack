@@ -81,7 +81,7 @@ public class Cluster {
     public void init() {
         Cluster.instance = this;
         beanFactoryInstance = beanFactory;
-        injector = new Injector();
+        injector = new SpringInjector(beanFactoryInstance);
         configManager.setInjector(injector);
         //  serviceDescriptorContextMan = new ServiceDescriptorContextManager();
         resourceHelper = new ResourceHelper(configManager.getDomainOwner(), configManager.getDomainContext(), configManager.getApiContext());
