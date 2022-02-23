@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
  */
 public class Injector {
 
-    private final Map<Class<?>, Object> map;
+    protected final Map<Class<?>, Object> map;
     protected final Map<String, Object> nameBinds;
     protected final Map<String, Class<?>> nameBindsByClass;
 
@@ -32,7 +32,7 @@ public class Injector {
         nameBindsByClass = new ConcurrentHashMap<>();
     }
 
-    private Injector(Map<Class<?>, Object> map, Map<String, Object> nameBinds, Map<String, Class<?>> nameBindsByClass) {
+    protected Injector(Map<Class<?>, Object> map, Map<String, Object> nameBinds, Map<String, Class<?>> nameBindsByClass) {
         this.map = new ConcurrentHashMap<>(map);
         this.nameBinds = new ConcurrentHashMap<>(nameBinds);
         this.nameBindsByClass = new ConcurrentHashMap<>(nameBindsByClass);
@@ -63,14 +63,18 @@ public class Injector {
         return val;
     }
 
+    protected Injector createInjector()
+    {
+        return new Injector(map, nameBinds, nameBindsByClass);
+    }
     public Injector with(String name, Object value) {
-        Injector injector = new Injector(map, nameBinds, nameBindsByClass);
+        Injector injector = createInjector();
         injector.nameBind(name, value);
         return injector;
     }
 
     public <T> Injector with(Class<T> clazz, Object value) {
-        Injector injector = new Injector(map, nameBinds, nameBindsByClass);
+        Injector injector = createInjector();
         injector.bind(clazz).to(value);
         return injector;
     }
