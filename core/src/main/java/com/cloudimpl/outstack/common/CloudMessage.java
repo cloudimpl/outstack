@@ -13,6 +13,9 @@ import java.util.Map;
  * @author nuwansa
  */
 public class CloudMessage {
+
+  public static final String METHOD_STR = "method";
+
   private final Object data;
   protected final Map<String, String> meta;
   private final String key;
