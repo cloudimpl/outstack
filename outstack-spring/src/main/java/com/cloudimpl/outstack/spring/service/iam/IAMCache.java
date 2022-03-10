@@ -106,7 +106,7 @@ public class IAMCache {
         }
 
         this.streamClient = new StreamClient(cluster);
-        this.entityCache = new FluxMap<>("entityCache",Schedulers.newSingle("iamCache"));
+        this.entityCache = new FluxMap<>("entityCache",Schedulers.newSingle("iamCache", true));
         subscribeToPolicyRef();
         subscribeToPolicyStatementRef();
         syncRole();

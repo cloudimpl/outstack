@@ -139,7 +139,7 @@ public class Cluster {
         if (node != null) {
             node.shutdown();
         }
-        System.exit(-1);
+        // System.exit(-1);
     }
 
     public ServiceRegistryReadOnly getServiceRegistry() {
