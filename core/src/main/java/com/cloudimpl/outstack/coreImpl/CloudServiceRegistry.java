@@ -27,7 +27,7 @@ public class CloudServiceRegistry implements ServiceRegistryReadOnly{
     private final Scheduler schedular;
 
     public CloudServiceRegistry(ILogger logger) {
-        this.schedular = Schedulers.newSingle("serviceRegistry");
+        this.schedular = Schedulers.newSingle("serviceRegistry", true);
         this.services = new FluxMap<>("CloudServiceRegistry",this.schedular);
         this.localServices = new FluxMap<>("CloudServiceRegistryLocal",this.schedular);
         this.logger = logger.createSubLogger(CloudServiceRegistry.class);
