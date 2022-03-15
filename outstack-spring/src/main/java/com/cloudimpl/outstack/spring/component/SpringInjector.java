@@ -18,6 +18,8 @@ package com.cloudimpl.outstack.spring.component;
 import com.cloudimpl.outstack.core.Injector;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
+import java.util.Map;
+
 /**
  *
  * @author nuwan
@@ -29,7 +31,16 @@ public class SpringInjector extends Injector {
     public SpringInjector(AutowireCapableBeanFactory beanFactory) {
         this.beanFactory = beanFactory;
     }
-    
+    public SpringInjector(AutowireCapableBeanFactory beanFactory, Map<Class<?>, Object> map, Map<String, Object> nameBinds, Map<String, Class<?>> nameBindsByClass) {
+        super(map,nameBinds,nameBindsByClass);
+        this.beanFactory = beanFactory;
+    }
+
+    protected Injector createInjector()
+    {
+        return new SpringInjector(this.beanFactory,this.map,this.nameBinds,this.nameBindsByClass);
+    }
+
     @Override
     public <T> T inject(Class<T> clazz) {
         T instance = super.inject(clazz);
