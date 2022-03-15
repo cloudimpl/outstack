@@ -4,7 +4,7 @@
     <parent>
         <groupId>com.cloudimpl.outstack</groupId>
         <artifactId>service-example</artifactId>
-        <version>3.1</version>
+        <version>4.1</version>
     </parent>
     <artifactId>App</artifactId>
     <packaging>jar</packaging>
