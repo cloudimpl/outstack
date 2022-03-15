@@ -42,7 +42,7 @@ import springfox.documentation.swagger.web.SwaggerResourcesProvider;
  *
  * @author nuwan
  */
-@Configuration
+//@Configuration
 //@EnableSwagger2
 public class SwaggerConfig {
 
