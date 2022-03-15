@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.cloudimpl.outstack</groupId>
     <artifactId>outstack</artifactId>
-    <version>4.1</version>
+    <version>4.0</version>
     <packaging>pom</packaging>
     <name>cloudImpl-outstack</name>
     <description>java microservice library with cluster support</description>
