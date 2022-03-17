@@ -78,6 +78,7 @@ public class ResourcesLoader {
             case SERVICE_ID:
             case LEADER:
             case LOCAL:
+            case CONSISTENT_HASH:
             case NODE_ID:
             {
                 node.registerService(meta.getFunc().getName(), com.cloudimpl.outstack.core.CloudFunction.builder()

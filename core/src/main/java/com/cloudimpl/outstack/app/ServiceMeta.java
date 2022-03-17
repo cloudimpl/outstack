@@ -19,6 +19,7 @@ import com.cloudimpl.outstack.core.CloudException;
 import com.cloudimpl.outstack.core.CloudFunctionMeta;
 import com.cloudimpl.outstack.core.CloudRouter;
 import com.cloudimpl.outstack.core.annon.Router;
+import com.cloudimpl.outstack.routers.ConsistentHashRouter;
 import com.cloudimpl.outstack.routers.DynamicRouter;
 import com.cloudimpl.outstack.routers.LeaderRouter;
 import com.cloudimpl.outstack.routers.LocalRouter;
@@ -82,6 +83,8 @@ public class ServiceMeta {
                 return LeaderRouter.class;
             case LOCAL:
                 return LocalRouter.class;
+            case CONSISTENT_HASH:
+                return ConsistentHashRouter.class;
             default:
                 throw new CloudException(router.routerType()+" not supported");
         }
