@@ -40,14 +40,7 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
         if (Objects.isNull(object)) {
             returnObject = method.invoke(this);
         } else {
-            Object[] objects = (Object[]) object;
-            if ( 1 == objects.length) {
-                returnObject = method.invoke(this, objects[0]);
-            } else if( 2 == objects.length){
-                returnObject = method.invoke(this, objects[0], objects[1]);
-            } else {
-                throw new ServiceException("More than 2 arguments are not supported.");
-            }
+            returnObject = method.invoke(this, object);
         }
 
         if (returnObject instanceof Mono) {

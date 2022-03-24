@@ -189,7 +189,7 @@ public class Cluster {
         return requestReply(null, serviceName, msg);
     }
 
-    public <T> Mono<T> requestReplyEx(String serviceName, String commandName, String key, Object... msg) {
+    public <T> Mono<T> requestReplyEx(String serviceName, String commandName, String key, Object msg) {
         CloudMessage cloudMessage = new CloudMessage(msg, key).withAttr(CloudMessage.METHOD_STR, commandName);
         return requestReply(serviceName, cloudMessage);
     }
@@ -198,7 +198,7 @@ public class Cluster {
         return this.requestStream(null, serviceName, msg);
     }
 
-    public <T> Flux<T> requestStreamEx(String serviceName, String commandName, String key, Object... msg) {
+    public <T> Flux<T> requestStreamEx(String serviceName, String commandName, String key, Object msg) {
         CloudMessage cloudMessage = new CloudMessage(msg, key).withAttr(CloudMessage.METHOD_STR, commandName);
         return this.requestStream(serviceName, cloudMessage);
     }
