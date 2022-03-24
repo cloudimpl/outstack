@@ -32,9 +32,7 @@ public class CloudMessageEncoder implements JsonSerializer<CloudMessage>{
          System.out.println(" encoding "+t.getClass());
          JsonObject json = new JsonObject();
          json.addProperty("key", t.getKey());
-         if(t.data() !=null) {
-             json.add("data", GsonCodec.encodeToJsonWithType(t.data()));
-         }
+         json.add("data", GsonCodec.encodeToJsonWithType(t.data()));
          json.add("meta",GsonCodec.encodeToJson(t.meta));
         return json;
     }
