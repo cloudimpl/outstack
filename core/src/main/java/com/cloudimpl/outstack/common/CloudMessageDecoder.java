@@ -39,7 +39,7 @@ public class CloudMessageDecoder implements JsonDeserializer<CloudMessage> {
                      (Map<String, String>) GsonCodec.decode(json.get("meta")));
         } else {
             return new CloudMessage(GsonCodec.decode(json.get("data")), key == null ? null : key.getAsString(),
-                    (Map<String, String>) GsonCodec.decode(json.get("meta")));
+                     (Map<String, String>) GsonCodec.decode(json.get("meta")));
         }
     }
 
