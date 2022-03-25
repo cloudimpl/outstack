@@ -24,18 +24,26 @@ import com.cloudimpl.outstack.spring.security.PlatformAuthenticationToken;
 import com.cloudimpl.outstack.spring.security.PolicyStatementValidator;
 import com.cloudimpl.outstack.spring.service.ServiceDescriptorContextManager;
 import com.cloudimpl.outstack.spring.service.config.ConfigQueryProvider;
+
+import java.time.Duration;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +55,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component("OUTSTACK_CLUSTER")
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class Cluster {
 
     static {
@@ -77,6 +86,10 @@ public class Cluster {
     private  Injector injector ;
     
     private static Cluster instance;
+
+    private final Executor executor = Executors.newFixedThreadPool(1);
+    private final Scheduler scheduler = Schedulers.fromExecutor(executor);
+
     @PostConstruct
     public void init() {
         Cluster.instance = this;
@@ -103,6 +116,8 @@ public class Cluster {
         ResourcesLoader serviceLoader = new ResourcesLoaderEx(resourceHelper);
         serviceLoader.preload();
         appConfig.getNodeConfigBuilder().doOnNext(c -> c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C -> C.build())
+                .delayElement(Duration.ofSeconds(1))
+                .publishOn(scheduler)
                 .doOnNext(c -> {
                     node = new CloudNode(injector, c);
                     serviceLoader.init(node);
