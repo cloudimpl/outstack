@@ -59,6 +59,18 @@ public class FluxProcessor<T> {
         });
     }
 
+    public void error(Throwable thr)
+    {
+        list.forEach(sink -> {
+            try {
+                sink.getSink().error(thr);
+            } catch (Throwable ex) {
+                System.out.println("xxxxxxxx: " + ex.getMessage());
+            }
+
+        });
+    }
+
     public Flux<T> flux(String subscriber) {
         return flux.contextWrite(ctx -> ctx.put("subscriber", subscriber));
     }
