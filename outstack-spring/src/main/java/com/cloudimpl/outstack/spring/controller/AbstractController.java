@@ -134,6 +134,42 @@ public abstract class AbstractController {
         return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
     }
 
+    protected Mono<Object> createRootEntityWithFiles(ServerHttpRequest httpRequest, String context, String version,
+                                                 String rootEntity, String contentType, String tenantId,
+                                                 List<FilePart> files, String jsonData) {
+
+        SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
+        String rootType = serviceDesc.getRootType();
+
+        String cmd = DomainModelDecoder.decode(contentType).orElseGet(() -> "Create" + rootType);
+
+        if (CollectionUtils.isEmpty(files)) {
+            throw new BadRequestException("no files were attached to the request");
+        }
+
+        SpringServiceDescriptor.ActionDescriptor action = serviceDesc.getRootAction(cmd)
+                .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
+                .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", rootType));
+
+        List<FileData> fileDataList = files.stream()
+                .map(FileUtil::getFileData)
+                .collect(Collectors.toList());
+        FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+
+        validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
+        CommandWrapper request = CommandWrapper.builder()
+                .withDomainOwner(serviceDesc.getDomainOwner())
+                .withDomainContext(serviceDesc.getDomainContext())
+                .withCommand(action.getName())
+                .withRootType(rootType)
+                .withVersion(version)
+                .withPayload(jsonData)
+                .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
+                .withTenantId(tenantId).build();
+        ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, rootType);
+        return cluster.requestReply(httpRequest, serviceDesc.getServiceName(), request).onErrorMap(this::onError).doOnNext(s -> stats.checkpoint()).doOnTerminate(() -> log.info(stats.stats()));
+    }
+
     protected Mono<ResponseEntity<Object>> createChildEntity(ServerHttpRequest httpRequest, String context,
             String version, String rootEntity,
             String rootId, String childEntity, String contentType,
