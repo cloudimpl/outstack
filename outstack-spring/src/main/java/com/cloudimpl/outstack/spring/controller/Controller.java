@@ -94,9 +94,9 @@ public class Controller extends AbstractController {
                                                      @PathVariable String rootEntity,
                                                      @RequestHeader("Content-Type") String contentType,
                                                      @RequestHeader(name = "X-TenantId", required = false) String tenantId,
-                                                     @RequestPart(name = "jsonData", required = false) String jsonData,
+                                                     @RequestPart(name = "body", required = false) String body,
                                                      @RequestPart(value = "files") List<FilePart> files) {
-        return super.createRootEntityWithFiles(request, context, version, rootEntity, contentType, tenantId, files, jsonData);
+        return super.createRootEntityWithFiles(request, context, version, rootEntity, contentType, tenantId, files, body);
     }
 
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})

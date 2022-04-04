@@ -136,7 +136,7 @@ public abstract class AbstractController {
 
     protected Mono<Object> createRootEntityWithFiles(ServerHttpRequest httpRequest, String context, String version,
                                                  String rootEntity, String contentType, String tenantId,
-                                                 List<FilePart> files, String jsonData) {
+                                                 List<FilePart> files, String body) {
 
         SpringServiceDescriptor serviceDesc = getServiceCmdDescriptor(context, version, rootEntity);
         String rootType = serviceDesc.getRootType();
@@ -163,7 +163,7 @@ public abstract class AbstractController {
                 .withCommand(action.getName())
                 .withRootType(rootType)
                 .withVersion(version)
-                .withPayload(jsonData)
+                .withPayload(body)
                 .withFiles(fileDataList.stream().map(e -> (Object) e).collect(Collectors.toList()))
                 .withTenantId(tenantId).build();
         ControllerStat stats = new ControllerStat(serviceDesc.getServiceName(), cmd, rootType);
