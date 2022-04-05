@@ -85,6 +85,20 @@ public class Controller extends AbstractController {
         return super.uploadRootEntityFiles(request, context, version, rootEntity, rootId, contentType, tenantId, files);
     }
 
+    @PostMapping(value = "{context}/{version}/{rootEntity}/files", consumes = {MULTIPART_FORM_DATA_VALUE, APPLICATION_JSON_VALUE})
+    @SuppressWarnings("unused")
+    @ResponseStatus(HttpStatus.CREATED)
+    protected Mono<Object> createRootEntityWithFiles(ServerHttpRequest request,
+                                                     @PathVariable String context,
+                                                     @PathVariable String version,
+                                                     @PathVariable String rootEntity,
+                                                     @RequestHeader("Content-Type") String contentType,
+                                                     @RequestHeader(name = "X-TenantId", required = false) String tenantId,
+                                                     @RequestPart(name = "body", required = false) String body,
+                                                     @RequestPart(value = "files") List<FilePart> files) {
+        return super.createRootEntityWithFiles(request, context, version, rootEntity, contentType, tenantId, files, body);
+    }
+
     @PostMapping(value = "{context}/{version}/{rootEntity}/{rootId}/{childEntity}", consumes = {APPLICATION_JSON_VALUE})
     @SuppressWarnings("unused")
     @ResponseStatus(HttpStatus.CREATED)
