@@ -52,6 +52,7 @@ public class TransportManager {
 
     public Closeable createEndpoint(String host, int port, MessageCodec codec, EndpointListener listener) {
         return RSocketServer.create((SocketAcceptor) new SocketAcceptorImpl(codec, listener))
+                .fragment(1024*1024)
                 // .frameDecoder(PayloadDecoder.ZERO_COPY)
                 //  .acceptor((SocketAcceptor) new SocketAcceptorImpl(codec, listener))     
                 .bindNow(TcpServerTransport.create(host, port));
@@ -89,7 +90,7 @@ public class TransportManager {
 
     private Mono<RSocket> connectRemote(RouteEndpoint endpoint) {
         Mono<RSocket> rsocketMono
-                = RSocketConnector.create().connect(TcpClientTransport.create(endpoint.getHost(), endpoint.getPort()));
+                = RSocketConnector.create().fragment(1024*1024).connect(TcpClientTransport.create(endpoint.getHost(), endpoint.getPort()));
         // .frameDecoder(PayloadDecoder.ZERO_COPY)
         return handleErrors(rsocketMono, endpoint);
     }
