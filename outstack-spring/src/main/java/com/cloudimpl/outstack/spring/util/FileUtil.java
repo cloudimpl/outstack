@@ -52,7 +52,7 @@ public class FileUtil {
                 .collect(Collectors.toSet());
 
         boolean containsInvalidMimeType = fileDataList.stream()
-                .map(fileData -> MimeType.valueOf(tika.detect(fileData.getMimeType())))
+                .map(fileData -> MimeType.valueOf(fileData.getMimeType()))
                 .anyMatch(e -> !acceptedMimeTypeSet.contains(e));
         if (containsInvalidMimeType) {
             throw new ValidationErrorException(String.format("unsupported mimetypes detected. accepts {%s} only",
