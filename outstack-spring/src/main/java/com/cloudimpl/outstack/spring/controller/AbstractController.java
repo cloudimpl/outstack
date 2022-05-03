@@ -114,10 +114,18 @@ public abstract class AbstractController {
                 .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
                 .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", rootType));
 
-        List<FileData> fileDataList = files.stream()
-                .map(FileUtil::getFileData)
-                .collect(Collectors.toList());
-        FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+        return Flux.fromIterable(files).flatMap(FileUtil::getFileData)
+                .collectList()
+                .flatMap(fileDataList -> sendRootEntityFiles(fileDataList, httpRequest, version, rootId, tenantId, serviceDesc, rootType, cmd, action))
+                .doOnError(err -> err.printStackTrace());
+    }
+
+    private Mono<Object> sendRootEntityFiles(List<FileData> fileDataList, ServerHttpRequest httpRequest, String version, String rootId, String tenantId, SpringServiceDescriptor serviceDesc, String rootType, String cmd, SpringServiceDescriptor.ActionDescriptor action) {
+        try {
+            FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+        } catch (Exception e) {
+            throw new ValidationErrorException("Unsupported mimetypes detected");
+        }
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
@@ -151,11 +159,18 @@ public abstract class AbstractController {
                 .filter(SpringServiceDescriptor.ActionDescriptor::isFileUploadEnabled)
                 .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented", rootType));
 
-        List<FileData> fileDataList = files.stream()
-                .map(FileUtil::getFileData)
-                .collect(Collectors.toList());
-        FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+        return Flux.fromIterable(files).flatMap(FileUtil::getFileData)
+                .collectList()
+                .flatMap(fileDataList -> this.sendRootEntityWithFiles(fileDataList, httpRequest, version, tenantId, body, serviceDesc, rootType, cmd, action))
+                .doOnError(err -> err.printStackTrace());
+    }
 
+    private Mono<Object> sendRootEntityWithFiles(List<FileData> fileDataList, ServerHttpRequest httpRequest, String version, String tenantId, String body, SpringServiceDescriptor serviceDesc, String rootType, String cmd, SpringServiceDescriptor.ActionDescriptor action) {
+        try {
+            FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+        } catch (Exception e) {
+            throw new ValidationErrorException("Unsupported mimetypes detected");
+        }
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()
                 .withDomainOwner(serviceDesc.getDomainOwner())
@@ -251,10 +266,18 @@ public abstract class AbstractController {
                 .orElseThrow(() -> new NotImplementedException("resource {0} file upload not implemented",
                 child.getName()));
 
-        List<FileData> fileDataList = files.stream()
-                .map(FileUtil::getFileData)
-                .collect(Collectors.toList());
-        FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+        return Flux.fromIterable(files).flatMap(FileUtil::getFileData)
+                .collectList()
+                .flatMap(fileDataList -> this.sendChildEntityFiles(fileDataList, httpRequest, context, version, rootEntity, rootId, childEntity, childId, tenantId, serviceDesc, child, cmd, action))
+                .doOnError(err -> err.printStackTrace());
+    }
+
+    private Mono<ResponseEntity<Object>> sendChildEntityFiles(List<FileData> fileDataList, ServerHttpRequest httpRequest, String context, String version, String rootEntity, String rootId, String childEntity, String childId, String tenantId, SpringServiceDescriptor serviceDesc, SpringServiceDescriptor.EntityDescriptor child, String cmd, SpringServiceDescriptor.ActionDescriptor action) {
+        try {
+            FileUtil.validateMimeType(fileDataList, action.getMimeTypes());
+        } catch (Exception e) {
+            throw new ValidationErrorException("Unsupported mimetypes detected");
+        }
 
         validateAction(action, SpringServiceDescriptor.ActionDescriptor.ActionType.COMMAND_HANDLER);
         CommandWrapper request = CommandWrapper.builder()

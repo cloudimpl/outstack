@@ -5,16 +5,19 @@ import com.cloudimpl.outstack.runtime.ValidationErrorException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.tika.Tika;
 import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.MimeType;
 import org.springframework.web.server.ServerErrorException;
+import reactor.core.publisher.Mono;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.SequenceInputStream;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -49,13 +52,7 @@ public class FileUtil {
                 .collect(Collectors.toSet());
 
         boolean containsInvalidMimeType = fileDataList.stream()
-                .map(fileData -> {
-                    try {
-                        return MimeType.valueOf(tika.detect(fileData.getInputStream()));
-                    } catch (IOException e) {
-                        throw new ServerErrorException("mimetype detection failure", e);
-                    }
-                })
+                .map(fileData -> MimeType.valueOf(tika.detect(fileData.getMimeType())))
                 .anyMatch(e -> !acceptedMimeTypeSet.contains(e));
         if (containsInvalidMimeType) {
             throw new ValidationErrorException(String.format("unsupported mimetypes detected. accepts {%s} only",
@@ -67,16 +64,34 @@ public class FileUtil {
      * Get file data from file part
      *
      * @param filePart : [FilePart] File part
-     * @return : [FileData] File data
+     * @return : Mono<FileData> File data
      */
-    public static FileData getFileData(FilePart filePart) {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        try {
-            getInputStream(filePart).transferTo(byteArrayOutputStream);
-        } catch (IOException e) {
-            throw new ServerErrorException("cannot read file stream", e);
-        }
-        return new FileData(filePart.filename(), byteArrayOutputStream);
+    public static Mono<FileData> getFileData(FilePart filePart) {
+        return transferByteArrayOutputStream(filePart)
+                .map(byteArrayOutputStream -> {
+                    byte[] bytes = byteArrayOutputStream.toByteArray();
+                    return new FileData(filePart.filename(), Base64.getEncoder().encodeToString(bytes), tika.detect(bytes));
+                });
+    }
+
+    private static Mono<ByteArrayOutputStream> transferByteArrayOutputStream(FilePart filePart) {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(30*1024*1024);
+        return filePart.content().doOnNext(dataBuffer -> {
+            byte[] bytes = new byte[dataBuffer.readableByteCount()];
+            dataBuffer.read(bytes);
+            DataBufferUtils.release(dataBuffer);
+            try {
+                byteArrayOutputStream.write(bytes);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).doOnTerminate(() -> {
+            try {
+                byteArrayOutputStream.close();
+            } catch (IOException e) {
+                throw new ServerErrorException("cannot read file stream", e);
+            }
+        }).then(Mono.just(byteArrayOutputStream));
     }
 
     /**
