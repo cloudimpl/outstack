@@ -139,6 +139,16 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <source>15</source>
+                    <target>15</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>3.2.1</version>
                 <executions>
@@ -208,6 +218,7 @@
         <module>service-example</module>
         <module>outstack-spring-test</module>
         <module>workflow</module>
+        <module>outstack-spring-repo</module>
     </modules>
     <distributionManagement>
         <snapshotRepository>
