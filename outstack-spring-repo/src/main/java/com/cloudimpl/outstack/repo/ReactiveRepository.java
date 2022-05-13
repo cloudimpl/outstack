@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-//|tenantId,resourceType,parentTid,id,tid,entity,createdDate,updatedDate
+//|tenantId,resourceType,parentTenantId,parentTid,id,tid,entity,createdDate,updatedDate
 public class ReactiveRepository extends ReadOnlyReactiveRepository{
 
     private transient boolean init;

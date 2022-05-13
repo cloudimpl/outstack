@@ -12,6 +12,7 @@ import com.cloudimpl.rstack.dsl.restql.ConstStringNode;
 import com.cloudimpl.rstack.dsl.restql.FieldCheckNode;
 import com.cloudimpl.rstack.dsl.restql.OrderByExpNode;
 import com.cloudimpl.rstack.dsl.restql.OrderByNode;
+import com.cloudimpl.rstack.dsl.restql.PlaceHolderNode;
 import com.cloudimpl.rstack.dsl.restql.RelNode;
 import com.cloudimpl.rstack.dsl.restql.RestQLNode;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
@@ -35,7 +36,12 @@ public class PostgresSqlNode implements RestQLNode {
             return String.valueOf(ConstNumberNode.class.cast(node).getVal());
         } else if (node instanceof ConstBooleanNode) {
             return String.valueOf(ConstBooleanNode.class.cast(node).getVal());
-        } else if (node instanceof RelNode) {
+        }
+        else if(node instanceof PlaceHolderNode)
+        {
+            return String.valueOf(PlaceHolderNode.class.cast(node).getVal());
+        }
+        else if (node instanceof RelNode) {
             RelNode rel = RelNode.class.cast(node);
             if (rel.getOp() == RelNode.Op.IN){
                 return this.inOperator(rel);
@@ -86,11 +92,11 @@ public class PostgresSqlNode implements RestQLNode {
 
         String[] fields = field.split("\\.");
         if (fields.length == 1) {
-            return "json->>'" + field + "'";
+            return "entity->>'" + field + "'";
         } else if (fields.length == 2) {
-            return "json->'" + fields[0] + "'->>'" + fields[1] + "'";
+            return "entity->'" + fields[0] + "'->>'" + fields[1] + "'";
         } else if (fields.length > 2) {
-            String param = "json";
+            String param = "entity";
             for (int i = 0; i < fields.length; i++) {
                 if (i == fields.length - 1) {
                     param = param + "->>'" + fields[i] + "'";

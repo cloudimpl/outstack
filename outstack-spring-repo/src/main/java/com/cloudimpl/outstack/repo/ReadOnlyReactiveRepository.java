@@ -71,9 +71,26 @@ public class ReadOnlyReactiveRepository {
         return executeFlux(config.connectionFromPool(tenantId),connection -> findChilds(connection,tenantId,tid,childTenantId,request));
     }
 
+    public <T extends Entity> Flux<T> findChildsByType(String tenantId,String tid,String childTenantId,Class<T> resourceType,QueryRequest request)
+    {
+        QueryRequest request2 = QueryRequest.builder()
+                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
+                .orderBy(request.getOrderBy())
+                .pageNum(request.getPageNum())
+                .pageSize(request.getPageSize())
+                .mergeNonTenant(request.isMergeNonTenant())
+                .build();
+        return findChilds(tenantId,tid,childTenantId,request2);
+    }
+
     public <T extends Entity> Flux<T> findChilds(String tenantId,String tid,QueryRequest request)
     {
         return findChilds(tenantId,tid,tenantId,request);
+    }
+
+    public <T extends Entity> Flux<T> findChildsByType(String tenantId,String tid,Class<T> resourceType,QueryRequest request)
+    {
+        return findChildsByType(tenantId,tid,tenantId,resourceType,request);
     }
 
     private <T extends Entity> Flux<T> query(Connection connection, String tenantId, QueryRequest request) {
@@ -93,7 +110,7 @@ public class ReadOnlyReactiveRepository {
 
     private <T extends Entity> Flux<T> findChilds(Connection connection,String tenantId,String tid,String childTenantId,QueryRequest request){
         PostgresSqlNode sqlNode = new PostgresSqlNode();
-        String whereClause = request.getQuery().isEmpty() ? "tenantId = $1 and parentTenantId = $2 and parentTid = $3" : sqlNode.eval(RestQLParser.parse(request.getQuery() + " and ( tenantId = $1 and parentTenantId = $2 and parentTid = $3)"));
+        String whereClause = request.getQuery().isEmpty() ? "tenantId = $1 and parentTenantId = $2 and parentTid = $3" : sqlNode.eval(RestQLParser.parse(request.getQuery() + " and ( _tenantId = $1 and _parentTenantId = $2 and _parentTid = $3)"));
         String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
         String tenantId2 = tenantId == null ? "default" : tenantId;
         String childTenantId2 = childTenantId == null ? "default" : childTenantId;

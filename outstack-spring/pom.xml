@@ -183,7 +183,7 @@
         <dependency>
             <groupId>com.cloudimpl</groupId>
             <artifactId>query-dsl</artifactId>
-            <version>1.0.15</version>
+            <version>1.0.16</version>
         </dependency>
     </dependencies>
 </project>
