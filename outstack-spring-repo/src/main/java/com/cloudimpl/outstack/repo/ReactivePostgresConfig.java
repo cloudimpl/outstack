@@ -1,53 +1,61 @@
 package com.cloudimpl.outstack.repo;
 
-import com.cloudimpl.outstack.repo.DatasourceProps;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.ConnectionFactories;
 import io.r2dbc.spi.ConnectionFactory;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.r2dbc.config.AbstractR2dbcConfiguration;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 @Configuration
 @RequiredArgsConstructor
 @EnableR2dbcRepositories("com.restrata")
-public class ReactivePostgresConfig extends AbstractR2dbcConfiguration {
+public class ReactivePostgresConfig {
 
-    private final DatasourceProps datasourceProps;
-    private  ConnectionPool connectionPool;
+    private final DataSources datasourceProps;
+    private Map<DataSources.DataSource,ConnectionHandler> handlers = new ConcurrentHashMap<>();
 
-    @PostConstruct
-    private void init()
+
+    public Supplier<Mono<Connection>> connectionFromPool(String dataSource,String tenantId)
     {
-        ConnectionPoolConfiguration configuration = ConnectionPoolConfiguration.builder(connectionFactory())
-                .maxIdleTime(Duration.ofMillis(100000))
-                .maxSize(20)
-                .build();
-        connectionPool = new ConnectionPool(configuration);
-    }
-    /**
-     * @noinspection NullableProblems
-     * @return
-     */
-    @Override
-    public ConnectionFactory connectionFactory() {
-        return ConnectionFactories.get(datasourceProps.getPrefix() + datasourceProps.getUsername() + ":" +
-                datasourceProps.getPassword() + "@" + datasourceProps.getHost() + ":" + datasourceProps.getPort() +
-                "/" + datasourceProps.getDatabase());
-
-
+        return ()-> handlers.computeIfAbsent(datasourceProps.getDataSource(dataSource),d->new ConnectionHandler(d))
+                .getConnectionPool().create();
     }
 
-    public Supplier<Mono<Connection>> connectionFromPool(String tenantId)
+    @Getter
+    public static final class ConnectionHandler
     {
-        return ()-> connectionPool.create();
+        private DataSources.DataSource dataSource;
+        private ConnectionPool connectionPool;
+
+        private ConnectionHandler(DataSources.DataSource source)
+        {
+            this.dataSource = source;
+            ConnectionPoolConfiguration configuration = ConnectionPoolConfiguration.builder(connectionFactory())
+                    .maxIdleTime(Duration.ofMillis(100000))
+                    .maxSize(20)
+                    .build();
+            connectionPool = new ConnectionPool(configuration);
+        }
+
+        private ConnectionFactory connectionFactory() {
+            return ConnectionFactories.get(dataSource.getConfigs().get("prefix")
+                    + dataSource.getConfigs().get("username") + ":" +
+                    dataSource.getConfigs().get("password")
+                    + "@" + dataSource.getConfigs().get("host")
+                    + ":" + dataSource.getConfigs().get("port") +
+                    "/" + dataSource.getConfigs().get("database"));
+
+
+        }
     }
 }

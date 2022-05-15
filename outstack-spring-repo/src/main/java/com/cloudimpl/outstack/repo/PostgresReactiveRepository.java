@@ -1,8 +1,7 @@
 package com.cloudimpl.outstack.repo;
 
 import com.cloudimpl.outstack.common.GsonCodec;
-import com.cloudimpl.outstack.runtime.util.Util;
-import io.r2dbc.postgresql.codec.Json;
+import com.cloudimpl.outstack.repo.core.ReactiveRepository;
 import io.r2dbc.spi.Connection;
 import reactor.core.publisher.Mono;
 
@@ -12,15 +11,13 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 //|tenantId,resourceType,parentTenantId,parentTid,id,tid,entity,createdDate,updatedDate
-public class ReactiveRepository extends ReadOnlyReactiveRepository{
+public class PostgresReactiveRepository extends PostgresReadOnlyReactiveRepository implements ReactiveRepository {
 
     private transient boolean init;
 
-    private final Table table;
 
     private final Map<String,String> tenants = new ConcurrentHashMap<>();
-    public ReactiveRepository() {
-        table = RepoUtil.getRepoMeta(this.getClass());
+    public PostgresReactiveRepository() {
         this.init = false;
     }
 
@@ -32,7 +29,7 @@ public class ReactiveRepository extends ReadOnlyReactiveRepository{
     }
 
     @Override
-    protected  Mono<ReactiveRepository> initTables() {
+    protected  Mono<PostgresReactiveRepository> initTables() {
         if (init) {
             return Mono.just(this);
         }
@@ -45,21 +42,24 @@ public class ReactiveRepository extends ReadOnlyReactiveRepository{
         }
     }
 
+    @Override
     public <T extends Entity> Mono<T> create(String tenantId,T entity) {
-       return createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(tenantId),conn->create(conn,tenantId,entity)));
+       return createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(table.config(),tenantId),conn->create(conn,tenantId,entity)));
     }
 
+    @Override
     public <T extends Entity> Mono<T> createOrUpdate(String tenantId,T entity){
-        return  createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(tenantId),conn->createOrUpdate(conn,tenantId,entity)));
+        return  createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(table.config(), tenantId),conn->createOrUpdate(conn,tenantId,entity)));
     }
 
     public Mono<Void> delete(String tenantId,Class<? extends Entity> resourceType,String id){
-        return  createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(tenantId),conn->delete(conn,tenantId,resourceType,id))).then();
+        return  createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(table.config(), tenantId),conn->delete(conn,tenantId,resourceType,id))).then();
     }
 
+    @Override
     public <T extends Entity> Mono<T> createChild(String parentTenantId,String parentTid,String tenantId,T child)
     {
-        return createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(tenantId)
+        return createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(table.config(), tenantId)
         ,conn->createChild(conn,parentTenantId,parentTid,tenantId,child)));
     }
 
@@ -172,23 +172,23 @@ public class ReactiveRepository extends ReadOnlyReactiveRepository{
     }
 
     @Override
-    protected Mono<ReactiveRepository> createTenantIfNotExist(String tenantId)
+    protected Mono<PostgresReactiveRepository> createTenantIfNotExist(String tenantId)
     {
         String _tenantId = tenantId == null ? "default":tenantId;
          return Mono.justOrEmpty(tenants.get(_tenantId)).map(s->this)
                  .switchIfEmpty(Mono.defer(()->createTenantTable(_tenantId).doOnNext(it->tenants.put(_tenantId,_tenantId))));
     }
 
-    private Mono<ReactiveRepository> createTenantTable(String tenantId){
-        return executeMono(config.connectionFromPool(tenantId),connection -> Mono.just(connection)
+    private Mono<PostgresReactiveRepository> createTenantTable(String tenantId){
+        return executeMono(config.connectionFromPool(table.config(),tenantId),connection -> Mono.just(connection)
                 .flatMapMany(conn->conn.createStatement("create table if not exists " + table.name() + "_" + tenantId.replaceAll("-", "_") + " partition of " + table.name() + " for values in ('" + tenantId + "')").execute())
                 .next())
                 .doOnNext(s -> System.out.println("table " + table.name()+"_"+tenantId.replaceAll("-","_") + " created"))
                 .then(Mono.just(this));
     }
 
-    private <T extends Entity> Mono<ReactiveRepository> createEntityTable(String tableName) {
-        return executeMono(config.connectionFromPool(null), conn -> Mono.just(conn)
+    private <T extends Entity> Mono<PostgresReactiveRepository> createEntityTable(String tableName) {
+        return executeMono(config.connectionFromPool(table.config(),null), conn -> Mono.just(conn)
                 .flatMapMany(connection -> connection.createStatement("create table if not exists " + tableName + "(tenantId varchar not null,resourceType varchar not null," +
                         "parentTenantId varchar," +
                         "parentTid varchar," +
@@ -203,8 +203,8 @@ public class ReactiveRepository extends ReadOnlyReactiveRepository{
                 .then(Mono.just(this));
     }
 
-    private <T extends Entity> Mono<ReactiveRepository> createAuditTable(String tableName) {
-        return executeMono(config.connectionFromPool(null), conn -> Mono.just(conn)
+    private <T extends Entity> Mono<PostgresReactiveRepository> createAuditTable(String tableName) {
+        return executeMono(config.connectionFromPool(table.config(),null), conn -> Mono.just(conn)
                 .flatMapMany(connection -> connection.createStatement("create table if not exists " + tableName + "_Audit" + "(tenantId varchar not null,resourceType varchar not null," +
                         "parentTenantId varchar,"+
                         "parentTid varchar," +

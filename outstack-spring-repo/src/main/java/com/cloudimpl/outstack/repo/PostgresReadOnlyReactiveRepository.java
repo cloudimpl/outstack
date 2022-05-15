@@ -1,6 +1,7 @@
 package com.cloudimpl.outstack.repo;
 
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.util.Util;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
@@ -18,7 +19,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class ReadOnlyReactiveRepository {
+public class PostgresReadOnlyReactiveRepository implements ReadOnlyReactiveRepository {
     @Autowired
     protected ReactivePostgresConfig config;
 
@@ -26,16 +27,23 @@ public class ReadOnlyReactiveRepository {
     @Qualifier("ioSchedular")
     protected Scheduler ioScheduler;
 
-    private final Table table;
+    protected  Table table;
 
-    public ReadOnlyReactiveRepository() {
-        table = RepoUtil.getRepoMeta(this.getClass());
+    public PostgresReadOnlyReactiveRepository() {
+        table = RepoUtil.getRepoMeta(this.getClass(),false);
     }
 
+    protected void setTable(Table table)
+    {
+        this.table = table;
+    }
+
+    @Override
     public <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id) {
-        return executeMono(config.connectionFromPool(tenantId), connection -> queryById(connection, tenantId, resourceType, id));
+        return executeMono(config.connectionFromPool(table.config(),tenantId), connection -> queryById(connection, tenantId, resourceType, id));
     }
 
+    @Override
     public <T extends Entity> Flux<T> queryByType(String tenantId, Class<T> resourceType, QueryRequest request) {
         QueryRequest request2 = QueryRequest.builder()
                 .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
@@ -47,6 +55,7 @@ public class ReadOnlyReactiveRepository {
         return query(tenantId, request2);
     }
 
+    @Override
     public <T extends Entity> Mono<ResultSet<T>> queryByTypeWithPagination(String tenantId, Class<T> resourceType, QueryRequest request) {
         QueryRequest request2 = QueryRequest.builder()
                 .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
@@ -58,19 +67,23 @@ public class ReadOnlyReactiveRepository {
         return queryWithPagination(tenantId, request2);
     }
 
+    @Override
     public <T extends Entity> Flux<T> query(String tenantId, QueryRequest request) {
-        return executeFlux(config.connectionFromPool(tenantId), connection -> query(connection, tenantId, request));
+        return executeFlux(config.connectionFromPool(table.config(),tenantId), connection -> query(connection, tenantId, request));
     }
 
+    @Override
     public <T extends Entity> Mono<ResultSet<T>> queryWithPagination(String tenantId, QueryRequest req) {
-        return executeMono(config.connectionFromPool(tenantId), connection -> queryWithPagination(connection, tenantId, req));
+        return executeMono(config.connectionFromPool(table.config(),tenantId), connection -> queryWithPagination(connection, tenantId, req));
     }
 
+    @Override
     public <T extends Entity> Flux<T> findChilds(String tenantId,String tid,String childTenantId,QueryRequest request)
     {
-        return executeFlux(config.connectionFromPool(tenantId),connection -> findChilds(connection,tenantId,tid,childTenantId,request));
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findChilds(connection,tenantId,tid,childTenantId,request));
     }
 
+    @Override
     public <T extends Entity> Flux<T> findChildsByType(String tenantId,String tid,String childTenantId,Class<T> resourceType,QueryRequest request)
     {
         QueryRequest request2 = QueryRequest.builder()
@@ -83,11 +96,13 @@ public class ReadOnlyReactiveRepository {
         return findChilds(tenantId,tid,childTenantId,request2);
     }
 
+    @Override
     public <T extends Entity> Flux<T> findChilds(String tenantId,String tid,QueryRequest request)
     {
         return findChilds(tenantId,tid,tenantId,request);
     }
 
+    @Override
     public <T extends Entity> Flux<T> findChildsByType(String tenantId,String tid,Class<T> resourceType,QueryRequest request)
     {
         return findChildsByType(tenantId,tid,tenantId,resourceType,request);
@@ -180,11 +195,11 @@ public class ReadOnlyReactiveRepository {
 //                .execute()).flatMap(it -> it.map((row, meta) -> ((T) GsonCodec.decode(Util.classForName(row.get("resourceType", String.class)), row.get("entity", Json.class).asString())).withTid(row.get("tid", String.class))));
 //    }
 
-    protected <T extends ReadOnlyReactiveRepository> Mono<T> initTables() {
+    protected <T extends PostgresReadOnlyReactiveRepository> Mono<T> initTables() {
         return Mono.just((T) this);
     }
 
-    protected <T extends ReadOnlyReactiveRepository> Mono<T> createTenantIfNotExist(String tenantId) {
+    protected <T extends PostgresReadOnlyReactiveRepository> Mono<T> createTenantIfNotExist(String tenantId) {
         return Mono.just((T) this);
     }
 

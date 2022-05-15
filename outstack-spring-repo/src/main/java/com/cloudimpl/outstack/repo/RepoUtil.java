@@ -17,10 +17,10 @@ public class RepoUtil {
     }
 
 
-    public static Table getRepoMeta(Class<?> repoType)
+    public static Table getRepoMeta(Class<?> repoType,boolean validate)
     {
         Table table = repoType.getAnnotation(Table.class);
-        if(table == null)
+        if(table == null && validate)
         {
             throw new RepoException("no table annotation defined in the repository "+repoType.getName());
         }

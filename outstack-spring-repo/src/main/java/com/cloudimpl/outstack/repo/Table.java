@@ -11,4 +11,5 @@ public @interface Table {
     String name();
     boolean trackChanges() default false;
     boolean audit() default false;
+    String config() default "default";
 }
