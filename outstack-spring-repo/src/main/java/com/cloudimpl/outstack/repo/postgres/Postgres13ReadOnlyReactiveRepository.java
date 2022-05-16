@@ -44,6 +44,10 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
         this.table = table;
     }
 
+    protected void init() {
+
+    }
+
     @Override
     public <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id) {
         return executeMono(config.connectionFromPool(table.config(),tenantId), connection -> queryById(connection, tenantId, resourceType, id));

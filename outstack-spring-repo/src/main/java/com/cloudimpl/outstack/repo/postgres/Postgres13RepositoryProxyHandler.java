@@ -23,7 +23,7 @@ public class Postgres13RepositoryProxyHandler implements InvocationHandler {
         }
         Postgres13ReadOnlyReactiveRepository.class.cast(repoInstance).setTable(RepoUtil.getRepoMeta(this.targetType,true));
         beanFactory.autowireBean(repoInstance);
-        Postgres13ReadOnlyReactiveRepository.class.cast(repoInstance).initTables();
+        Postgres13ReadOnlyReactiveRepository.class.cast(repoInstance).init();
     }
 
 
