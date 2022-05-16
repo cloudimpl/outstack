@@ -26,7 +26,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     }
 
     @PostConstruct
-    private void init() {
+    protected void init() {
         initTables()
                 .doOnError(thr->thr.printStackTrace())
                 .subscribe(); //bootstrap tables
