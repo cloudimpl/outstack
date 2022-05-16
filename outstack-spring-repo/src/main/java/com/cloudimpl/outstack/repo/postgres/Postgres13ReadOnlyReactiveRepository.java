@@ -1,6 +1,12 @@
-package com.cloudimpl.outstack.repo;
+package com.cloudimpl.outstack.repo.postgres;
 
 import com.cloudimpl.outstack.common.GsonCodec;
+import com.cloudimpl.outstack.repo.Entity;
+import com.cloudimpl.outstack.repo.EntityUtil;
+import com.cloudimpl.outstack.repo.QueryRequest;
+import com.cloudimpl.outstack.repo.RepoUtil;
+import com.cloudimpl.outstack.repo.SafeExecute;
+import com.cloudimpl.outstack.repo.Table;
 import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -19,7 +25,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class PostgresReadOnlyReactiveRepository implements ReadOnlyReactiveRepository {
+public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRepository {
     @Autowired
     protected ReactivePostgresConfig config;
 
@@ -27,9 +33,9 @@ public class PostgresReadOnlyReactiveRepository implements ReadOnlyReactiveRepos
     @Qualifier("ioSchedular")
     protected Scheduler ioScheduler;
 
-    protected  Table table;
+    protected Table table;
 
-    public PostgresReadOnlyReactiveRepository() {
+    public Postgres13ReadOnlyReactiveRepository() {
         table = RepoUtil.getRepoMeta(this.getClass(),false);
     }
 
@@ -179,13 +185,12 @@ public class PostgresReadOnlyReactiveRepository implements ReadOnlyReactiveRepos
     }
 
     protected <T extends Entity> T createEntity(Row row) {
-        T entity = ((T) GsonCodec.decode(Util.classForName(row.get("resourceType", String.class)), row.get("entity", Json.class).asString()))
-                .withTid(row.get("tid", String.class));
+        T entity = ((T) GsonCodec.decode(Util.classForName(row.get("resourceType", String.class)), row.get("entity", Json.class).asString()));
 
-        entity.getMeta()
-                .withCreatedTime(row.get("createdTime", Long.class))
-                .withUpdatedTime(row.get("updatedTime", Long.class))
-                .withTenantId(row.get("tenantId", String.class));
+        EntityUtil.withTid(entity,row.get("tid", String.class));
+        EntityUtil.withCreatedTime(entity.getMeta(), row.get("createdTime", Long.class));
+        EntityUtil.withUpdatedTime(entity.getMeta(),row.get("updatedTime", Long.class));
+        EntityUtil.withTenantId(entity.getMeta(),row.get("tenantId", String.class));
         return entity;
     }
 //    protected <T extends Entity> Flux<T> queryByType(Connection connection,String tenantId,Class<T> resourceType){
@@ -195,11 +200,11 @@ public class PostgresReadOnlyReactiveRepository implements ReadOnlyReactiveRepos
 //                .execute()).flatMap(it -> it.map((row, meta) -> ((T) GsonCodec.decode(Util.classForName(row.get("resourceType", String.class)), row.get("entity", Json.class).asString())).withTid(row.get("tid", String.class))));
 //    }
 
-    protected <T extends PostgresReadOnlyReactiveRepository> Mono<T> initTables() {
+    protected <T extends Postgres13ReadOnlyReactiveRepository> Mono<T> initTables() {
         return Mono.just((T) this);
     }
 
-    protected <T extends PostgresReadOnlyReactiveRepository> Mono<T> createTenantIfNotExist(String tenantId) {
+    protected <T extends Postgres13ReadOnlyReactiveRepository> Mono<T> createTenantIfNotExist(String tenantId) {
         return Mono.just((T) this);
     }
 

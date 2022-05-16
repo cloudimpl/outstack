@@ -1,5 +1,6 @@
-package com.cloudimpl.outstack.repo;
+package com.cloudimpl.outstack.repo.postgres;
 
+import com.cloudimpl.outstack.repo.DataSources;
 import io.r2dbc.pool.ConnectionPool;
 import io.r2dbc.pool.ConnectionPoolConfiguration;
 import io.r2dbc.spi.Connection;

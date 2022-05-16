@@ -1,4 +1,4 @@
-package com.cloudimpl.outstack.repo;
+package com.cloudimpl.outstack.repo.postgres;
 
 import com.cloudimpl.rstack.dsl.restql.BinNode;
 import com.cloudimpl.rstack.dsl.restql.ConstArrayNode;
