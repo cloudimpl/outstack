@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRepository {
     @Autowired
@@ -118,6 +119,72 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
         return findChildsByType(tenantId,tid,tenantId,resourceType,request);
     }
 
+    @Override
+    public <T extends Entity> Flux<T> findParentGraphSearch(String tenantId,Class<? extends Entity> resourceType, String childId, QueryRequest request) {
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findParentGraphSearch(connection,tenantId,resourceType,childId,request));
+    }
+
+    @Override
+    public <T extends Entity> Flux<T> findChildGraphSearch(String tenantId, Class<? extends Entity> resourceType, String parentId, QueryRequest request) {
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findChildGraphSearch(connection,tenantId,resourceType,parentId,request));
+    }
+
+    private <T extends Entity> Flux<T> findChildGraphSearch(Connection connection,String tenantId, Class<? extends Entity> resourceType, String parentId, QueryRequest request) {
+        String sql = "with recursive node_cte(tenantId,resourceType,parentTenantId,parentTid,id,tid,entity,createdTime,updatedTime) as (" +
+                "select tn.tenantId,tn.resourceType,tn.parentTenantId,tn.parentTid,tn.id,tn.tid,tn.entity,tn.createdTime,tn.updatedTime" +
+                " from "+table.name()+" as tn where tn.tenantId = $1 and tn."+((parentId.startsWith("id-"))?"tid":"id") + " = $2 and resourceType = $3" +
+                " union all " +
+                "select c.tenantId,c.resourceType,c.parentTenantId,c.parentTid,c.id,c.tid,c.entity,c.createdTime,c.updatedTime from node_cte as p , "+table.name()+" as c " +
+                " where p.tid = c.parentTid )";
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+        String tenantId2 = tenantId == null ? "default" : tenantId;
+
+        String filter = "not(n.tenantId = $4 and n.resourceType = $5 and n."+(parentId.startsWith("id-")?"tid":"id") + " = $6)";
+        sql += " select * from node_cte as n where "+ (whereClause.isEmpty()? filter : whereClause + " and ("+filter+")") ;
+        sql += " order by "+orderBy + " limit "+request.getPageSize() + " offset "+ (request.getPageNum() * request.getPageSize());
+
+        String sql2 = sql;
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql2)
+                        .bind("$1", tenantId2)
+                        .bind("$2", parentId)
+                        .bind("$3",resourceType.getName())
+                        .bind("$4", tenantId2)
+                        .bind("$5", resourceType.getName())
+                        .bind("$6",parentId)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
+    }
+
+    private <T extends Entity> Flux<T> findParentGraphSearch(Connection connection, String tenantId,Class<? extends Entity> resourceType, String childId, QueryRequest request) {
+        String sql = "with recursive node_cte(tenantId,resourceType,parentTenantId,parentTid,id,tid,entity,createdTime,updatedTime) as (" +
+                "select tn.tenantId,tn.resourceType,tn.parentTenantId,tn.parentTid,tn.id,tn.tid,tn.entity,tn.createdTime,tn.updatedTime" +
+                " from "+table.name()+" as tn where tn.tenantId = $1 and tn."+((childId.startsWith("id-"))?"tid":"id") + " = $2 and resourceType = $3" +
+                " union all " +
+                "select c.tenantId,c.resourceType,c.parentTenantId,c.parentTid,c.id,c.tid,c.entity,c.createdTime,c.updatedTime from node_cte as p , "+table.name()+" as c " +
+                " where p.parentTid = c.tid )";
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+        String tenantId2 = tenantId == null ? "default" : tenantId;
+
+        String filter = "not(n.tenantId = $4 and n.resourceType = $5 and n."+(childId.startsWith("id-")?"tid":"id") + " = $6)";
+        sql += " select * from node_cte as n where "+ (whereClause.isEmpty()? filter : whereClause + " and ("+filter+")") ;
+        sql += " order by "+orderBy + " limit "+request.getPageSize() + " offset "+ (request.getPageNum() * request.getPageSize());
+
+        String sql2 = sql;
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql2)
+                        .bind("$1", tenantId2)
+                        .bind("$2", childId)
+                        .bind("$3",resourceType.getName())
+                        .bind("$4", tenantId2)
+                        .bind("$5", resourceType.getName())
+                        .bind("$6",childId)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
+    }
+
     private <T extends Entity> Flux<T> query(Connection connection, String tenantId, QueryRequest request) {
         PostgresSqlNode sqlNode = new PostgresSqlNode();
         String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
@@ -157,6 +224,13 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
 
     private <T extends Entity> ResultSet<T> toResultSet(long total, List<Entity> list, QueryRequest req) {
         return new com.cloudimpl.outstack.runtime.ResultSet(total, (int) Math.ceil(((double) total) / req.getPageSize()), req.getPageNum(), list);
+    }
+
+    @Override
+    public <T extends Entity> Mono<ResultSet> doPagination(Flux<T> flux, QueryRequest req)
+    {
+        return flux.collectList()
+                .map(list->new ResultSet((long)list.size(),(int) Math.ceil(((double) list.size()) / req.getPageSize()),req.getPageNum(),list.stream().skip(req.getPageNum() * req.getPageSize()).limit(req.getPageSize()).collect(Collectors.toList())));
     }
 
     public Mono<Long> getCount(Connection connection, String tenantId, String whereClause, boolean mergeNonTenant) {
