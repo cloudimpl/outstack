@@ -253,7 +253,7 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
                     .flatMap(it -> it.map((row, meta) -> (T) createEntity(row))).next();
 
         } else {
-            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("select  tid,resourceType,entity from " + table.name() + " where tenantId = $1 and resourceType = $2 and id = $3")
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() + " where tenantId = $1 and resourceType = $2 and id = $3")
                     .bind("$1", tenantId == null ? "default" : tenantId)
                     .bind("$2", resourceType.getName())
                     .bind("$3", id)
