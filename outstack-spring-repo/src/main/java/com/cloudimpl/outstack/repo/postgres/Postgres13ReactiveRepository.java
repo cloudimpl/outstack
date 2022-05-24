@@ -67,6 +67,11 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         ,conn->createChild(conn,parentTenantId,parentTid,tenantId,child)));
     }
 
+    @Override
+    public <T extends Entity> Mono<T> update(String tenantId, T entity, String id) {
+        return createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(table.config(), tenantId), conn->update(conn,tenantId,entity, id)));
+    }
+
     private <T extends Entity> Mono<T> createChild(Connection connection,String parentTenantId,String parentTid,String tenantId,T child)
     {
         Objects.requireNonNull(parentTid);
@@ -165,14 +170,36 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     }
 
-    private <T extends Entity> Mono<T> update(Connection connection,String tenantId,T entity)
+    private <T extends Entity> Mono<T> update(Connection connection,String tenantId,T entity, String id)
     {
-        return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set tenantId = $1 and resourceType = $3 and id = $2 returning tenantId,createdTime,updatedTime,tid,entity")
-                .bind("$1",tenantId == null ? "default":tenantId)
-                .bind("$2",entity.getClass().getName())
-                .bind("$3",entity.id())
-                .execute()).take(1).flatMap(it->it.map((row, meta) ->(T) (createEntity(row))))
-                .next();
+        String json = GsonCodec.encode(entity);
+        long time = System.currentTimeMillis();
+
+        if(id.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
+                    "where tid= $3 and tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                    .bind("$1", json)
+                    .bind("$2", time)
+                    .bind("$3", id)
+                    .bind("$4", tenantId == null ? "default":tenantId)
+                    .bind("$5", entity.getClass().getName())
+                    .execute()).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("entity not exist"))));
+
+        } else {
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
+                                    "where id= $3 tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                            .bind("$1", json)
+                            .bind("$2", time)
+                            .bind("$3", id)
+                            .bind("$4", tenantId == null ? "default":tenantId)
+                            .bind("$5", entity.getClass().getName())
+                            .execute()).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("entity not exist"))));
+        }
+
     }
 
     @Override
