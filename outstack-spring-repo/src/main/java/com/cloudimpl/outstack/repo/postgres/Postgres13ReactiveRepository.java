@@ -177,20 +177,24 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
         if(id.startsWith("id-")) {
             return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
-                    "where tid= $3 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                    "where tid= $3 and tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
                     .bind("$1", json)
                     .bind("$2", time)
                     .bind("$3", id)
+                    .bind("$4", tenantId)
+                    .bind("$5", entity.getClass().getName())
                     .execute()).take(1)
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
                     .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("entity not exist"))));
 
         } else {
             return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
-                                    "where id= $3 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                    "where id= $3 tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
                             .bind("$1", json)
                             .bind("$2", time)
                             .bind("$3", id)
+                            .bind("$4", tenantId)
+                            .bind("$5", entity.getClass().getName())
                             .execute()).take(1)
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
                     .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("entity not exist"))));
