@@ -7,7 +7,6 @@ import reactor.core.publisher.Mono;
 import java.util.Collection;
 
 public interface ReactiveEventRepository extends ReadOnlyReactiveEventRepository{
-
     <T extends Event> Mono<T> addEvent(String tenantId, T event);
     <T extends Event> Flux<T> addEvents(String tenantId, Collection<T> events);
     <T extends Event> Mono<T> updateEvent(String tenantId,String eventId, T event);
