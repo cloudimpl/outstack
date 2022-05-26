@@ -6,6 +6,10 @@ import com.cloudimpl.outstack.repo.EntityUtil;
 import com.cloudimpl.outstack.repo.QueryRequest;
 import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
 import com.cloudimpl.outstack.repo.core.Repository;
+import com.cloudimpl.outstack.repo.core.geo.GeoUtil;
+import com.cloudimpl.outstack.repo.core.geo.Point;
+import com.cloudimpl.outstack.repo.core.geo.Polygon;
+import com.cloudimpl.outstack.repo.core.geo.ReactiveGeoQueryRepository;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.util.Util;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
@@ -18,7 +22,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Postgres13ReadOnlyReactiveRepository extends Repository implements ReadOnlyReactiveRepository {
+public class Postgres13ReadOnlyReactiveRepository extends Repository implements ReadOnlyReactiveRepository, ReactiveGeoQueryRepository {
 
     @Override
     public <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id) {
@@ -253,5 +257,69 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
     @Override
     protected Mono<Void> initTables() {
         return Mono.just(this).then();
+    }
+
+    @Override
+    public <T> Flux<T> findEntitiesWithinBoundaryWithType(String tenantId, Class<T> type, Polygon polygon, QueryRequest request) {
+        QueryRequest request2 = QueryRequest.builder().query(request.getQuery().isEmpty()?" _resourceType = '"+type.getName():request.getQuery() + "' and _resourceType = '"+type.getName()+"'")
+                .orderBy(request.getOrderBy())
+                .pageNum(request.getPageNum())
+                .pageSize(request.getPageSize())
+                .build();
+        return findEntitiesWithinBoundary(tenantId,polygon,request2);
+    }
+
+    @Override
+    public <T> Flux<T> findEntitiesWithinBoundary(String tenantId, Polygon polygon, QueryRequest request) {
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findEntitiesWithinBoundary(connection,tenantId,polygon
+        ,request));
+    }
+
+    private <T> Flux<T> findEntitiesWithinBoundary(Connection connection,String tenantId,Polygon polygon,QueryRequest request){
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+        String tenantId2 = tenantId == null ? "default" : tenantId;
+
+        String sql = "select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() +
+                "where ST_within(geom::geometry, ST_GeomFromText($1)) and tenantId = $2"+(whereClause.isEmpty()?"":" and ".concat(whereClause))
+        +" order by " + orderBy + " limit " + request.getPageSize() + " offset " + (request.getPageNum() * request.getPageSize());
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
+                        .bind("$1", GeoUtil.convertToGeo(polygon))
+                        .bind("$2", tenantId2)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
+    }
+
+    @Override
+    public <T> Flux<T> findClosestBoundEntitiesForPoint(String tenantId, Point point, QueryRequest request){
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findClosestBoundEntitiesForPoint(connection,tenantId,point
+                ,request));
+    }
+
+    private <T> Flux<T> findClosestBoundEntitiesForPoint(Connection connection,String tenantId, Point point, QueryRequest request) {
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "ST_AREA(geom) , createdTime" : "ST_AREA(geom) , ".concat(new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+        String tenantId2 = tenantId == null ? "default" : tenantId;
+
+        String sql = "select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() +
+                "where ST_within(ST_GeomFromText($1), geom::geometry) and tenantId = $2"+(whereClause.isEmpty()?"":" and ".concat(whereClause))
+                +" order by " + orderBy + " limit " + request.getPageSize() + " offset " + (request.getPageNum() * request.getPageSize());
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
+                        .bind("$1", GeoUtil.convertToGeo(point))
+                        .bind("$2", tenantId2)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
+    }
+
+    @Override
+    public <T> Flux<T> findClosestBoundEntitiesForPointWithType(String tenantId, Class<T> type, Point point, QueryRequest request) {
+        QueryRequest request2 = QueryRequest.builder().query(request.getQuery().isEmpty()?" _resourceType = '"+type.getName()+"'": request.getQuery().concat(" and _resourceType = '"+type.getName()+"'"))
+                .orderBy(request.getOrderBy())
+                .pageNum(request.getPageNum())
+                .pageSize(request.getPageSize())
+                .build();
+        return findClosestBoundEntitiesForPoint(tenantId,point,request2);
     }
 }

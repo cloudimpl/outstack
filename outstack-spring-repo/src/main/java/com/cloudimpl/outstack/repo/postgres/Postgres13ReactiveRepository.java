@@ -3,16 +3,25 @@ package com.cloudimpl.outstack.repo.postgres;
 import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.repo.Entity;
 import com.cloudimpl.outstack.repo.EntityUtil;
+import com.cloudimpl.outstack.repo.QueryRequest;
 import com.cloudimpl.outstack.repo.RepoException;
 import com.cloudimpl.outstack.repo.RepoUtil;
 import com.cloudimpl.outstack.repo.core.ReactiveRepository;
+import com.cloudimpl.outstack.repo.core.geo.GeoEntity;
+import com.cloudimpl.outstack.repo.core.geo.GeoMetry;
+import com.cloudimpl.outstack.repo.core.geo.GeoUtil;
+import com.cloudimpl.outstack.repo.core.geo.Point;
+import com.cloudimpl.outstack.repo.core.geo.Polygon;
 import io.r2dbc.spi.Connection;
+import io.r2dbc.spi.Statement;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import javax.annotation.PostConstruct;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 //|tenantId,resourceType,parentTenantId,parentTid,id,tid,entity,createdDate,updatedDate
 public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepository implements ReactiveRepository {
@@ -45,73 +54,110 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     @Override
     public <T extends Entity> Mono<T> update(String tenantId, T entity, String id) {
-        return createTenantIfNotExist(tenantId).flatMap(it->it.executeMono(config.connectionFromPool(table.config(), tenantId), conn->update(conn,tenantId,entity, id)));
+        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> update(conn, tenantId, entity, id)));
     }
 
-    private <T extends Entity> Mono<T> createChild(Connection connection,String parentTenantId,String parentTid,String tenantId,T child)
-    {
+    private void checkGeoEntity(Object child) {
+        if (child instanceof GeoEntity) {
+            if (!table.enableGeo()) {
+                throw new RepoException("GeoEntity not supported for non geo tables");
+            }
+        }
+    }
+
+    private <T extends Entity> Mono<T> createChild(Connection connection, String parentTenantId, String parentTid, String tenantId, T child) {
         Objects.requireNonNull(parentTid);
+        checkGeoEntity(child);
         String json = GsonCodec.encode(child);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
         String parentTenantId2 = parentTenantId == null ? "default" : parentTenantId;
         String tenantId2 = tenantId == null ? "default" : tenantId;
 
-        return Mono.just(connection).flatMapMany(conn -> conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,parentTenantId,parentTid,uniqueId,id,tid,entity,createdTime,updatedTime) " +
-                                "select $1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" +
-                                "where exists (select tid from " + table.name() + " where tenantId = $11 and tid = $12) " +
-                                "on conflict (tenantId,resourceType,id) do nothing returning tid ")
-                        .bind("$1", tenantId2)
-                        .bind("$2", child.getClass().getName())
-                        .bind("$3", parentTenantId2)
-                        .bind("$4", parentTid)
-                        .bind("$5", parentTid + "/" + child.id())
-                        .bind("$6", child.id())
-                        .bind("$7", tid)
-                        .bind("$8", json)
-                        .bind("$9", time)
-                        .bind("$10", time)
-                        .bind("$11", parentTenantId2)
-                        .bind("$12", parentTid)
-                        .execute()).take(1).flatMap(it -> it.map((row, meta) -> row.get("tid", String.class)))
+        boolean geoApplicable = table.enableGeo() && child instanceof GeoEntity;
+        String sql = "insert into " + table.name() + " as tab(tenantId,resourceType,parentTenantId,parentTid,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") " +
+                "select $1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$13 " : " ") +
+                "where exists (select tid from " + table.name() + " where tenantId = $11 and tid = $12) " +
+                "on conflict (tenantId,resourceType,id) do nothing returning tid ";
+
+        return Mono.just(connection).flatMapMany(conn -> {
+                    Statement stmt = conn.createStatement(sql)
+                            .bind("$1", tenantId2)
+                            .bind("$2", child.getClass().getName())
+                            .bind("$3", parentTenantId2)
+                            .bind("$4", parentTid)
+                            .bind("$5", parentTid + "/" + child.id())
+                            .bind("$6", child.id())
+                            .bind("$7", tid)
+                            .bind("$8", json)
+                            .bind("$9", time)
+                            .bind("$10", time)
+                            .bind("$11", parentTenantId2)
+                            .bind("$12", parentTid);
+                    if (geoApplicable) {
+                        GeoMetry geo = GeoEntity.class.cast(child).getGeom();
+                        stmt.bind("$13", GeoUtil.convertToGeo(geo));
+                    }
+                    return stmt.execute();
+
+                }).take(1).flatMap(it -> it.map((row, meta) -> row.get("tid", String.class)))
                 .map(it -> (T) EntityUtil.with(child, it, tenantId, time, time)).next()
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity already exist or parent not found"))));
     }
 
+
+
     private <T extends Entity> Mono<T> create(Connection connection, String tenantId, T entity) {
+        checkGeoEntity(entity);
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
-        return Mono.just(connection).flatMapMany(conn -> conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime) values($1,$2,$3,$4,$5,$6::JSON,$7,$8) on conflict (tenantId,resourceType,id) do nothing returning tid")
-                        .bind("$1", tenantId == null ? "default" : tenantId)
-                        .bind("$2", entity.getClass().getName())
-                        .bind("$3", entity.id())
-                        .bind("$4", entity.id())
-                        .bind("$5", tid)
-                        .bind("$6", json)
-                        .bind("$7", time)
-                        .bind("$8", time)
-                        .execute()).take(1).flatMap(it -> it.map((row, meta) -> row.get("tid", String.class)))
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
+        return Mono.just(connection).flatMapMany(conn -> {
+                            Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$9" : "") + ") on conflict (tenantId,resourceType,id) do nothing returning tid")
+                                    .bind("$1", tenantId == null ? "default" : tenantId)
+                                    .bind("$2", entity.getClass().getName())
+                                    .bind("$3", entity.id())
+                                    .bind("$4", entity.id())
+                                    .bind("$5", tid)
+                                    .bind("$6", json)
+                                    .bind("$7", time)
+                                    .bind("$8", time);
+                            if (geoApplicable) {
+                                GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                                stmt.bind("$9", GeoUtil.convertToGeo(geo));
+                            }
+                            return stmt.execute();
+                        }
+                ).take(1).flatMap(it -> it.map((row, meta) -> row.get("tid", String.class)))
                 .map(it -> (T) EntityUtil.with(entity, it, tenantId, time, time)).next()
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity already exist"))));
     }
 
     private <T extends Entity> Mono<T> createOrUpdate(Connection connection, String tenantId, T entity) {
+        checkGeoEntity(entity);
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
-        return Mono.just(connection).flatMapMany(conn -> conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,id,tid,entity,createdTime,updatedTime) values($1,$2,$3,$4,$5::JSON,$6,$7) on conflict (tenantId,resourceType,id) do update set " +
-                                "entity = $8::JSON , updatedTime = $9 returning tid,createdTime,updatedTime")
-                        .bind("$1", tenantId == null ? "default" : tenantId)
-                        .bind("$2", entity.getClass().getName())
-                        .bind("$3", entity.id())
-                        .bind("$4", tid)
-                        .bind("$5", json)
-                        .bind("$6", time)
-                        .bind("$7", time)
-                        .bind("$8", json)
-                        .bind("$9", time)
-                        .execute()).take(1)
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
+        return Mono.just(connection).flatMapMany(conn -> {
+                    Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5::JSON,$6,$7) on conflict (tenantId,resourceType,id) do update set " +
+                                    "entity = $8::JSON , updatedTime = $9" + (geoApplicable ? " , geom = $10" : "") + " returning tid,createdTime,updatedTime")
+                            .bind("$1", tenantId == null ? "default" : tenantId)
+                            .bind("$2", entity.getClass().getName())
+                            .bind("$3", entity.id())
+                            .bind("$4", tid)
+                            .bind("$5", json)
+                            .bind("$6", time)
+                            .bind("$7", time)
+                            .bind("$8", json)
+                            .bind("$9", time);
+                    if (geoApplicable) {
+                        GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                        stmt.bind("$10", GeoUtil.convertToGeo(geo));
+                    }
+                    return stmt.execute();
+                }).take(1)
                 .flatMap(it -> it.map((row, meta) -> EntityUtil.with(entity
                         , row.get("tid", String.class), tenantId
                         , row.get("createdTime", Long.class)
@@ -144,34 +190,48 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     }
 
-    private <T extends Entity> Mono<T> update(Connection connection,String tenantId,T entity, String id)
-    {
+    private <T extends Entity> Mono<T> update(Connection connection, String tenantId, T entity, String id) {
+        checkGeoEntity(entity);
         String json = GsonCodec.encode(entity);
         long time = System.currentTimeMillis();
-
-        if(id.startsWith("id-")) {
-            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
-                    "where tid= $3 and tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
-                    .bind("$1", json)
-                    .bind("$2", time)
-                    .bind("$3", id)
-                    .bind("$4", tenantId == null ? "default":tenantId)
-                    .bind("$5", entity.getClass().getName())
-                    .execute()).take(1)
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
+        if (id.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> {
+                        Statement stmt = conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
+                                        (geoApplicable ? " , geom = $6" : "") +
+                                        "where tid= $3 and tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                .bind("$1", json)
+                                .bind("$2", time)
+                                .bind("$3", id)
+                                .bind("$4", tenantId == null ? "default" : tenantId)
+                                .bind("$5", entity.getClass().getName());
+                        if (geoApplicable) {
+                            GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                            stmt.bind("$6", GeoUtil.convertToGeo(geo));
+                        }
+                        return stmt.execute();
+                    }).take(1)
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
-                    .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("entity not exist"))));
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
 
         } else {
-            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
-                                    "where id= $3 tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
-                            .bind("$1", json)
-                            .bind("$2", time)
-                            .bind("$3", id)
-                            .bind("$4", tenantId == null ? "default":tenantId)
-                            .bind("$5", entity.getClass().getName())
-                            .execute()).take(1)
+            return Mono.just(connection).flatMapMany(conn -> {
+                        Statement stmt = conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
+                                        (geoApplicable ? " , geom = $6" : "") +
+                                        "where id= $3 tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                .bind("$1", json)
+                                .bind("$2", time)
+                                .bind("$3", id)
+                                .bind("$4", tenantId == null ? "default" : tenantId)
+                                .bind("$5", entity.getClass().getName());
+                        if (geoApplicable) {
+                            GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                            stmt.bind("$6", GeoUtil.convertToGeo(geo));
+                        }
+                        return stmt.execute();
+                    }).take(1)
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
-                    .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("entity not exist"))));
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
         }
 
     }
@@ -217,6 +277,26 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     protected Mono<Void> initTables() {
 
         return createEntityTable(table.name()).then();
+    }
+
+    @Override
+    public <T> Flux<T> findEntitiesWithinBoundaryWithType(String tenantId, Class<T> type, Polygon polygon, QueryRequest request) {
+        return null;
+    }
+
+    @Override
+    public <T> Flux<T> findEntitiesWithinBoundary(String tenantId, Polygon polygon, QueryRequest request) {
+        return null;
+    }
+
+    @Override
+    public <T> Flux<T> findClosestBoundEntitiesForPoint(String tenantId, Point point, QueryRequest request) {
+        return null;
+    }
+
+    @Override
+    public <T> Flux<T> findClosestBoundEntitiesForPointWithType(String tenantId, Class<T> type, Point point, QueryRequest request) {
+        return null;
     }
 
 //    private <T extends Entity> Mono<Postgres13ReactiveRepository> createAuditTable(String tableName) {
