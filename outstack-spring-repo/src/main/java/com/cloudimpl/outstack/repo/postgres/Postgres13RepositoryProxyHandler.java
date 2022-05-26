@@ -2,7 +2,10 @@ package com.cloudimpl.outstack.repo.postgres;
 
 
 import com.cloudimpl.outstack.repo.RepoUtil;
+import com.cloudimpl.outstack.repo.core.ReactiveEventRepository;
 import com.cloudimpl.outstack.repo.core.ReactiveRepository;
+import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
+import com.cloudimpl.outstack.repo.core.Repository;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
 import java.lang.reflect.InvocationHandler;
@@ -11,19 +14,27 @@ import java.lang.reflect.Method;
 public class Postgres13RepositoryProxyHandler implements InvocationHandler {
 
     private final Class<?> targetType;
-    private final Object repoInstance;
+    private final Repository repoInstance;
     public Postgres13RepositoryProxyHandler(Class<?> targetType, AutowireCapableBeanFactory beanFactory)
     {
         this.targetType = targetType;
         if(ReactiveRepository.class.isAssignableFrom(targetType))
         {
             repoInstance = new Postgres13ReactiveRepository();
-        }else {
+        }else if(ReadOnlyReactiveRepository.class.isAssignableFrom(targetType)) {
             repoInstance = new Postgres13ReadOnlyReactiveRepository();
         }
-        Postgres13ReadOnlyReactiveRepository.class.cast(repoInstance).setTable(RepoUtil.getRepoMeta(this.targetType,true));
+        else if(ReactiveEventRepository.class.isAssignableFrom(targetType))
+        {
+            repoInstance = new Postgres13ReactiveEventRepository();
+        }
+        else
+        {
+            repoInstance = new Postgres13ReadOnlyReactiveEventRepository();
+        }
+        repoInstance.setTable(RepoUtil.getRepoMeta(this.targetType,true));
         beanFactory.autowireBean(repoInstance);
-        Postgres13ReadOnlyReactiveRepository.class.cast(repoInstance).init();
+        beanFactory.initializeBean(repoInstance,repoInstance.getClass().getName());
     }
 
 

@@ -4,50 +4,21 @@ import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.repo.Entity;
 import com.cloudimpl.outstack.repo.EntityUtil;
 import com.cloudimpl.outstack.repo.QueryRequest;
-import com.cloudimpl.outstack.repo.RepoUtil;
-import com.cloudimpl.outstack.repo.SafeExecute;
-import com.cloudimpl.outstack.repo.Table;
 import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
+import com.cloudimpl.outstack.repo.core.Repository;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.util.Util;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
 import io.r2dbc.postgresql.codec.Json;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Row;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRepository {
-    @Autowired
-    protected ReactivePostgresConfig config;
-
-    @Autowired
-    @Qualifier("ioSchedular")
-    protected Scheduler ioScheduler;
-
-    protected Table table;
-
-    public Postgres13ReadOnlyReactiveRepository() {
-        table = RepoUtil.getRepoMeta(this.getClass(),false);
-    }
-
-    protected void setTable(Table table)
-    {
-        this.table = table;
-    }
-
-    protected void init() {
-
-    }
+public class Postgres13ReadOnlyReactiveRepository extends Repository implements ReadOnlyReactiveRepository {
 
     @Override
     public <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id) {
@@ -278,49 +249,9 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
 //                .execute()).flatMap(it -> it.map((row, meta) -> ((T) GsonCodec.decode(Util.classForName(row.get("resourceType", String.class)), row.get("entity", Json.class).asString())).withTid(row.get("tid", String.class))));
 //    }
 
-    protected <T extends Postgres13ReadOnlyReactiveRepository> Mono<T> initTables() {
-        return Mono.just((T) this);
-    }
 
-    protected <T extends Postgres13ReadOnlyReactiveRepository> Mono<T> createTenantIfNotExist(String tenantId) {
-        return Mono.just((T) this);
-    }
-
-    protected <T> Mono<T> executeMono(Supplier<Mono<Connection>> supplier, Function<Connection, Mono<T>> function) {
-        SafeExecute safeAction = new SafeExecute();
-        return supplier.get()
-                .flatMap(connection -> Mono.from(connection.setAutoCommit(false))
-                        .thenReturn(connection))
-                .flatMap(connection -> Mono.from(connection.beginTransaction()).thenReturn(connection))
-                // .flatMap(connection -> Mono.from(connection.setAutoCommit(true))
-                //          .flatMap(v -> initTables().map(repo -> v))
-                .flatMap(connection -> function.apply(connection)
-                        .flatMap(v -> Mono.from(connection.commitTransaction()).thenReturn(v))
-                        .doOnError(err -> err.printStackTrace())
-                        .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                        .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe())))
-                .publishOn(ioScheduler);
-    }
-
-    protected <T> Mono<T> executeTxMono(Supplier<Mono<Connection>> supplier, Function<Connection, Mono<T>>... functions) {
-        SafeExecute safeAction = new SafeExecute();
-        return supplier.get()
-                .flatMap(connection -> Mono.from(connection.setAutoCommit(false)).map(v -> connection))
-                .flatMap(connection -> Mono.from(connection.beginTransaction()).map(v -> connection))
-                .flatMap(connection -> Flux.fromIterable(Arrays.asList(functions))
-                        .flatMap(func -> func.apply(connection)).last()
-                        .doOnError(err -> err.printStackTrace())
-                        .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                        .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                ).publishOn(ioScheduler);
-    }
-
-    protected <T> Flux<T> executeFlux(Supplier<Mono<Connection>> supplier, Function<Connection, Flux<T>> function) {
-        SafeExecute safeAction = new SafeExecute();
-        return supplier.get()
-                .flatMapMany(connection -> function.apply(connection)
-                        .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                        .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe())))
-                .publishOn(ioScheduler);
+    @Override
+    protected Mono<Void> initTables() {
+        return Mono.just(this).then();
     }
 }
