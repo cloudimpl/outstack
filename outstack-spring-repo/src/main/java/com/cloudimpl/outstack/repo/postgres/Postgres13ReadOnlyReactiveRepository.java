@@ -1,12 +1,7 @@
 package com.cloudimpl.outstack.repo.postgres;
 
 import com.cloudimpl.outstack.common.GsonCodec;
-import com.cloudimpl.outstack.repo.Entity;
-import com.cloudimpl.outstack.repo.EntityUtil;
-import com.cloudimpl.outstack.repo.QueryRequest;
-import com.cloudimpl.outstack.repo.RepoUtil;
-import com.cloudimpl.outstack.repo.SafeExecute;
-import com.cloudimpl.outstack.repo.Table;
+import com.cloudimpl.outstack.repo.*;
 import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.util.Util;
@@ -22,6 +17,7 @@ import reactor.core.scheduler.Scheduler;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -231,6 +227,40 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
     {
         return flux.collectList()
                 .map(list->new ResultSet((long)list.size(),(int) Math.ceil(((double) list.size()) / req.getPageSize()),req.getPageNum(),list.stream().skip(req.getPageNum() * req.getPageSize()).limit(req.getPageSize()).collect(Collectors.toList())));
+    }
+
+    @Override
+    public <T extends Entity> Mono<T> findParent(String tenantId, Class<? extends Entity> resourceType, String id) {
+        return executeMono(config.connectionFromPool(table.config(), tenantId), connection -> findParent(connection, tenantId, resourceType, id));
+    }
+
+    private <T extends Entity> Mono<T> findParent(Connection connection, String tenantId, Class<? extends Entity> resourceType, String id) {
+
+        if (id.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement(
+                    "select tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() + " where tenantId = $1 and resourceType = $2 and tid =" +
+                            "(select parenttid from " + table.name() + " where tenantId = $1 and resourceType = $2 and tid = $3 )")
+                            .bind("$1", tenantId == null ? "default" : tenantId)
+                            .bind("$2", resourceType.getName())
+                            .bind("$3", id)
+                            .execute()).take(1)
+                            .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)))
+                    .next()
+                    .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("No parent or parent not found"))));
+
+        } else {
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement(
+                                    "select tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() + " where tenantId = $1 and resourceType = $2 and tid =" +
+                                            "(select parenttid from " + table.name() + " where tenantId = $1 and resourceType = $2 and id = $3 )")
+                            .bind("$1", tenantId == null ? "default" : tenantId)
+                            .bind("$2", resourceType.getName())
+                            .bind("$3", id)
+                            .execute()).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)))
+                    .next()
+                    .switchIfEmpty(Mono.defer(()->Mono.error(new RepoException("No parent or parent not found"))));
+
+        }
     }
 
     public Mono<Long> getCount(Connection connection, String tenantId, String whereClause, boolean mergeNonTenant) {

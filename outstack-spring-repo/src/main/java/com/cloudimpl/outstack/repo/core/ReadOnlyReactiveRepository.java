@@ -20,4 +20,5 @@ public interface ReadOnlyReactiveRepository extends Repository<Object,String> {
     <T extends Entity> Flux<T> findParentGraphSearch(String tenantId,Class<? extends Entity> resourceType, String childId, QueryRequest request);
     <T extends Entity> Flux<T> findChildGraphSearch(String tenantId,Class<? extends Entity> resourceType,String parentId,QueryRequest request);
     <T extends Entity> Mono<ResultSet> doPagination(Flux<T> flux, QueryRequest req);
+    <T extends Entity> Mono<T> findParent(String tenantId, Class<? extends Entity> resourceType, String id);
 }
