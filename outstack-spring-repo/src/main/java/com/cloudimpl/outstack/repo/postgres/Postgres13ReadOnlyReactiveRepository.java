@@ -32,7 +32,7 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
     @Override
     public <T extends Entity> Flux<T> queryByType(String tenantId, Class<T> resourceType, QueryRequest request) {
         QueryRequest request2 = QueryRequest.builder()
-                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
+                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" :request.getQuery() + " and _resourceType = '" + resourceType.getName() + "'")
                 .orderBy(request.getOrderBy())
                 .pageNum(request.getPageNum())
                 .pageSize(request.getPageSize())
@@ -44,7 +44,7 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
     @Override
     public <T extends Entity> Mono<ResultSet<T>> queryByTypeWithPagination(String tenantId, Class<T> resourceType, QueryRequest request) {
         QueryRequest request2 = QueryRequest.builder()
-                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
+                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" :request.getQuery() + " and _resourceType = '" + resourceType.getName() + "'")
                 .orderBy(request.getOrderBy())
                 .pageNum(request.getPageNum())
                 .pageSize(request.getPageSize())
