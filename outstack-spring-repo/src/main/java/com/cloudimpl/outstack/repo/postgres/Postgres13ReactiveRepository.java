@@ -79,7 +79,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         String sql = "insert into " + table.name() + " as tab(tenantId,resourceType,parentTenantId,parentTid,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") " +
                 "select $1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$13 " : " ") +
                 "where exists (select tid from " + table.name() + " where tenantId = $11 and tid = $12) " +
-                "on conflict (tenantId,resourceType,id) do nothing returning tid ";
+                "on conflict (tenantId,resourceType,uniqueId) do nothing returning tid ";
 
         return Mono.just(connection).flatMapMany(conn -> {
                     Statement stmt = conn.createStatement(sql)
@@ -142,8 +142,8 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         long time = System.currentTimeMillis();
         boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
         return Mono.just(connection).flatMapMany(conn -> {
-                    Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8) on conflict (tenantId,resourceType,uniqueId) do update set " +
-                                    "entity = $9::JSON , updatedTime = $10" + (geoApplicable ? " , geom = $11" : "") + " returning tid,createdTime,updatedTime")
+                    Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$11" : "") + ") on conflict (tenantId,resourceType,uniqueId) do update set " +
+                                    "entity = $9::JSON , updatedTime = $10" + (geoApplicable ? " , geom = $12" : "") + " returning tid,createdTime,updatedTime")
                             .bind("$1", tenantId == null ? "default" : tenantId)
                             .bind("$2", entity.getClass().getName())
                             .bind("$3", entity.id())
@@ -157,6 +157,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     if (geoApplicable) {
                         GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
                         stmt.bind("$11", GeoUtil.convertToGeo(geo));
+                        stmt.bind("$12", GeoUtil.convertToGeo(geo));
                     }
                     return stmt.execute();
                 }).take(1)
