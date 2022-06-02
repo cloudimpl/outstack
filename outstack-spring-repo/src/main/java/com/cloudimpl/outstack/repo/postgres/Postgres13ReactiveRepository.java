@@ -42,8 +42,9 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> createOrUpdate(conn, tenantId, entity)));
     }
 
-    public Mono<Void> delete(String tenantId, Class<? extends Entity> resourceType, String id) {
-        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> delete(conn, tenantId, resourceType, id))).then();
+    @Override
+    public <T extends Entity> Mono<T> delete(String tenantId, Class<T> resourceType, String id) {
+        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> delete(conn, tenantId, resourceType, id)));
     }
 
     @Override
@@ -114,7 +115,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         long time = System.currentTimeMillis();
         boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
         return Mono.just(connection).flatMapMany(conn -> {
-                            Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$9" : "") + ") on conflict (tenantId,resourceType,id) do nothing returning tid")
+                            Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$9" : "") + ") on conflict (tenantId,resourceType,uniqueId) do nothing returning tid")
                                     .bind("$1", tenantId == null ? "default" : tenantId)
                                     .bind("$2", entity.getClass().getName())
                                     .bind("$3", entity.id())
@@ -141,28 +142,31 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         long time = System.currentTimeMillis();
         boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
         return Mono.just(connection).flatMapMany(conn -> {
-                    Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5::JSON,$6,$7) on conflict (tenantId,resourceType,id) do update set " +
-                                    "entity = $8::JSON , updatedTime = $9" + (geoApplicable ? " , geom = $10" : "") + " returning tid,createdTime,updatedTime")
+                    Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8) on conflict (tenantId,resourceType,uniqueId) do update set " +
+                                    "entity = $9::JSON , updatedTime = $10" + (geoApplicable ? " , geom = $11" : "") + " returning tid,createdTime,updatedTime")
                             .bind("$1", tenantId == null ? "default" : tenantId)
                             .bind("$2", entity.getClass().getName())
                             .bind("$3", entity.id())
-                            .bind("$4", tid)
-                            .bind("$5", json)
-                            .bind("$6", time)
+                            .bind("$4", entity.id())
+                            .bind("$5", tid)
+                            .bind("$6", json)
                             .bind("$7", time)
-                            .bind("$8", json)
-                            .bind("$9", time);
+                            .bind("$8", time)
+                            .bind("$9", json)
+                            .bind("$10", time);
                     if (geoApplicable) {
                         GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
-                        stmt.bind("$10", GeoUtil.convertToGeo(geo));
+                        stmt.bind("$11", GeoUtil.convertToGeo(geo));
                     }
                     return stmt.execute();
                 }).take(1)
-                .flatMap(it -> it.map((row, meta) -> EntityUtil.with(entity
-                        , row.get("tid", String.class), tenantId
-                        , row.get("createdTime", Long.class)
-                        , row.get("updatedTime", Long.class)
-                )))
+                .flatMap(it -> it.map((row, meta) -> {
+                    return EntityUtil.with(entity
+                            , row.get("tid", String.class), tenantId
+                            , row.get("createdTime", Long.class)
+                            , row.get("updatedTime", Long.class)
+                    );
+                }))
                 .map(it -> (T) entity).next();
     }
 
@@ -179,7 +183,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist or child entity attached to it"))));
         } else {
             return Mono.just(connection).flatMapMany(conn -> conn.createStatement("delete from " + table.name() + " as x where x.tenantId = $1 and x.resourceType = $2 and x.id = $3 " +
-                                    " and not exists (select 1 from " + table.name() + " as k where k.parentTenantId = x.tenantId and parentTid = x.tid )" +
+                                    " and not exists (select 1 from " + table.name() + " as k where k.parentTenantId = x.tenantId and k.parentTid = x.tid )" +
                                     "returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
                             .bind("$1", tenantId == null ? "default" : tenantId)
                             .bind("$2", resourceType.getName())

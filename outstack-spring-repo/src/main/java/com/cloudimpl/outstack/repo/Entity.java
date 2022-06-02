@@ -10,49 +10,48 @@ public abstract class Entity {
     private String parentTid;
     private transient Field idField;
     private Meta meta;
-    public Entity(){
 
-        this.idField  = RepoUtil.getIdField(this.getClass());
+    public Entity() {
+        this(true);
+    }
+
+    public Entity(boolean extractId) {
+        if (extractId) {
+            this.idField = RepoUtil.getIdField(this.getClass());
+        }
         this.meta = new Meta();
     }
 
-    public String getTid()
-    {
-        if(tid == null)
-        {
+    public String getTid() {
+        if (tid == null) {
             throw new RepoException("tid is null");
         }
         return tid;
     }
 
-    public Meta getMeta()
-    {
-        if(meta == null)
-        {
+    public Meta getMeta() {
+        if (meta == null) {
             meta = new Meta();
         }
         return meta;
     }
 
-    public String id()
-    {
-        return RepoUtil.getValue(this,idField);
+    public String id() {
+        return RepoUtil.getValue(this, idField);
     }
 
-    public Optional<String> getParentTid(){
+    public Optional<String> getParentTid() {
         return Optional.ofNullable(parentTid);
     }
 
-    protected <T extends Entity> T withTid(String tid)
-    {
+    protected <T extends Entity> T withTid(String tid) {
         this.tid = tid;
-        return (T)this;
+        return (T) this;
     }
 
-    protected <T extends Entity> T setParentTid(String tid)
-    {
+    protected <T extends Entity> T setParentTid(String tid) {
         this.tid = tid;
-        return (T)this;
+        return (T) this;
     }
 
     @Override
@@ -68,59 +67,48 @@ public abstract class Entity {
         return Objects.hash(tid);
     }
 
-    public  final class Meta
-    {
+    public final class Meta {
         private String tenantId;
         private long createdTime;
         private long updatedTime;
 
-        private Meta()
-        {
+        private Meta() {
 
         }
 
-        protected Meta withTenantId(String tenantId)
-        {
-            if(tenantId != null && tenantId.equals("default"))
-            {
+        protected Meta withTenantId(String tenantId) {
+            if (tenantId != null && tenantId.equals("default")) {
                 this.tenantId = null;
-            }else
-            {
+            } else {
                 this.tenantId = tenantId;
             }
             return this;
         }
 
-        protected Meta withCreatedTime(long createdTime)
-        {
+        protected Meta withCreatedTime(long createdTime) {
             this.createdTime = createdTime;
             return this;
         }
 
-        protected Meta withUpdatedTime(long updatedTime)
-        {
+        protected Meta withUpdatedTime(long updatedTime) {
             this.updatedTime = updatedTime;
             return this;
         }
 
-        public String getTenantId()
-        {
+        public String getTenantId() {
             return tenantId;
         }
 
-        public long getCreatedTime()
-        {
+        public long getCreatedTime() {
             return this.createdTime;
         }
 
-        public long getUpdatedTime()
-        {
+        public long getUpdatedTime() {
             return this.updatedTime;
         }
 
 
-        public <T extends Entity> T  entity()
-        {
+        public <T extends Entity> T entity() {
             return (T) Entity.this;
         }
 
