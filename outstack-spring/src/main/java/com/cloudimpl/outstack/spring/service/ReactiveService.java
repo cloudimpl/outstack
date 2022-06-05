@@ -14,6 +14,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -29,8 +30,7 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
     public ReactiveService() {
         factory = Validation.buildDefaultValidatorFactory();
         this.validator = this.factory.getValidator();
-        declaredMethods = Arrays.stream(getClass().getDeclaredMethods())
-                .collect(Collectors.toMap(method -> method.getName(), method -> method));
+        declaredMethods = extractHandlers(new HashMap<>(),getClass());
     }
 
     @SneakyThrows
@@ -82,5 +82,20 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
         } else {
             return Mono.just(returnObject);
         }
+    }
+
+    private Map<String, Method> extractHandlers(Map<String, Method> declaredMethods,Class cls)
+    {
+        Map<String, Method>  methods = Arrays.stream(cls.getDeclaredMethods())
+                .filter(m->m.getAnnotation(ReactiveHandler.class) != null)
+                .collect(Collectors.toMap(method -> method.getName(), method -> method));
+        declaredMethods.putAll(methods);
+        cls = cls.getSuperclass();
+        if(cls == ReactiveService.class)
+        {
+            return declaredMethods;
+        }
+        extractHandlers(declaredMethods,cls);
+        return declaredMethods;
     }
 }

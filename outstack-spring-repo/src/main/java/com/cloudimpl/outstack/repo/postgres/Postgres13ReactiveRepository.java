@@ -46,8 +46,9 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> createOrUpdate(conn, tenantId, entity)));
     }
 
-    public Mono<Void> delete(String tenantId, Class<? extends Entity> resourceType, String id) {
-        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> delete(conn, tenantId, resourceType, id))).then();
+    @Override
+    public <T extends Entity> Mono<T> delete(String tenantId, Class<T> resourceType, String id) {
+        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> delete(conn, tenantId, resourceType, id)));
     }
 
     @Override
@@ -165,11 +166,13 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     }
                     return stmt.execute();
                 }).take(1)
-                .flatMap(it -> it.map((row, meta) -> EntityUtil.with(entity
-                        , row.get("tid", String.class), tenantId
-                        , row.get("createdTime", Long.class)
-                        , row.get("updatedTime", Long.class)
-                )))
+                .flatMap(it -> it.map((row, meta) -> {
+                    return EntityUtil.with(entity
+                            , row.get("tid", String.class), tenantId
+                            , row.get("createdTime", Long.class)
+                            , row.get("updatedTime", Long.class)
+                    );
+                }))
                 .map(it -> (T) entity).next();
     }
 
@@ -186,7 +189,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist or child entity attached to it"))));
         } else {
             return Mono.just(connection).flatMapMany(conn -> conn.createStatement("delete from " + table.name() + " as x where x.tenantId = $1 and x.resourceType = $2 and x.id = $3 " +
-                                    " and not exists (select 1 from " + table.name() + " as k where k.parentTenantId = x.tenantId and parentTid = x.tid )" +
+                                    " and not exists (select 1 from " + table.name() + " as k where k.parentTenantId = x.tenantId and k.parentTid = x.tid )" +
                                     "returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
                             .bind("$1", tenantId == null ? "default" : tenantId)
                             .bind("$2", resourceType.getName())

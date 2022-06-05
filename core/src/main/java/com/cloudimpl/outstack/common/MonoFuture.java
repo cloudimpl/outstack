@@ -40,6 +40,10 @@ public class MonoFuture<T> {
         future.complete(t);
     }
 
+    public void error(Throwable thr){
+        future.completeExceptionally(thr);
+    }
+
     public Mono<T> get() {
         return mono;
     }
