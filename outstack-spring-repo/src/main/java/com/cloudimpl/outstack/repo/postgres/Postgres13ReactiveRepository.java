@@ -12,6 +12,10 @@ import com.cloudimpl.outstack.repo.core.geo.GeoMetry;
 import com.cloudimpl.outstack.repo.core.geo.GeoUtil;
 import com.cloudimpl.outstack.repo.core.geo.Point;
 import com.cloudimpl.outstack.repo.core.geo.Polygon;
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryFactory;
+
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
@@ -73,8 +77,8 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         long time = System.currentTimeMillis();
         String parentTenantId2 = parentTenantId == null ? "default" : parentTenantId;
         String tenantId2 = tenantId == null ? "default" : tenantId;
+        boolean geoApplicable = table.enableGeo() && child instanceof GeoEntity && GeoEntity.class.cast(child).getGeom() != null;
 
-        boolean geoApplicable = table.enableGeo() && child instanceof GeoEntity;
         String sql = "insert into " + table.name() + " as tab(tenantId,resourceType,parentTenantId,parentTid,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") " +
                 "select $1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$13 " : " ") +
                 "where exists (select tid from " + table.name() + " where tenantId = $11 and tid = $12) " +
@@ -112,7 +116,8 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
-        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity && GeoEntity.class.cast(entity).getGeom() != null;
+
         return Mono.just(connection).flatMapMany(conn -> {
                             Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$9" : "") + ") on conflict (tenantId,resourceType,uniqueId) do nothing returning tid")
                                     .bind("$1", tenantId == null ? "default" : tenantId)
@@ -139,7 +144,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
-        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity && GeoEntity.class.cast(entity).getGeom() != null;
         return Mono.just(connection).flatMapMany(conn -> {
                     Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$11" : "") + ") on conflict (tenantId,resourceType,uniqueId) do update set " +
                                     "entity = $9::JSON , updatedTime = $10" + (geoApplicable ? " , geom = $12" : "") + " returning tid,createdTime,updatedTime")
@@ -196,7 +201,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         checkGeoEntity(entity);
         String json = GsonCodec.encode(entity);
         long time = System.currentTimeMillis();
-        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity;
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity && GeoEntity.class.cast(entity).getGeom() != null;
         if (id.startsWith("id-")) {
             return Mono.just(connection).flatMapMany(conn -> {
                         Statement stmt = conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +

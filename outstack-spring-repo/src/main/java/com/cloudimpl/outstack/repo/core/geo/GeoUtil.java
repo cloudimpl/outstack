@@ -9,20 +9,25 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.PrecisionModel;
 import com.vividsolutions.jts.io.WKBWriter;
+import com.vividsolutions.jts.io.WKTWriter;
 
 public class GeoUtil {
     public static final WKBWriter WKB_WRITER = new WKBWriter();
+    public static final WKTWriter WKT_WRITER = new WKTWriter();
+
     public static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
     public static byte[] convertToGeo(GeoMetry geo) {
         if (geo == null)
-            return null;
+            return GeoUtil.WKB_WRITER.write(GEOMETRY_FACTORY.createPolygon(new Coordinate[]{}));
         if (geo instanceof Point) {
             Point point = (Point) geo;
             return GeoUtil.WKB_WRITER.write(getGeometryForPoint(io.r2dbc.postgresql.codec.Point.of(point.getLat(), point.getLon())));
         } else if (geo instanceof Polygon) {
             Polygon polygon = (Polygon) geo;
-            return WKB_WRITER.write(getGeometryForPolygon(getPolygon(convertCoordinates(polygon.getPoints()))));
+            return GeoUtil.WKB_WRITER.write(GeoUtil.GEOMETRY_FACTORY.createPolygon(convertCoordinates(polygon.getPoints())));
+//            Geometry geometry = GeoUtil.GEOMETRY_FACTORY.createPolygon(convertCoordinates(polygon.getPoints()));
+//            return WKB_WRITER.write(getGeometryForPolygon(getPolygon(convertCoordinates(polygon.getPoints()))));
         }
         throw new RepoException("uknown geometry " + geo.getClass().getName());
     }
