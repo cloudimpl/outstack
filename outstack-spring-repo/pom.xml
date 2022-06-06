@@ -14,12 +14,18 @@
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <jts.version>1.14.0</jts.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.cloudimpl.outstack</groupId>
             <artifactId>outstack-spring</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vividsolutions</groupId>
+            <artifactId>jts-core</artifactId>
+            <version>${jts.version}</version>
         </dependency>
     </dependencies>
 </project>

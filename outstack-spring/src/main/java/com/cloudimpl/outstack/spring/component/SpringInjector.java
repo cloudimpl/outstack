@@ -45,6 +45,7 @@ public class SpringInjector extends Injector {
     public <T> T inject(Class<T> clazz) {
         T instance = super.inject(clazz);
         beanFactory.autowireBean(instance);
+        beanFactory.initializeBean(instance,instance.toString());
         return instance;
     }
     

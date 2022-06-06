@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Table {
     String name();
+    boolean enableGeo() default false;
     boolean trackChanges() default false;
     boolean audit() default false;
     String config() default "default";

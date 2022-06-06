@@ -1,6 +1,8 @@
 package com.cloudimpl.outstack.repo;
 
 import com.cloudimpl.outstack.repo.core.ReactiveRepository;
+import com.cloudimpl.outstack.repo.core.Repository;
+import com.cloudimpl.outstack.repo.core.geo.BaseRepository;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
@@ -27,7 +29,7 @@ public class DynamicProxyBeanDefinitionRegistryPostProcessor implements BeanDefi
 	@Override
 	public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
 		ScanResult scanResult = new ClassGraph().enableClassInfo().enableAnnotationInfo().scan();
-		ClassInfoList controlClasses = scanResult.getClassesImplementing(ReactiveRepository.class.getName());
+		ClassInfoList controlClasses = scanResult.getClassesImplementing(BaseRepository.class.getName());
 		for(Class<?> type : controlClasses.loadClasses())
 		{
 			if(type.isInterface())

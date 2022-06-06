@@ -16,6 +16,14 @@ public class RepoUtil {
                 .toString();
     }
 
+    public static String createEventUUID()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("evt-");
+        return builder.append(UUID.randomUUID())
+                .toString();
+    }
+
 
     public static Table getRepoMeta(Class<?> repoType,boolean validate)
     {

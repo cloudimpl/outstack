@@ -4,50 +4,25 @@ import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.repo.Entity;
 import com.cloudimpl.outstack.repo.EntityUtil;
 import com.cloudimpl.outstack.repo.QueryRequest;
-import com.cloudimpl.outstack.repo.RepoUtil;
-import com.cloudimpl.outstack.repo.SafeExecute;
-import com.cloudimpl.outstack.repo.Table;
 import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
+import com.cloudimpl.outstack.repo.core.Repository;
+import com.cloudimpl.outstack.repo.core.geo.GeoUtil;
+import com.cloudimpl.outstack.repo.core.geo.Point;
+import com.cloudimpl.outstack.repo.core.geo.Polygon;
+import com.cloudimpl.outstack.repo.core.geo.ReactiveGeoQueryRepository;
 import com.cloudimpl.outstack.runtime.ResultSet;
 import com.cloudimpl.outstack.runtime.util.Util;
 import com.cloudimpl.rstack.dsl.restql.RestQLParser;
 import io.r2dbc.postgresql.codec.Json;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Row;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Scheduler;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRepository {
-    @Autowired
-    protected ReactivePostgresConfig config;
-
-    @Autowired
-    @Qualifier("ioSchedular")
-    protected Scheduler ioScheduler;
-
-    protected Table table;
-
-    public Postgres13ReadOnlyReactiveRepository() {
-        table = RepoUtil.getRepoMeta(this.getClass(),false);
-    }
-
-    protected void setTable(Table table)
-    {
-        this.table = table;
-    }
-
-    protected void init() {
-
-    }
+public class Postgres13ReadOnlyReactiveRepository extends Repository implements ReadOnlyReactiveRepository, ReactiveGeoQueryRepository {
 
     @Override
     public <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id) {
@@ -57,7 +32,7 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
     @Override
     public <T extends Entity> Flux<T> queryByType(String tenantId, Class<T> resourceType, QueryRequest request) {
         QueryRequest request2 = QueryRequest.builder()
-                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
+                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" :request.getQuery() + " and _resourceType = '" + resourceType.getName() + "'")
                 .orderBy(request.getOrderBy())
                 .pageNum(request.getPageNum())
                 .pageSize(request.getPageSize())
@@ -69,7 +44,7 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
     @Override
     public <T extends Entity> Mono<ResultSet<T>> queryByTypeWithPagination(String tenantId, Class<T> resourceType, QueryRequest request) {
         QueryRequest request2 = QueryRequest.builder()
-                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
+                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" :request.getQuery() + " and _resourceType = '" + resourceType.getName() + "'")
                 .orderBy(request.getOrderBy())
                 .pageNum(request.getPageNum())
                 .pageSize(request.getPageSize())
@@ -278,49 +253,73 @@ public class Postgres13ReadOnlyReactiveRepository implements ReadOnlyReactiveRep
 //                .execute()).flatMap(it -> it.map((row, meta) -> ((T) GsonCodec.decode(Util.classForName(row.get("resourceType", String.class)), row.get("entity", Json.class).asString())).withTid(row.get("tid", String.class))));
 //    }
 
-    protected <T extends Postgres13ReadOnlyReactiveRepository> Mono<T> initTables() {
-        return Mono.just((T) this);
+
+    @Override
+    protected Mono<Void> initTables() {
+        return Mono.just(this).then();
     }
 
-    protected <T extends Postgres13ReadOnlyReactiveRepository> Mono<T> createTenantIfNotExist(String tenantId) {
-        return Mono.just((T) this);
+    @Override
+    public <T> Flux<T> findEntitiesWithinBoundaryWithType(String tenantId, Class<T> type, Polygon polygon, QueryRequest request) {
+        QueryRequest request2 = QueryRequest.builder().query(request.getQuery().isEmpty()?" _resourceType = '"+type.getName():request.getQuery() + "' and _resourceType = '"+type.getName()+"'")
+                .orderBy(request.getOrderBy())
+                .pageNum(request.getPageNum())
+                .pageSize(request.getPageSize())
+                .build();
+        return findEntitiesWithinBoundary(tenantId,polygon,request2);
     }
 
-    protected <T> Mono<T> executeMono(Supplier<Mono<Connection>> supplier, Function<Connection, Mono<T>> function) {
-        SafeExecute safeAction = new SafeExecute();
-        return supplier.get()
-                .flatMap(connection -> Mono.from(connection.setAutoCommit(false))
-                        .thenReturn(connection))
-                .flatMap(connection -> Mono.from(connection.beginTransaction()).thenReturn(connection))
-                // .flatMap(connection -> Mono.from(connection.setAutoCommit(true))
-                //          .flatMap(v -> initTables().map(repo -> v))
-                .flatMap(connection -> function.apply(connection)
-                        .flatMap(v -> Mono.from(connection.commitTransaction()).thenReturn(v))
-                        .doOnError(err -> err.printStackTrace())
-                        .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                        .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe())))
-                .publishOn(ioScheduler);
+    @Override
+    public <T> Flux<T> findEntitiesWithinBoundary(String tenantId, Polygon polygon, QueryRequest request) {
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findEntitiesWithinBoundary(connection,tenantId,polygon
+        ,request));
     }
 
-    protected <T> Mono<T> executeTxMono(Supplier<Mono<Connection>> supplier, Function<Connection, Mono<T>>... functions) {
-        SafeExecute safeAction = new SafeExecute();
-        return supplier.get()
-                .flatMap(connection -> Mono.from(connection.setAutoCommit(false)).map(v -> connection))
-                .flatMap(connection -> Mono.from(connection.beginTransaction()).map(v -> connection))
-                .flatMap(connection -> Flux.fromIterable(Arrays.asList(functions))
-                        .flatMap(func -> func.apply(connection)).last()
-                        .doOnError(err -> err.printStackTrace())
-                        .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                        .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                ).publishOn(ioScheduler);
+    private <T> Flux<T> findEntitiesWithinBoundary(Connection connection,String tenantId,Polygon polygon,QueryRequest request){
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+        String tenantId2 = tenantId == null ? "default" : tenantId;
+
+        String sql = "select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() +
+                "where ST_within(geom::geometry, ST_GeomFromText($1)) and tenantId = $2"+(whereClause.isEmpty()?"":" and ".concat(whereClause))
+        +" order by " + orderBy + " limit " + request.getPageSize() + " offset " + (request.getPageNum() * request.getPageSize());
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
+                        .bind("$1", GeoUtil.convertToGeo(polygon))
+                        .bind("$2", tenantId2)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
     }
 
-    protected <T> Flux<T> executeFlux(Supplier<Mono<Connection>> supplier, Function<Connection, Flux<T>> function) {
-        SafeExecute safeAction = new SafeExecute();
-        return supplier.get()
-                .flatMapMany(connection -> function.apply(connection)
-                        .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
-                        .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe())))
-                .publishOn(ioScheduler);
+    @Override
+    public <T> Flux<T> findClosestBoundEntitiesForPoint(String tenantId, Point point, QueryRequest request){
+        return executeFlux(config.connectionFromPool(table.config(),tenantId),connection -> findClosestBoundEntitiesForPoint(connection,tenantId,point
+                ,request));
+    }
+
+    private <T> Flux<T> findClosestBoundEntitiesForPoint(Connection connection,String tenantId, Point point, QueryRequest request) {
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "ST_AREA(geom) , createdTime" : "ST_AREA(geom) , ".concat(new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+        String tenantId2 = tenantId == null ? "default" : tenantId;
+
+        String sql = "select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() +
+                "where ST_within(ST_GeomFromText($1), geom::geometry) and tenantId = $2"+(whereClause.isEmpty()?"":" and ".concat(whereClause))
+                +" order by " + orderBy + " limit " + request.getPageSize() + " offset " + (request.getPageNum() * request.getPageSize());
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
+                        .bind("$1", GeoUtil.convertToGeo(point))
+                        .bind("$2", tenantId2)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
+    }
+
+    @Override
+    public <T> Flux<T> findClosestBoundEntitiesForPointWithType(String tenantId, Class<T> type, Point point, QueryRequest request) {
+        QueryRequest request2 = QueryRequest.builder().query(request.getQuery().isEmpty()?" _resourceType = '"+type.getName()+"'": request.getQuery().concat(" and _resourceType = '"+type.getName()+"'"))
+                .orderBy(request.getOrderBy())
+                .pageNum(request.getPageNum())
+                .pageSize(request.getPageSize())
+                .build();
+        return findClosestBoundEntitiesForPoint(tenantId,point,request2);
     }
 }
