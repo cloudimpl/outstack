@@ -7,25 +7,20 @@ import com.cloudimpl.outstack.repo.QueryRequest;
 import com.cloudimpl.outstack.repo.RepoException;
 import com.cloudimpl.outstack.repo.RepoUtil;
 import com.cloudimpl.outstack.repo.core.ReactiveRepository;
-import com.cloudimpl.outstack.repo.core.geo.GeoEntity;
+import com.cloudimpl.outstack.repo.core.geo.GeoData;
 import com.cloudimpl.outstack.repo.core.geo.GeoMetry;
 import com.cloudimpl.outstack.repo.core.geo.GeoUtil;
 import com.cloudimpl.outstack.repo.core.geo.Point;
 import com.cloudimpl.outstack.repo.core.geo.Polygon;
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
 
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 //|tenantId,resourceType,parentTenantId,parentTid,id,tid,entity,createdDate,updatedDate
 public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepository implements ReactiveRepository {
@@ -63,7 +58,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     }
 
     private void checkGeoEntity(Object child) {
-        if (child instanceof GeoEntity) {
+        if (child instanceof GeoData) {
             if (!table.enableGeo()) {
                 throw new RepoException("GeoEntity not supported for non geo tables");
             }
@@ -78,7 +73,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         long time = System.currentTimeMillis();
         String parentTenantId2 = parentTenantId == null ? "default" : parentTenantId;
         String tenantId2 = tenantId == null ? "default" : tenantId;
-        boolean geoApplicable = table.enableGeo() && child instanceof GeoEntity && GeoEntity.class.cast(child).getGeom() != null;
+        boolean geoApplicable = table.enableGeo() && child instanceof GeoData && GeoData.class.cast(child).getGeom() != null;
 
         String sql = "insert into " + table.name() + " as tab(tenantId,resourceType,parentTenantId,parentTid,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") " +
                 "select $1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$13 " : " ") +
@@ -100,7 +95,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                             .bind("$11", parentTenantId2)
                             .bind("$12", parentTid);
                     if (geoApplicable) {
-                        GeoMetry geo = GeoEntity.class.cast(child).getGeom();
+                        GeoMetry geo = GeoData.class.cast(child).getGeom();
                         stmt.bind("$13", GeoUtil.convertToGeo(geo));
                     }
                     return stmt.execute();
@@ -117,7 +112,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
-        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity && GeoEntity.class.cast(entity).getGeom() != null;
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoData && GeoData.class.cast(entity).getGeom() != null;
 
         return Mono.just(connection).flatMapMany(conn -> {
                             Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$9" : "") + ") on conflict (tenantId,resourceType,uniqueId) do nothing returning tid")
@@ -130,7 +125,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                                     .bind("$7", time)
                                     .bind("$8", time);
                             if (geoApplicable) {
-                                GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                                GeoMetry geo = GeoData.class.cast(entity).getGeom();
                                 stmt.bind("$9", GeoUtil.convertToGeo(geo));
                             }
                             return stmt.execute();
@@ -145,7 +140,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
-        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity && GeoEntity.class.cast(entity).getGeom() != null;
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoData && GeoData.class.cast(entity).getGeom() != null;
         return Mono.just(connection).flatMapMany(conn -> {
                     Statement stmt = conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,uniqueId,id,tid,entity,createdTime,updatedTime" + (geoApplicable ? ",geom" : "") + ") values($1,$2,$3,$4,$5,$6::JSON,$7,$8" + (geoApplicable ? ",$11" : "") + ") on conflict (tenantId,resourceType,uniqueId) do update set " +
                                     "entity = $9::JSON , updatedTime = $10" + (geoApplicable ? " , geom = $12" : "") + " returning tid,createdTime,updatedTime")
@@ -160,7 +155,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                             .bind("$9", json)
                             .bind("$10", time);
                     if (geoApplicable) {
-                        GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                        GeoMetry geo = GeoData.class.cast(entity).getGeom();
                         stmt.bind("$11", GeoUtil.convertToGeo(geo));
                         stmt.bind("$12", GeoUtil.convertToGeo(geo));
                     }
@@ -204,7 +199,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         checkGeoEntity(entity);
         String json = GsonCodec.encode(entity);
         long time = System.currentTimeMillis();
-        boolean geoApplicable = table.enableGeo() && entity instanceof GeoEntity && GeoEntity.class.cast(entity).getGeom() != null;
+        boolean geoApplicable = table.enableGeo() && entity instanceof GeoData && GeoData.class.cast(entity).getGeom() != null;
         if (id.startsWith("id-")) {
             return Mono.just(connection).flatMapMany(conn -> {
                         Statement stmt = conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
@@ -216,7 +211,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                                 .bind("$4", tenantId == null ? "default" : tenantId)
                                 .bind("$5", entity.getClass().getName());
                         if (geoApplicable) {
-                            GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                            GeoMetry geo = GeoData.class.cast(entity).getGeom();
                             stmt.bind("$6", GeoUtil.convertToGeo(geo));
                         }
                         return stmt.execute();
@@ -235,7 +230,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                                 .bind("$4", tenantId == null ? "default" : tenantId)
                                 .bind("$5", entity.getClass().getName());
                         if (geoApplicable) {
-                            GeoMetry geo = GeoEntity.class.cast(entity).getGeom();
+                            GeoMetry geo = GeoData.class.cast(entity).getGeom();
                             stmt.bind("$6", GeoUtil.convertToGeo(geo));
                         }
                         return stmt.execute();
