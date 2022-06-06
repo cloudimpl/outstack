@@ -1,9 +1,10 @@
 package com.cloudimpl.outstack.repo;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 
 @Builder
-
+@AllArgsConstructor
 public class QueryRequest {
     private String query = "";
     private String orderBy = "";
