@@ -39,7 +39,7 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
         try
         {
             final String methodName = cloudMessage.attr(CloudMessage.METHOD_STR);
-            validator.validate(cloudMessage.data());
+            validateObject(cloudMessage.data());
             return Mono.justOrEmpty(declaredMethods.get(methodName))
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new ServiceException("Unknown Method"))))
                     .flatMapMany(method -> invokeMethod(method, cloudMessage.data()));

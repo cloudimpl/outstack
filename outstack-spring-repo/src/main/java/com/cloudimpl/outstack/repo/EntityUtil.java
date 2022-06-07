@@ -4,7 +4,8 @@ public class EntityUtil {
 
     public static <T extends Entity> T with(T entity,String tid,String tenantId, long createdTime,long updatedTime)
     {
-        return entity.withTid(tid).getMeta().withTenantId(tenantId).withCreatedTime(createdTime).withUpdatedTime(updatedTime).entity();
+        entity.withTid(tid).getMeta().withTenantId(tenantId).withCreatedTime(createdTime).withUpdatedTime(updatedTime);
+        return entity;
     }
 
     public static <T extends Entity> T withTid(T entity,String tid)

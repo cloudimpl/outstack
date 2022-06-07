@@ -35,7 +35,7 @@ public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiv
         String tenantId2 = tenantId == null ? "default": tenantId;
 
         return Mono.just(connection) .flatMapMany(conn -> conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,eventId,event,createdTime,updatedTime) " +
-                                "select $1,$2,3,$4::JSON,$5,$6 "+
+                                "select $1,$2,$3,$4::JSON,$5,$6 "+
                                 "on conflict (tenantId,resourceType,eventId) do nothing returning eventId")
                         .bind("$1", tenantId2)
                         .bind("$2", event.getClass().getName())
@@ -58,7 +58,7 @@ public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiv
     private  <T extends Event> Flux<T> addEvents(Connection connection,String tenantId, Collection<T> events) {
 
         return Mono.just(connection) .flatMapMany(conn -> bindEventList(conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,eventId,event,createdTime,updatedTime) " +
-                                "select $1,$2,3,$4::JSON,$5,$6 "+
+                                "select $1,$2,$3,$4::JSON,$5,$6 "+
                                 "on conflict (tenantId,resourceType,eventId) do nothing returning eventId"),tenantId,events)
                         .execute())
                 .next().flatMapMany(rs->Flux.fromIterable(events))
