@@ -162,4 +162,9 @@ public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiv
                 .then(Mono.just(this));
     }
 
+    @Override
+    protected Mono<Void> initTables() {
+        return createEventTable(table.name()).then();
+    }
+
 }
