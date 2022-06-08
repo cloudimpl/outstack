@@ -29,7 +29,6 @@ public class CloudMessageEncoder implements JsonSerializer<CloudMessage>{
 
     @Override
     public JsonElement serialize(CloudMessage t, Type type, JsonSerializationContext jsc) {
-         System.out.println(" encoding "+t.getClass());
          JsonObject json = new JsonObject();
          json.addProperty("key", t.getKey());
          json.add("data", GsonCodec.encodeToJsonWithType(t.data()));
