@@ -31,7 +31,6 @@ public class CloudMessageDecoder implements JsonDeserializer<CloudMessage> {
 
     @Override
     public CloudMessage deserialize(JsonElement je, Type type, JsonDeserializationContext jdc) throws JsonParseException {
-        System.out.println(" decoding " + je.toString());
         JsonObject json = je.getAsJsonObject();
         JsonElement key = json.get("key");
         if (key == null) {
