@@ -14,6 +14,8 @@ import io.r2dbc.spi.Row;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.stream.Collectors;
+
 public class Postgres13ReadOnlyReactiveEventRepository extends Repository implements ReadOnlyReactiveEventRepository {
 
     @Override
@@ -24,13 +26,14 @@ public class Postgres13ReadOnlyReactiveEventRepository extends Repository implem
     private <T extends Event> Flux<T> queryEvents(Connection connection,String tenantId,QueryRequest queryRequest)
     {
         String tenantId2 = tenantId == null ? "default" : tenantId;
-        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        PostgresSqlNode sqlNode = new PostgresSqlNode("event");
         String whereClause = queryRequest.getQuery().isEmpty() ? "tenantId = $1" : sqlNode.eval(RestQLParser.parse(queryRequest.getQuery() + " and tenantId = $1"));
         String orderBy = queryRequest.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(queryRequest.getOrderBy())));
 
-
-        String sql = "select * from "+table.name() + "where "+whereClause + " order by "+orderBy + " limit "+
-                queryRequest.getPageSize() + " offset "+ (queryRequest.getPageNum() * queryRequest.getPageSize());
+        String distinct = queryRequest.getDistinctFields().isEmpty() ? "":" distinct on(".concat(queryRequest.getDistinctFields().stream().map(f->PostgresSqlNode.convertToJsonField("event",f)).collect(Collectors.joining(",")))
+                .concat(")");
+        String sql = "select ".concat(distinct).concat(" * from ").concat(table.name()).concat("where ").concat(whereClause).concat(" order by ").concat(orderBy).concat(" limit ")
+                .concat(String.valueOf(queryRequest.getPageSize()).concat(" offset ").concat(String.valueOf(queryRequest.getPageNum() * queryRequest.getPageSize())));
 
         return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
                         .bind("$1",tenantId2)

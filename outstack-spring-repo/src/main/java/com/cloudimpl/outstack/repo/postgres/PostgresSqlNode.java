@@ -25,6 +25,16 @@ import java.util.stream.Collectors;
  * @author nuwan
  */
 public class PostgresSqlNode implements RestQLNode {
+    private final String entityField;
+    public PostgresSqlNode(String entityField)
+    {
+        this.entityField = entityField;
+    }
+
+    public PostgresSqlNode()
+    {
+        this("entity");
+    }
 
     @Override
     public String eval(RestQLNode node) {
@@ -46,17 +56,17 @@ public class PostgresSqlNode implements RestQLNode {
             if (rel.getOp() == RelNode.Op.IN){
                 return this.inOperator(rel);
             } else{
-                return castToType(convertToJsonField(rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":(rel.getOp() == RelNode.Op.NOT_LIKE?" NOT ILIKE ":rel.getOp().getOp())) + (String) rel.getConstNode().eval(this);
+                return castToType(convertToJsonField(this.entityField,rel.getFieldName()), rel.getConstNode()) + (rel.getOp() == RelNode.Op.LIKE ? " ILIKE ":(rel.getOp() == RelNode.Op.NOT_LIKE?" NOT ILIKE ":rel.getOp().getOp())) + (String) rel.getConstNode().eval(this);
             }
         }else if(node instanceof FieldCheckNode) {
             FieldCheckNode fieldNode = FieldCheckNode.class.cast(node);
-            return convertToJsonField(fieldNode.getFieldName()) + (fieldNode.isCheckExist() ? " is not null " : " is null ");
+            return convertToJsonField(this.entityField,fieldNode.getFieldName()) + (fieldNode.isCheckExist() ? " is not null " : " is null ");
         } else if (node instanceof BinNode) {
             BinNode binNode = BinNode.class.cast(node);
             return "(" + binNode.getLeft().eval(this) + binNode.getOp().getOp() + binNode.getRight().eval(this) + ")";
         }else if (node instanceof OrderByNode) {
             OrderByNode orderBy = OrderByNode.class.cast(node);
-            return castToType(convertToJsonField(orderBy.getFieldName()),orderBy.getDataType() )+ " " + orderBy.getOrder();
+            return castToType(convertToJsonField(this.entityField,orderBy.getFieldName()),orderBy.getDataType() )+ " " + orderBy.getOrder();
         }else if(node instanceof OrderByExpNode)
         {
             OrderByExpNode expNode = OrderByExpNode.class.cast(node);
@@ -73,17 +83,17 @@ public class PostgresSqlNode implements RestQLNode {
     private String inOperator(RelNode relNode){
         ConstNode constNode = relNode.getConstNode();
         if (constNode instanceof ConstStringArrayNode){
-            return convertToJsonField( relNode.getFieldName() ) + " IN (" + ConstStringArrayNode.class.cast(constNode).getVals().stream().collect(Collectors.joining(",")) + ")";
+            return convertToJsonField(this.entityField, relNode.getFieldName() ) + " IN (" + ConstStringArrayNode.class.cast(constNode).getVals().stream().collect(Collectors.joining(",")) + ")";
         } else if(constNode instanceof ConstNumberArrayNode){
-            return convertToJsonField( relNode.getFieldName() ) + " IN (" + ConstNumberArrayNode.class.cast(constNode).getVals().stream().map(v->v.toString()).collect(Collectors.joining(",")) + ")";
+            return convertToJsonField( this.entityField,relNode.getFieldName() ) + " IN (" + ConstNumberArrayNode.class.cast(constNode).getVals().stream().map(v->v.toString()).collect(Collectors.joining(",")) + ")";
         } else if(constNode instanceof ConstBooleanArrayNode){
-            return convertToJsonField( relNode.getFieldName() ) + " IN (" + ConstBooleanArrayNode.class.cast(constNode).getVals().stream().map(v->v.toString()).collect(Collectors.joining(",")) + ")";
+            return convertToJsonField( this.entityField,relNode.getFieldName() ) + " IN (" + ConstBooleanArrayNode.class.cast(constNode).getVals().stream().map(v->v.toString()).collect(Collectors.joining(",")) + ")";
         } else {
             throw new RuntimeException("unknown const array node :" + constNode.getClass().getName());
         }
     }
 
-    public static String convertToJsonField(String field) {
+    public static String convertToJsonField(String entityField,String field) {
         field = field.trim();
         if(field.startsWith("_"))
         {
@@ -92,11 +102,11 @@ public class PostgresSqlNode implements RestQLNode {
 
         String[] fields = field.split("\\.");
         if (fields.length == 1) {
-            return "entity->>'" + field + "'";
+            return entityField.concat("->>'") + field + "'";
         } else if (fields.length == 2) {
-            return "entity->'" + fields[0] + "'->>'" + fields[1] + "'";
+            return entityField.concat("->'") + fields[0] + "'->>'" + fields[1] + "'";
         } else if (fields.length > 2) {
-            String param = "entity";
+            String param = entityField;
             for (int i = 0; i < fields.length; i++) {
                 if (i == fields.length - 1) {
                     param = param + "->>'" + fields[i] + "'";

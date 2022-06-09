@@ -3,6 +3,11 @@ package com.cloudimpl.outstack.repo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
 @Builder
 @AllArgsConstructor
 public class QueryRequest {
@@ -11,6 +16,7 @@ public class QueryRequest {
     private int pageSize = Integer.MAX_VALUE;
     private int pageNum = 0;
     private boolean mergeNonTenant = false;
+    private List<String> distinctFields = Collections.EMPTY_LIST;
 
     public String getQuery()
     {
@@ -35,5 +41,10 @@ public class QueryRequest {
     public boolean isMergeNonTenant()
     {
         return this.mergeNonTenant;
+    }
+
+    public Collection<String> getDistinctFields()
+    {
+        return this.distinctFields;
     }
 }
