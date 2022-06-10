@@ -37,7 +37,7 @@ public abstract class Entity {
     }
 
     public String id() {
-        return RepoUtil.getValue(this, idField);
+        return RepoUtil.getValue(this, getIdField());
     }
 
     public Optional<String> getParentTid() {
@@ -52,6 +52,13 @@ public abstract class Entity {
     protected <T extends Entity> T setParentTid(String tid) {
         this.tid = tid;
         return (T) this;
+    }
+
+    private Field getIdField() {
+        if(idField == null) {
+            idField = RepoUtil.getIdField(this.getClass());
+        }
+        return idField;
     }
 
     @Override

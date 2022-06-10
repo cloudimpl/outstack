@@ -27,12 +27,12 @@ public class Postgres13ReadOnlyReactiveEventRepository extends Repository implem
     {
         String tenantId2 = tenantId == null ? "default" : tenantId;
         PostgresSqlNode sqlNode = new PostgresSqlNode("event");
-        String whereClause = queryRequest.getQuery().isEmpty() ? "tenantId = $1" : sqlNode.eval(RestQLParser.parse(queryRequest.getQuery() + " and tenantId = $1"));
-        String orderBy = queryRequest.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(queryRequest.getOrderBy())));
+        String whereClause = queryRequest.getQuery().isEmpty() ? "tenantId = $1" : sqlNode.eval(RestQLParser.parse(queryRequest.getQuery() + " and _tenantId = $1"));
+        String orderBy = queryRequest.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode("event").eval(RestQLParser.parseOrderBy(queryRequest.getOrderBy())));
 
         String distinct = queryRequest.getDistinctFields().isEmpty() ? "":" distinct on(".concat(queryRequest.getDistinctFields().stream().map(f->PostgresSqlNode.convertToJsonField("event",f)).collect(Collectors.joining(",")))
                 .concat(")");
-        String sql = "select ".concat(distinct).concat(" * from ").concat(table.name()).concat("where ").concat(whereClause).concat(" order by ").concat(orderBy).concat(" limit ")
+        String sql = "select ".concat(distinct).concat(" * from ").concat(table.name()).concat(" where ").concat(whereClause).concat(" order by ").concat(orderBy).concat(" limit ")
                 .concat(String.valueOf(queryRequest.getPageSize()).concat(" offset ").concat(String.valueOf(queryRequest.getPageNum() * queryRequest.getPageSize())));
 
         return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
