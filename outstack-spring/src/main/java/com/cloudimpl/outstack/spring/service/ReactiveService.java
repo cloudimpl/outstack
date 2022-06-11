@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class ReactiveService implements IReactiveService,Function<CloudMessage, Publisher<Object>> {
+public abstract class ReactiveService implements Function<CloudMessage, Publisher<Object>> {
 
     private final Map<String, Method> declaredMethods;
 
@@ -42,7 +42,7 @@ public abstract class ReactiveService implements IReactiveService,Function<Cloud
             validator.validate(cloudMessage.data());
             return Mono.justOrEmpty(declaredMethods.get(methodName))
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new ServiceException("Unknown Method"))))
-                    .flatMapMany(method -> invokeMethod(method, cloudMessage.data()));
+                    .flatMapMany(method -> invokeMethod(method, cloudMessage.getKey(), cloudMessage.data()));
         }catch (Throwable thr)
         {
             return Mono.error(thr);
@@ -65,14 +65,15 @@ public abstract class ReactiveService implements IReactiveService,Function<Cloud
     }
 
     @SneakyThrows
-    private Publisher invokeMethod(Method method, Object object) {
+    private Publisher invokeMethod(Method method, String key, Object object) {
 
         Object returnObject;
 
+        int paramCount = method.getParameterCount();
         if (Objects.isNull(object)) {
-            returnObject = method.invoke(this);
+            returnObject = paramCount==1 ? method.invoke(this): method.invoke(this, key);
         } else {
-            returnObject = method.invoke(this, object);
+            returnObject = paramCount==1 ? method.invoke(this, object): method.invoke(this, key, object);
         }
 
         if (returnObject instanceof Mono) {

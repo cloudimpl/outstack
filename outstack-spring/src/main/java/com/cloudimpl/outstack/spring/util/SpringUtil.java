@@ -26,6 +26,7 @@ import com.cloudimpl.outstack.spring.component.SpringQueryService;
 import com.cloudimpl.outstack.spring.component.SpringService;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
 import com.cloudimpl.outstack.spring.service.IReactiveService;
+import com.cloudimpl.outstack.util.SrvUtil;
 
 import java.security.MessageDigest;
 import java.security.Provider;
@@ -51,7 +52,7 @@ public class SpringUtil {
                 .findFirst().orElse(null);
 
         Objects.requireNonNull(type);
-        Router router = funcType.getAnnotation(Router.class);
+        Router router = type.getAnnotation(Router.class);
         Objects.requireNonNull(router);
         return new ServiceMeta(funcType,new CloudFunctionMeta(type.getName(),""), router);
     }

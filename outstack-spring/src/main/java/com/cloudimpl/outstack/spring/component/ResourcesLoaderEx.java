@@ -52,6 +52,6 @@ public class ResourcesLoaderEx extends ResourcesLoader{
     {
         super.preload(rs);
         ClassInfoList list = rs.getClassesImplementing(IReactiveService.class.getName());
-        metaList.addAll(list.loadClasses().stream().map(this::toServiceMeta).collect(Collectors.toList()));
+        metaList.addAll(list.loadClasses().stream().filter(cls -> !cls.isInterface()).map(this::toServiceMeta).collect(Collectors.toList()));
     }
 }

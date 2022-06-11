@@ -9,8 +9,8 @@ import java.lang.reflect.Method;
 
 public class ReactiveServiceProxyHandler implements InvocationHandler {
     private Cluster cluster;
-    private Class<? extends ReactiveService> serviceType;
-    public ReactiveServiceProxyHandler(Class<? extends ReactiveService> serviceType,Cluster cluster)
+    private Class<? extends IReactiveService> serviceType;
+    public ReactiveServiceProxyHandler(Class<? extends IReactiveService> serviceType,Cluster cluster)
     {
         this.serviceType = serviceType;
         this.cluster = cluster;

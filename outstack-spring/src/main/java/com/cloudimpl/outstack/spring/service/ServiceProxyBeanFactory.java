@@ -23,7 +23,7 @@ public class ServiceProxyBeanFactory {
     }
 
     @SuppressWarnings("unused")
-    public <T extends ReactiveService> T createServiceProxyBean(Class<T> beanClass) {
+    public <T extends IReactiveService> T createServiceProxyBean(Class<T> beanClass) {
 
         return (T)Proxy.newProxyInstance(beanClass.getClassLoader(),new Class[]{beanClass},new ReactiveServiceProxyHandler(beanClass,cluster));
     }
