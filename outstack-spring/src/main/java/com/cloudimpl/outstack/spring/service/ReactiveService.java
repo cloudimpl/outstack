@@ -21,7 +21,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public abstract class ReactiveService implements Function<CloudMessage, Publisher<Object>> {
+public abstract class ReactiveService implements IReactiveService,Function<CloudMessage, Publisher<Object>> {
 
     private final Map<String, Method> declaredMethods;
 

@@ -36,15 +36,14 @@ import org.reactivestreams.Publisher;
  */
 public class ResourcesLoader {
 
-    private  List<ServiceMeta> metaList;
+    protected   List<ServiceMeta> metaList;
     private  List<Class<? extends ServiceEndpointPlugin>> endpoints;
     public ResourcesLoader() {
         
     }
     
-    public void preload()
+    public void preload(ScanResult rs)
     {
-        ScanResult rs = new ClassGraph().enableAnnotationInfo().enableClassInfo().scan();
         ClassInfoList list = rs.getClassesWithAnnotation(CloudFunction.class.getName());
         metaList = list.loadClasses().stream().map(this::toServiceMeta).collect(Collectors.toList());
         list = rs.getClassesImplementing(ServiceEndpointPlugin.class.getName());

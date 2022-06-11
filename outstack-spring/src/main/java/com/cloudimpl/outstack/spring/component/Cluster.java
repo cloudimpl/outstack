@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
+import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ScanResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
@@ -114,7 +116,7 @@ public class Cluster {
         injector.nameBind("leaderOptions", CollectionOptions.builder().withOption("TableName", "Test").build());
         //injector.bind(CollectionProvider.class).to(configManager.getProvider(CollectionProvider.class.getName()).get().getInstance());
         ResourcesLoader serviceLoader = new ResourcesLoaderEx(resourceHelper);
-        serviceLoader.preload();
+        serviceLoader.preload(new ClassGraph().enableAnnotationInfo().enableClassInfo().scan());
         appConfig.getNodeConfigBuilder().doOnNext(c -> c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C -> C.build())
                 .delayElement(Duration.ofSeconds(1))
                 .publishOn(scheduler)

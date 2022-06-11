@@ -25,7 +25,10 @@ import com.cloudimpl.outstack.runtime.util.Util;
 import com.cloudimpl.outstack.spring.component.SpringQueryService;
 import com.cloudimpl.outstack.spring.component.SpringService;
 import com.cloudimpl.outstack.spring.component.SpringServiceDescriptor;
+import com.cloudimpl.outstack.spring.service.IReactiveService;
+
 import java.security.MessageDigest;
+import java.security.Provider;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +44,17 @@ import javax.xml.bind.DatatypeConverter;
  * @author nuwan
  */
 public class SpringUtil {
+
+    public static ServiceMeta reactiveServiceMeta(Class<? extends IReactiveService> funcType)
+    {
+        Class<? extends IReactiveService> type = (Class<? extends IReactiveService>) Arrays.asList(funcType.getInterfaces()).stream().filter(t->IReactiveService.class.isAssignableFrom(t))
+                .findFirst().orElse(null);
+
+        Objects.requireNonNull(type);
+        Router router = funcType.getAnnotation(Router.class);
+        Objects.requireNonNull(router);
+        return new ServiceMeta(funcType,new CloudFunctionMeta(type.getName(),""), router);
+    }
 
     public static ServiceMeta serviceProviderMeta(ResourceHelper resourceHelper, Class<? extends SpringService> funcType) {
         CloudFunction func = funcType.getAnnotation(CloudFunction.class);
