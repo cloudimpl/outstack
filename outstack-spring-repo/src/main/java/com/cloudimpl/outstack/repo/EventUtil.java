@@ -4,7 +4,8 @@ public class EventUtil {
 
     public static <T extends Event> T with(T event,String tenantId,String eventId, long createdTime,long updatedTime)
     {
-        return event.withEventId(eventId).getMeta().withTenantId(tenantId).withCreatedTime(createdTime).withUpdatedTime(updatedTime).entity();
+        event.withEventId(eventId).getMeta().withTenantId(tenantId).withCreatedTime(createdTime).withUpdatedTime(updatedTime);
+        return event;
     }
 
     public static <T extends Event> T withEventId(T entity,String eventId)

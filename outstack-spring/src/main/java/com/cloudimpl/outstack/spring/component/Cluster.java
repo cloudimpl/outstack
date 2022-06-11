@@ -173,33 +173,41 @@ public class Cluster {
     }
     
     public <T> Mono<T> requestReply(ServerHttpRequest httpRequest, String serviceName, Object msg) {
-        if (msg instanceof CommandWrapper) {
-            CommandWrapper wrapper = CommandWrapper.class.cast(msg);
-            return ReactiveSecurityContextHolder
-                    .getContext().map(c -> c.getAuthentication())
-                    .cast(PlatformAuthenticationToken.class)
-                    .doOnNext(c -> validateTenantId(c, httpRequest))
-                    .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
-                    .map(t -> policyValidator.processPolicyStatementsForCommand(wrapper, t))
-                    .doOnNext(g -> wrapper.setGrant(g))
-                    .flatMap(g -> this.node.requestReply(serviceName, msg))
-                    .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
-                    .map(o -> (T) o);
-        } else if (msg instanceof QueryWrapper) {
-            QueryWrapper wrapper = QueryWrapper.class.cast(msg);
-            return ReactiveSecurityContextHolder
-                    .getContext().map(c -> c.getAuthentication())
-                    .cast(PlatformAuthenticationToken.class)
-                    .doOnNext(c -> validateTenantId(c, httpRequest))
-                    .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
-                    .map(t -> policyValidator.processPolicyStatementsForQuery(wrapper, t))
-                    .doOnNext(g -> wrapper.setGrant(g))
-                    .flatMap(g -> this.node.requestReply(serviceName, msg))
-                    .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
-                    .map(o -> (T) o);
-        }
 
-        return this.node.requestReply(serviceName, msg);
+        return Mono.defer(() -> {
+            try {
+                if (msg instanceof CommandWrapper) {
+                    CommandWrapper wrapper = CommandWrapper.class.cast(msg);
+                    return ReactiveSecurityContextHolder
+                            .getContext().map(c -> c.getAuthentication())
+                            .cast(PlatformAuthenticationToken.class)
+                            .doOnNext(c -> validateTenantId(c, httpRequest))
+                            .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
+                            .map(t -> policyValidator.processPolicyStatementsForCommand(wrapper, t))
+                            .doOnNext(g -> wrapper.setGrant(g))
+                            .flatMap(g -> this.node.requestReply(serviceName, msg))
+                            .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
+                            .map(o -> (T) o);
+                } else if (msg instanceof QueryWrapper) {
+                    QueryWrapper wrapper = QueryWrapper.class.cast(msg);
+                    return ReactiveSecurityContextHolder
+                            .getContext().map(c -> c.getAuthentication())
+                            .cast(PlatformAuthenticationToken.class)
+                            .doOnNext(c -> validateTenantId(c, httpRequest))
+                            .doOnNext(c -> populateAttributes(c, httpRequest, wrapper))
+                            .map(t -> policyValidator.processPolicyStatementsForQuery(wrapper, t))
+                            .doOnNext(g -> wrapper.setGrant(g))
+                            .flatMap(g -> this.node.requestReply(serviceName, msg))
+                            .switchIfEmpty(Mono.defer(() -> this.node.requestReply(serviceName, msg)))
+                            .map(o -> (T) o);
+                }
+
+                return this.node.requestReply(serviceName, msg);
+
+            } catch (Throwable thr) {
+                return Mono.error(thr);
+            }
+        });
     }
 
     public <T> Mono<T> requestReply(String serviceName, Object msg) {

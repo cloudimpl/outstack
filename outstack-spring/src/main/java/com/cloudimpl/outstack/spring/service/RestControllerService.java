@@ -130,7 +130,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             this.serviceManager.putCmdContext(desc.getApiContext(), desc.getVersion(), desc);
             addEntities(desc);
         } catch (Exception ex) {
-            logger.exception(ex, "addCmdDescriptor");
+            logger.error("addCmdDescriptor {}", ex.getMessage());
         }
     }
 
@@ -139,7 +139,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             this.serviceManager.putQueryContext(desc.getApiContext(), desc.getVersion(), desc);
             addEntities(desc);
         } catch (Exception ex) {
-            logger.exception(ex, "addQueryDescriptor");
+            logger.error("addQueryDescriptor {}", ex.getMessage());
         }
     }
 

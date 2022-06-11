@@ -27,9 +27,12 @@ public class ConsistentHashRouter implements CloudRouter {
 
     private final ServiceRegistryReadOnly serviceRegistry;
     private HashRing<SimpleNode> ring;
+    private String topic;
+
 
     public ConsistentHashRouter(@Named("@topic") String topic, ServiceRegistryReadOnly serviceRegistry) {
         this.serviceRegistry = serviceRegistry;
+        this.topic = topic;
         ring = HashRing.<SimpleNode>newBuilder().partitionRate(64).nodes(Collections.EMPTY_LIST).build();
         serviceRegistry.flux("ConsistentHashRouter:"+topic)
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD)
@@ -50,6 +53,6 @@ public class ConsistentHashRouter implements CloudRouter {
             return Mono.error(new RouterException("service route key not found"));
         }
         return Mono.justOrEmpty(ring.locate(msg.getKey()))
-                .map(node -> this.serviceRegistry.findService(node.getKey())).switchIfEmpty(Mono.defer(()->Mono.error(()->new RouterException("service not found"))));
+                .map(node -> this.serviceRegistry.findService(node.getKey())).switchIfEmpty(Mono.defer(()->Mono.error(()->new RouterException("service [".concat(topic).concat("] not found ")))));
     }
 }

@@ -7,6 +7,8 @@ import lombok.SneakyThrows;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import javax.validation.ConstraintViolation;
 import javax.validation.Validation;
@@ -39,10 +41,12 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
         try
         {
             final String methodName = cloudMessage.attr(CloudMessage.METHOD_STR);
-            validator.validate(cloudMessage.data());
+            validateObject(cloudMessage.data());
             return Mono.justOrEmpty(declaredMethods.get(methodName))
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new ServiceException("Unknown Method"))))
-                    .flatMapMany(method -> invokeMethod(method, cloudMessage.getKey(), cloudMessage.data()));
+
+                    .publishOn(Schedulers.parallel())
+                    .flatMapMany(method -> invokeMethod(method, cloudMessage.getKey(),cloudMessage.data()));
         }catch (Throwable thr)
         {
             return Mono.error(thr);
