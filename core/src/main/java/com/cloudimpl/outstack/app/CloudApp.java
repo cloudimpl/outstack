@@ -27,6 +27,7 @@ import com.cloudimpl.outstack.core.Injector;
 import com.cloudimpl.outstack.logger.ConsoleLogWriter;
 import com.cloudimpl.outstack.logger.LogWriter;
 import com.cloudimpl.outstack.node.CloudNode;
+import io.github.classgraph.ClassGraph;
 import picocli.CommandLine;
 
 /**
@@ -45,7 +46,7 @@ public class CloudApp {
         injector.bind(CollectionProvider.class).to(new AwsCollectionProvider(ComponentProvider.ProviderConfigs.EMTPY));
         injector.nameBind("leaderOptions",CollectionOptions.builder().withOption("TableName", "Test").build());
         ResourcesLoader serviceLoader = new ResourcesLoader();
-        serviceLoader.preload();
+        serviceLoader.preload(new ClassGraph().enableAnnotationInfo().enableClassInfo().scan());
         appConfig.getNodeConfigBuilder().doOnNext(c->c.withServiceEndpoints(serviceLoader.getEndpoints())).map(C->C.build())
                 .doOnNext(c -> {
             CloudNode node = new CloudNode(injector, c);

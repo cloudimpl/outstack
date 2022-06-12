@@ -72,8 +72,8 @@ public class CloudUtil {
         while (klass != null) {
             Type superType = klass.getGenericSuperclass();
             Type[] genericInterfaces = klass.getGenericInterfaces();
-            for (int j = 0; j <= genericInterfaces.length; ++j) {
-                Type type = (j == 0) ? superType : genericInterfaces[j - 1];
+            for (int j = 0; j < genericInterfaces.length; ++j) {
+                Type type = genericInterfaces[j];
                 if (type instanceof ParameterizedType) {
                     ParameterizedType parType = (ParameterizedType) type;
                     Type rawType = parType.getRawType();
@@ -97,10 +97,12 @@ public class CloudUtil {
                         }
                     }
                     klass = (Class<?>) rawType;
-                } else {
-                    klass = klass.getSuperclass();
                 }
+//                else {
+//                    klass = klass.getSuperclass();
+//                }
             }
+            klass = klass.getSuperclass();
         }
         throw new CloudServiceException("template not found");
     }

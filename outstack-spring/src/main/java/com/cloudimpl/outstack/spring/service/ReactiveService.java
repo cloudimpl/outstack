@@ -44,8 +44,9 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
             validateObject(cloudMessage.data());
             return Mono.justOrEmpty(declaredMethods.get(methodName))
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new ServiceException("Unknown Method"))))
+
                     .publishOn(Schedulers.parallel())
-                    .flatMapMany(method -> invokeMethod(method, cloudMessage.data()));
+                    .flatMapMany(method -> invokeMethod(method, cloudMessage.getKey(),cloudMessage.data()));
         }catch (Throwable thr)
         {
             return Mono.error(thr);
@@ -68,14 +69,15 @@ public abstract class ReactiveService implements Function<CloudMessage, Publishe
     }
 
     @SneakyThrows
-    private Publisher invokeMethod(Method method, Object object) {
+    private Publisher invokeMethod(Method method, String key, Object object) {
 
         Object returnObject;
 
+        int paramCount = method.getParameterCount();
         if (Objects.isNull(object)) {
-            returnObject = method.invoke(this);
+            returnObject = paramCount==1 ? method.invoke(this): method.invoke(this, key);
         } else {
-            returnObject = method.invoke(this, object);
+            returnObject = paramCount==1 ? method.invoke(this, object): method.invoke(this, key, object);
         }
 
         if (returnObject instanceof Mono) {
