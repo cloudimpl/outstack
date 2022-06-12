@@ -68,6 +68,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     private <T extends Entity> Mono<T> createChild(Connection connection, String parentTenantId, String parentTid, String tenantId, T child) {
         Objects.requireNonNull(parentTid);
         checkGeoEntity(child);
+        validateObject(child);
         String json = GsonCodec.encode(child);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
@@ -109,6 +110,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     private <T extends Entity> Mono<T> create(Connection connection, String tenantId, T entity) {
         checkGeoEntity(entity);
+        validateObject(entity);
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
@@ -137,6 +139,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     private <T extends Entity> Mono<T> createOrUpdate(Connection connection, String tenantId, T entity) {
         checkGeoEntity(entity);
+        validateObject(entity);
         String json = GsonCodec.encode(entity);
         String tid = RepoUtil.createUUID();
         long time = System.currentTimeMillis();
@@ -197,6 +200,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     private <T extends Entity> Mono<T> update(Connection connection, String tenantId, T entity, String id) {
         checkGeoEntity(entity);
+        validateObject(entity);
         String json = GsonCodec.encode(entity);
         long time = System.currentTimeMillis();
         boolean geoApplicable = table.enableGeo() && entity instanceof GeoData && GeoData.class.cast(entity).getGeom() != null;
@@ -282,26 +286,6 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     protected Mono<Void> initTables() {
 
         return createEntityTable(table.name()).then();
-    }
-
-    @Override
-    public <T> Flux<T> findEntitiesWithinBoundaryWithType(String tenantId, Class<T> type, Polygon polygon, QueryRequest request) {
-        return null;
-    }
-
-    @Override
-    public <T> Flux<T> findEntitiesWithinBoundary(String tenantId, Polygon polygon, QueryRequest request) {
-        return null;
-    }
-
-    @Override
-    public <T> Flux<T> findClosestBoundEntitiesForPoint(String tenantId, Point point, QueryRequest request) {
-        return null;
-    }
-
-    @Override
-    public <T> Flux<T> findClosestBoundEntitiesForPointWithType(String tenantId, Class<T> type, Point point, QueryRequest request) {
-        return null;
     }
 
 //    private <T extends Entity> Mono<Postgres13ReactiveRepository> createAuditTable(String tableName) {

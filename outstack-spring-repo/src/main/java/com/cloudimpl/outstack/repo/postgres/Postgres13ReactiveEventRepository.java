@@ -7,6 +7,10 @@ import com.cloudimpl.outstack.repo.EventUtil;
 import com.cloudimpl.outstack.repo.RepoException;
 import com.cloudimpl.outstack.repo.RepoUtil;
 import com.cloudimpl.outstack.repo.core.ReactiveEventRepository;
+import com.cloudimpl.outstack.runtime.ValidationErrorException;
+import com.cloudimpl.outstack.spring.service.ReactiveServiceException;
+import com.cloudimpl.outstack.spring.service.TenantAwareReactiveRequest;
+import com.cloudimpl.outstack.spring.service.TenantOnly;
 import io.r2dbc.postgresql.codec.Json;
 import io.r2dbc.spi.Connection;
 import io.r2dbc.spi.Row;
@@ -14,8 +18,13 @@ import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import javax.validation.ConstraintViolation;
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiveEventRepository implements ReactiveEventRepository {
@@ -29,6 +38,7 @@ public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiv
 
     private <T extends Event> Mono<T> addEvent(Connection connection,String tenantId,T event)
     {
+        validateObject(event);
         String json = GsonCodec.encode(event);
         String eventId = RepoUtil.createEventUUID();
         long time = System.currentTimeMillis();
@@ -56,7 +66,7 @@ public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiv
 
 
     private  <T extends Event> Flux<T> addEvents(Connection connection,String tenantId, Collection<T> events) {
-
+        events.forEach(e->validateObject(e));
         return Mono.just(connection) .flatMapMany(conn -> bindEventList(conn.createStatement("insert into " + table.name() + " as tab(tenantId,resourceType,eventId,event,createdTime,updatedTime) " +
                                 "select $1,$2,$3,$4::JSON,$5,$6 "+
                                 "on conflict (tenantId,resourceType,eventId) do nothing returning eventId"),tenantId,events)
@@ -92,6 +102,7 @@ public class Postgres13ReactiveEventRepository extends Postgres13ReadOnlyReactiv
 
     private <T extends Event> Mono<T> updateEvent(Connection connection,String tenantId,String eventId,T event)
     {
+        validateObject(event);
         String json = GsonCodec.encode(event);
         long time = System.currentTimeMillis();
         String tenantId2 = tenantId == null ? "default": tenantId;
