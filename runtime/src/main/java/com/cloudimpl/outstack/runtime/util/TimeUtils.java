@@ -51,8 +51,20 @@ public class TimeUtils {
     return (offset == 0) ? DateTime.now().withZone(zone) : DateTime.now().plus(offset).withZone(zone);
   }
 
+
   public static DateTime fromEpoch(long mills) {
     return new DateTime(mills).withZone(zone);
+  }
+
+  public static DateTime fromString(String string, String format,String zone) {
+    DateTime dt = DateTime.parse(string, DateTimeFormat.forPattern(format).withZone(DateTimeZone.forID(zone)));
+    if (dt.getYear() != 1970) {
+      return dt;
+    } else {
+      DateTime currentDate = TimeUtils.getCurrentTime();
+      return dt.withYear(currentDate.getYear()).withMonthOfYear(currentDate.getMonthOfYear())
+              .withDayOfMonth(currentDate.getDayOfMonth()).withMillisOfDay(0);
+    }
   }
 
   public static DateTime fromString(String string, String format) {
