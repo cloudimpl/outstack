@@ -1,12 +1,11 @@
 package com.cloudimpl.outstack.repo;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 @Builder
 @AllArgsConstructor
@@ -18,33 +17,36 @@ public class QueryRequest {
     private boolean mergeNonTenant = false;
     private List<String> distinctFields = Collections.EMPTY_LIST;
 
-    public String getQuery()
-    {
-        return query == null ? "":query;
+    public QueryRequest(String query, String orderBy, Integer pageSize, Integer pageNum, Boolean mergeNonTenant, List<String> distinctFields) {
+        this.query = query;
+        this.orderBy = orderBy;
+        this.pageSize = pageSize == null ? Integer.MAX_VALUE : pageSize;
+        this.pageNum = pageNum == null ? 0 : pageNum;
+        this.mergeNonTenant = mergeNonTenant != null && mergeNonTenant;
+        this.distinctFields = distinctFields;
     }
 
-    public String getOrderBy()
-    {
-        return orderBy == null ? "":orderBy;
+    public String getQuery() {
+        return query == null ? "" : query;
     }
 
-    public int getPageSize()
-    {
+    public String getOrderBy() {
+        return orderBy == null ? "" : orderBy;
+    }
+
+    public int getPageSize() {
         return pageSize == 0 ? Integer.MAX_VALUE : pageSize;
     }
 
-    public int getPageNum()
-    {
+    public int getPageNum() {
         return pageNum;
     }
 
-    public boolean isMergeNonTenant()
-    {
+    public boolean isMergeNonTenant() {
         return this.mergeNonTenant;
     }
 
-    public Collection<String> getDistinctFields()
-    {
+    public Collection<String> getDistinctFields() {
         return this.distinctFields;
     }
 }
