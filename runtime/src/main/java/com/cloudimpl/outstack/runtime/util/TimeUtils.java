@@ -56,6 +56,10 @@ public class TimeUtils {
     return new DateTime(mills).withZone(zone);
   }
 
+  public static String fromEpochToString(long mills,DateTimeZone zone,String format) {
+    return new DateTime(mills).withZone(zone).toString(format);
+  }
+
   public static DateTime fromString(String string, String format,String zone) {
     DateTime dt = DateTime.parse(string, DateTimeFormat.forPattern(format).withZone(DateTimeZone.forID(zone)));
     if (dt.getYear() != 1970) {
