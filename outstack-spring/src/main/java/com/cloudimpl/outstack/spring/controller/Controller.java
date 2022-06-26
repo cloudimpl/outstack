@@ -43,7 +43,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 @RestController
 
 @CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.DELETE, RequestMethod.GET, RequestMethod.POST})
-@RequestMapping(path = "/")
+@RequestMapping(path = "/managed")
 public class Controller extends AbstractController {
 
     public Controller(Cluster cluster) {
