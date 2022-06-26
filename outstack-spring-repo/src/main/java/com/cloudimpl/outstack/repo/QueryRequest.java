@@ -15,6 +15,7 @@ public class QueryRequest {
     private int pageSize = Integer.MAX_VALUE;
     private int pageNum = 0;
     private boolean mergeNonTenant = false;
+    @Builder.Default
     private List<String> distinctFields = Collections.EMPTY_LIST;
 
     public QueryRequest(String query, String orderBy, Integer pageSize, Integer pageNum, Boolean mergeNonTenant, List<String> distinctFields) {
@@ -23,7 +24,7 @@ public class QueryRequest {
         this.pageSize = pageSize == null ? Integer.MAX_VALUE : pageSize;
         this.pageNum = pageNum == null ? 0 : pageNum;
         this.mergeNonTenant = mergeNonTenant != null && mergeNonTenant;
-        this.distinctFields = distinctFields;
+        this.distinctFields = distinctFields == null ? Collections.EMPTY_LIST : distinctFields;
     }
 
     public String getQuery() {
