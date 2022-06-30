@@ -18,6 +18,8 @@ import io.r2dbc.spi.Statement;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +41,11 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     @Override
     public <T extends Entity> Mono<T> createOrUpdate(String tenantId, T entity) {
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> createOrUpdate(conn, tenantId, entity)));
+    }
+
+    @Override
+    public <T extends Entity> Flux<T> createOrUpdate(String tenantId, Collection<T> entities) {
+        return createTenantIfNotExist(tenantId).flatMapMany(it -> it.executeFlux(config.connectionFromPool(table.config(), tenantId), conn -> Flux.fromIterable(entities).flatMap(e->createOrUpdate(conn, tenantId, e))));
     }
 
     @Override

@@ -19,6 +19,10 @@ public class Event {
         return this.meta;
     }
 
+    public String getEventId(){
+        return this.eventId;
+    }
+
     public  final class Meta
     {
         private String tenantId;
