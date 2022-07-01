@@ -34,6 +34,7 @@ public class ConsistentHashRouter implements CloudRouter {
         this.serviceRegistry = serviceRegistry;
         this.topic = topic;
         ring = HashRing.<SimpleNode>newBuilder().partitionRate(64).nodes(Collections.EMPTY_LIST).build();
+        serviceRegistry.services().filter(s -> s.name().equals(topic)).forEach(s -> ring.add(SimpleNode.of(s.id())));
         serviceRegistry.flux("ConsistentHashRouter:"+topic)
                 .filter(e -> e.getType() == FluxMap.Event.Type.ADD)
                 .map(e->e.getValue())
