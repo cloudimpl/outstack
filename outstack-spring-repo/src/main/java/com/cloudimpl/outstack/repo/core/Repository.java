@@ -105,7 +105,11 @@ public abstract class Repository {
         {
             SafeExecute safeAction = new SafeExecute();
             return supplier.get()
+                    .flatMap(connection -> Mono.from(connection.setAutoCommit(false))
+                            .thenReturn(connection))
+                    .flatMap(connection -> Mono.from(connection.beginTransaction()).thenReturn(connection))
                     .flatMapMany(connection -> function.apply(connection)
+                            .doOnComplete(() -> Mono.from(connection.commitTransaction()).subscribe())
                             .doOnCancel(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe()))
                             .doOnTerminate(() -> safeAction.execute(() -> Mono.from(connection.close()).subscribe())))
                     .publishOn(ioScheduler);
