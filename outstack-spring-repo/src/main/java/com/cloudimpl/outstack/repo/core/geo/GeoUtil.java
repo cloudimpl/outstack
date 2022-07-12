@@ -28,6 +28,9 @@ public class GeoUtil {
             return GeoUtil.WKB_WRITER.write(GeoUtil.GEOMETRY_FACTORY.createPolygon(convertCoordinates(polygon.getPoints())));
 //            Geometry geometry = GeoUtil.GEOMETRY_FACTORY.createPolygon(convertCoordinates(polygon.getPoints()));
 //            return WKB_WRITER.write(getGeometryForPolygon(getPolygon(convertCoordinates(polygon.getPoints()))));
+        } else if (geo instanceof Polygons) {
+            Polygons polygons = (Polygons) geo;
+            return GeoUtil.WKB_WRITER.write(GeoUtil.GEOMETRY_FACTORY.createMultiPolygon(convertToMultiPolygon(polygons.getPolygons())));
         }
         throw new RepoException("uknown geometry " + geo.getClass().getName());
     }
@@ -53,5 +56,12 @@ public class GeoUtil {
         return Arrays.stream(geometry)
                 .map(points -> new Coordinate(points[0], points[1]))
                 .toArray(Coordinate[]::new);
+    }
+
+    public static com.vividsolutions.jts.geom.Polygon[] convertToMultiPolygon(double[][][] geometry) {
+        return Arrays.stream(geometry)
+                .map(GeoUtil::convertCoordinates)
+                .map(GEOMETRY_FACTORY::createPolygon)
+                .toArray(com.vividsolutions.jts.geom.Polygon[]::new);
     }
 }
