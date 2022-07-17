@@ -45,12 +45,17 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
 
     @Override
     public <T extends Entity> Flux<T> createOrUpdate(String tenantId, Collection<T> entities) {
-        return createTenantIfNotExist(tenantId).flatMapMany(it -> it.executeFlux(config.connectionFromPool(table.config(), tenantId), conn -> Flux.fromIterable(entities).flatMap(e->createOrUpdate(conn, tenantId, e))));
+        return createTenantIfNotExist(tenantId).flatMapMany(it -> it.executeFlux(config.connectionFromPool(table.config(), tenantId), conn -> Flux.fromIterable(entities).flatMap(e -> createOrUpdate(conn, tenantId, e))));
     }
 
     @Override
     public <T extends Entity> Mono<T> delete(String tenantId, Class<T> resourceType, String id) {
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> delete(conn, tenantId, resourceType, id)));
+    }
+
+    @Override
+    public <T extends Entity> Mono<T> delete(String tenantId, String tid) {
+        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> delete(conn, tenantId, tid)));
     }
 
     @Override
@@ -112,7 +117,6 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                 .map(it -> (T) EntityUtil.with(child, it, tenantId, time, time)).next()
                 .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity already exist or parent not found"))));
     }
-
 
 
     private <T extends Entity> Mono<T> create(Connection connection, String tenantId, T entity) {
@@ -201,6 +205,22 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                             .bind("$3", id)
                             .execute()).take(1).flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist or child entity attached to it"))));
+        }
+
+    }
+
+    private <T extends Entity> Mono<T> delete(Connection connection, String tenantId, String id) {
+        if (id.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("delete from " + table.name() + " as x where x.tenantId = $1 and x.tid = $2 " +
+                                    " and not exists( select 1 from " + table.name() + " as k where k.parentTenantId = x.tenantId and parentTid = x.tid )" +
+                                    "returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                            .bind("$1", tenantId == null ? "default" : tenantId)
+                            .bind("$2", id)
+                            .execute()).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist or child entity attached to it"))));
+        } else {
+            return Mono.error(new RepoException("technical id needed"));
         }
 
     }
