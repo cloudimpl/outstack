@@ -130,7 +130,7 @@ public class RestControllerService implements Function<CloudMessage, CloudMessag
             this.serviceManager.putCmdContext(desc.getApiContext(), desc.getVersion(), desc);
             addEntities(desc);
         } catch (Exception ex) {
-            logger.error("addCmdDescriptor {}", ex.getMessage());
+            logger.error("addCmdDescriptor {0}", ex.getMessage());
         }
     }
 
