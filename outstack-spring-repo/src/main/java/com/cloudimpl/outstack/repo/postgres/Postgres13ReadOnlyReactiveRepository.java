@@ -4,6 +4,7 @@ import com.cloudimpl.outstack.common.GsonCodec;
 import com.cloudimpl.outstack.repo.Entity;
 import com.cloudimpl.outstack.repo.EntityUtil;
 import com.cloudimpl.outstack.repo.QueryRequest;
+import com.cloudimpl.outstack.repo.RepoException;
 import com.cloudimpl.outstack.repo.core.ReadOnlyReactiveRepository;
 import com.cloudimpl.outstack.repo.core.Repository;
 import com.cloudimpl.outstack.repo.core.geo.GeoUtil;
@@ -27,6 +28,11 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
     @Override
     public <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id) {
         return executeMono(config.connectionFromPool(table.config(),tenantId), connection -> queryById(connection, tenantId, resourceType, id));
+    }
+
+    @Override
+    public <T extends Entity> Mono<T> queryById(String tenantId, String tid) {
+        return executeMono(config.connectionFromPool(table.config(),tenantId), connection -> queryById(connection, tenantId, tid));
     }
 
     @Override
@@ -234,6 +240,19 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
                     .bind("$3", id)
                     .execute()).take(1).flatMap(it -> it.map((row, meta) -> (T)createEntity(row))).next();
 
+        }
+    }
+
+    protected <T extends Entity> Mono<T> queryById(Connection connection, String tenantId, String tid) {
+        if (tid.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> conn.createStatement("select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() + " where tenantId = $1 and tid = $2")
+                            .bind("$1", tenantId == null ? "default" : tenantId)
+                            .bind("$2", tid)
+                            .execute()).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) createEntity(row))).next();
+
+        } else {
+            return Mono.error(new RepoException("technical id needed"));
         }
     }
 

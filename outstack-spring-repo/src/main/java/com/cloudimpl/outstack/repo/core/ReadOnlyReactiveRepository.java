@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 
 public interface ReadOnlyReactiveRepository extends BaseRepository {
     <T extends Entity> Mono<T> queryById(String tenantId, Class<T> resourceType, String id);
+    <T extends Entity> Mono<T> queryById(String tenantId, String tid);
     <T extends Entity> Flux<T> queryByType(String tenantId, Class<T> resourceType, QueryRequest request);
     <T extends Entity> Mono<ResultSet<T>> queryByTypeWithPagination(String tenantId, Class<T> resourceType, QueryRequest request);
     <T extends Entity> Flux<T> query(String tenantId, QueryRequest request);
