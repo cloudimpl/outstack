@@ -223,6 +223,11 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
     }
 
     @Override
+    public Optional<T> getEntityById(String id, boolean isIgnoreCase) {
+        return this.<T>getQueryOperations().getRootById(entityType, id, getTenantId(), isIgnoreCase);
+    }
+
+    @Override
     public <C extends ChildEntity<T>> Optional<C> getChildEntityById(Class<C> childType, String id) {
         EntityIdHelper.validateTechnicalId(_id);
         return this.<T>getQueryOperations().getChildById(entityType, _id, childType, id, getTenantId());
@@ -249,6 +254,14 @@ public class RootEntityContext<T extends RootEntity> extends EntityContext<T> im
             return Optional.empty();
         }
         return getEntityById(_id);
+    }
+
+    @Override
+    public Optional<T> getEntity(boolean isIgnoreCase) {
+        if (this._id == null) {
+            return Optional.empty();
+        }
+        return getEntityById(_id, isIgnoreCase);
     }
 
     @Override

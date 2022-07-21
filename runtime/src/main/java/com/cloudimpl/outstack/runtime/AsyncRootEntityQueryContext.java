@@ -64,6 +64,11 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     }
 
     @Override
+    public Optional<T> getEntity(boolean isIgnoreCase) {
+        return inst.getEntity(isIgnoreCase);
+    }
+
+    @Override
     public  ResultSet<T> getAll(Query.PagingRequest pagingRequest) {
         return inst.getAll(pagingRequest);
     }
@@ -71,6 +76,11 @@ public class AsyncRootEntityQueryContext<T extends RootEntity> implements RootEn
     @Override
     public Optional<T> getEntityById(String id) {
         return inst.getEntityById(id);
+    }
+
+    @Override
+    public Optional<T> getEntityById(String id, boolean isIgnoreCase) {
+        return inst.getEntityById(id, isIgnoreCase);
     }
 
     @Override

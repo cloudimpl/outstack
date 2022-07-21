@@ -195,6 +195,11 @@ public class ChildEntityContext<R extends RootEntity, T extends ChildEntity<R>> 
     }
 
     @Override
+    public Optional<T> getEntityById(String id, boolean isIgnoreCase) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public R getRoot() {
         return (R) this.<R>getQueryOperations().getRootById(rootType, rootId, getTenantId()).orElseThrow(() -> new DomainEventException(DomainEventException.ErrorCode.ENTITY_NOT_FOUND,"root entity {0} not found for id {1}", rootType, rootId));
     }

@@ -31,7 +31,9 @@ public interface RootEntityQueryContext<T extends RootEntity> extends EntityQuer
     }
     
     Optional<T> getEntity();
-    
+
+    Optional<T> getEntity(boolean isIgnoreCase);
+
     <T extends RootEntity> ResultSet<T> getAll(Query.PagingRequest pagingRequest);
    
     RootEntityQueryContext<T> asNonTenantContext(String id);

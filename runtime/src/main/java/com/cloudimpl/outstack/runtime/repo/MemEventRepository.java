@@ -130,6 +130,11 @@ public class MemEventRepository<T extends RootEntity> extends EventRepositoy<T> 
     }
 
     @Override
+    public Optional<T> getRootById(Class<T> rootType, String id, String tenantId, boolean isIgnoreCase) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public synchronized <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         if (childId.startsWith(TID_PREFIX)) {

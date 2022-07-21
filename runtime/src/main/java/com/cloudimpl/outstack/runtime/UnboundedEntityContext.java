@@ -61,6 +61,11 @@ private EntityContextProvider entityContextProvider;
     }
 
     @Override
+    public Optional<T> getEntityById(String id, boolean isIgnoreCase) {
+        return this.<T>getQueryOperations().getRootById(entityType, id, getTenantId(), isIgnoreCase);
+    }
+
+    @Override
     public ResultSet<Event> getEntityEventsById(String id, Query.PagingRequest pageRequest) {
         return null;
     }
@@ -153,5 +158,15 @@ private EntityContextProvider entityContextProvider;
     @Override
     public boolean isIdExist(String id, String tenantId) {
         return getQueryOperations().isIdExist(id, tenantId);
+    }
+
+    @Override
+    public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, String tenantId) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
+    public ExternalEntityQueryProvider getEntityQueryProviderFromTenantList(Class rootType, Collection tenantId) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 }

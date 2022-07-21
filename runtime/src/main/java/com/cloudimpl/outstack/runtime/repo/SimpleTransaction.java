@@ -193,6 +193,11 @@ public class SimpleTransaction<T extends RootEntity> implements ITransaction<T> 
     }
 
     @Override
+    public Optional<T> getRootById(Class<T> rootType, String id, String tenantId, boolean isIgnoreCase) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         if (EntityIdHelper.isTechnicalId(childId)) {

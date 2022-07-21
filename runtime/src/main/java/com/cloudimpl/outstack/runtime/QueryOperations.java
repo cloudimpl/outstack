@@ -24,6 +24,7 @@ public interface QueryOperations<R extends RootEntity>{
     <K> K executeRawQuery(String rawQuery);
     boolean isIdExist(String id,String tenantId);
     Optional<R> getRootById(Class<R> rootType,String id,String tenantId);
+    Optional<R> getRootById(Class<R> rootType,String id,String tenantId, boolean isIgnoreCase);
     <T extends ChildEntity<R>> Optional<T> getChildById(Class<R> rootType,String id,Class<T> childType, String childId,String tenantId);
     <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType,String id,Class<T> childType,String tenantId,Query.PagingRequest paging);
     <T extends ChildEntity<R>> ResultSet<T> getAllChildByType(Class<R> rootType,String id,Class<T> childType,Collection<String> tenantId,Query.PagingRequest paging);

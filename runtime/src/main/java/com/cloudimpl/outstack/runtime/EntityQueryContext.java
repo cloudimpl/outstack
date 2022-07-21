@@ -24,6 +24,8 @@ public interface EntityQueryContext<T extends Entity> {
 
     Optional<T> getEntityById(String id);
 
+    Optional<T> getEntityById(String id, boolean isIgnoreCase);
+
     boolean isIdExist(String id,String tenantId);
     
     String getTenantId();

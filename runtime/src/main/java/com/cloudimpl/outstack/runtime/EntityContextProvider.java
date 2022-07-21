@@ -140,7 +140,8 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                 validateRootTid();
                 Class<R> rootType = Util.extractGenericParameter(entityType, ChildEntity.class, 0);
                 Class<C> childType = (Class<C>) entityType;
-                return (Z) new ChildEntityContext<>(
+                return
+                        (Z) new ChildEntityContext<>(
                         rootType,
                         rootTid, childType, tenantId,
                         Optional.of((EntityProvider) this::loadEntity), idGenerator, Optional.of((CRUDOperations) this),
@@ -217,6 +218,14 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
                 return Optional.ofNullable((R) mapTrnEntities.get(RootEntity.makeTRN(rootType, version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
             } else {
                 return Optional.ofNullable((R) mapBrnEntities.get(RootEntity.makeRN(rootType, version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
+            }
+        }
+        @Override
+        public Optional<R> getRootById(Class<R> rootType, String id, String tenantId, boolean isIgnoreCase) {
+            if (id.startsWith(TID_PREFIX)) {
+                return Optional.ofNullable((R) mapTrnEntities.get(RootEntity.makeTRN(rootType, version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId));
+            } else {
+                return Optional.ofNullable((R) mapBrnEntities.get(RootEntity.makeRN(rootType, version, id, tenantId))).or(() -> queryOperation.getRootById(rootType, id, tenantId,isIgnoreCase));
             }
         }
 
@@ -400,6 +409,11 @@ public class EntityContextProvider<T extends RootEntity> extends EntityQueryCont
         @Override
         public Optional<R> getRootById(Class<R> rootType, String id, String tenantId) {
             return transactionMap.values().stream().filter(tr -> tr.getRootType() == rootType).map(tx -> tx.getRootById(rootType, id, tenantId)).filter(t -> t.isPresent()).findFirst().orElse(this.queryOperation.getRootById(rootType, id, tenantId));
+        }
+
+        @Override
+        public Optional<R> getRootById(Class<R> rootType, String id, String tenantId, boolean isIgnoreCase) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
