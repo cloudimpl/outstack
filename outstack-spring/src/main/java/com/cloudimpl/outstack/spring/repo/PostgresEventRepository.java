@@ -29,6 +29,8 @@ import com.cloudimpl.outstack.runtime.domainspec.RootEntity;
 import com.cloudimpl.outstack.runtime.domainspec.TenantRequirement;
 import com.cloudimpl.outstack.runtime.repo.EventRepoUtil;
 import com.cloudimpl.outstack.spring.component.SpringApplicationConfigManager.Provider;
+
+import java.lang.annotation.Annotation;
 import java.sql.Connection;
 import java.util.*;
 import java.util.function.Function;
@@ -278,6 +280,23 @@ public class PostgresEventRepository<T extends RootEntity> extends EventReposito
         } else {
             String brn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId));
             fn = conn -> factory.getEntityByBrn(conn, tableName, brn, t);
+        }
+
+        Optional<String> out = factory.executeQuery(fn);
+        return out.map(s -> GsonCodec.decode(rootType, s));
+    }
+
+    @Override
+    public Optional<T> getRootById(Class<T> rootType, String id, String tenantId, boolean isIgnoreCase) {
+
+        String t = tenantId != null ? tenantId : "nonTenant";
+        Function<Connection, Optional<String>> fn;
+
+        if (EntityIdHelper.isTechnicalId(id)) {
+            fn = conn -> factory.getEntityByTrn(conn, tableName, rootType.getSimpleName(), id, t);
+        } else {
+            String brn = resourceHelper.getFQBrn(RootEntity.makeRN(rootType, version, id, tenantId));
+            fn = conn -> factory.getEntityByBrn(conn, tableName, brn, t, isIgnoreCase);
         }
 
         Optional<String> out = factory.executeQuery(fn);

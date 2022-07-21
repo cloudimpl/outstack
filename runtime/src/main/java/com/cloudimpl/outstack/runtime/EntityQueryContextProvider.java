@@ -89,8 +89,9 @@ public class EntityQueryContextProvider<T extends RootEntity> {
                 Function<Class<? extends RootEntity>, QueryOperations<?>> queryOperationSelector, String version, boolean async, Supplier<BiFunction<String, Object, Mono>> requestHandler) {
             this.idGenerator = idGenerator;
             this.type = type;
+            EntityMetaDetail meta = EntityMetaDetailCache.instance().getEntityMeta(this.type);
             if (rootTid != null) {
-                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId).map(t -> t.id()).orElse(null);
+                this.rootTid = EntityIdHelper.isTechnicalId(rootTid) ? rootTid : queryOperation.getRootById(type, rootTid, tenantId, meta.isIdIgnoreCase()).map(t -> t.id()).orElse(null);
             }
             this.tenantId = tenantId;
             this.queryOperation = queryOperation;
@@ -148,6 +149,11 @@ public class EntityQueryContextProvider<T extends RootEntity> {
             } else {
                 return queryOperation.getRootById(rootType, id, tenantId);
             }
+        }
+
+        @Override
+        public Optional<R> getRootById(Class<R> rootType, String id, String tenantId, boolean isIgnoreCase) {
+            throw new UnsupportedOperationException("Not supported.");
         }
 
         @Override

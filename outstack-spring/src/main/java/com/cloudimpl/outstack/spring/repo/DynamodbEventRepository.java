@@ -465,6 +465,11 @@ public class DynamodbEventRepository<T extends RootEntity> extends EventReposito
     }
 
     @Override
+    public Optional<T> getRootById(Class<T> rootType, String id, String tenantId, boolean isIgnoreCase) {
+        throw new UnsupportedOperationException("Not supported.");
+    }
+
+    @Override
     public <C extends ChildEntity<T>> Optional<C> getChildById(Class<T> rootType, String id, Class<C> childType, String childId, String tenantId) {
         EntityIdHelper.validateTechnicalId(id);
         String pKey = resourceHelper.getFQTrn(RootEntity.makeTRN(rootType, version, id, tenantId));

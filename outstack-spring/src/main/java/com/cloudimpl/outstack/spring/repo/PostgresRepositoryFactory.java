@@ -380,6 +380,24 @@ public class PostgresRepositoryFactory implements EventRepositoryFactory {
         }
     }
 
+    protected Optional<String> getEntityByBrn(Connection conn, String tableName, String brn, String tenantId, boolean isIgnoreCase) {
+        createTenantIfNotExist(tableName, tenantId);
+        try (PreparedStatement stmt = isIgnoreCase ? conn.prepareStatement("select json from " + tableName + " where LOWER(brn) = LOWER(?) and tenantId = ?") :
+                conn.prepareStatement("select json from " + tableName + " where brn = ? and tenantId = ?")) {
+            stmt.setString(1, brn);
+            stmt.setString(2, tenantId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(rs.getString("json"));
+                } else {
+                    return Optional.empty();
+                }
+            }
+        } catch (SQLException ex) {
+            throw new PostgresException(ex);
+        }
+    }
+
     protected Optional<String> getEntityByTrn(Connection conn, String tableName, String entityType, String id, String tenantId) {
         createTenantIfNotExist(tableName, tenantId);
         try (PreparedStatement stmt = conn.prepareStatement("select json from " + tableName + " where entityType = ? and entityId = ? and tenantId = ?")) {
