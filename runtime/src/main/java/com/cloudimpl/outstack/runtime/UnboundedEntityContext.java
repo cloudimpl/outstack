@@ -159,14 +159,4 @@ private EntityContextProvider entityContextProvider;
     public boolean isIdExist(String id, String tenantId) {
         return getQueryOperations().isIdExist(id, tenantId);
     }
-
-    @Override
-    public ExternalEntityQueryProvider getEntityQueryProvider(Class rootType, String tenantId) {
-        throw new UnsupportedOperationException("Not supported.");
-    }
-
-    @Override
-    public ExternalEntityQueryProvider getEntityQueryProviderFromTenantList(Class rootType, Collection tenantId) {
-        throw new UnsupportedOperationException("Not supported.");
-    }
 }
