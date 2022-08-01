@@ -15,6 +15,7 @@ import com.cloudimpl.outstack.util.SrvUtil;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 
+import java.lang.reflect.Modifier;
 import java.util.stream.Collectors;
 
 /**
@@ -52,6 +53,6 @@ public class ResourcesLoaderEx extends ResourcesLoader{
     {
         super.preload(rs);
         ClassInfoList list = rs.getClassesImplementing(IReactiveService.class.getName());
-        metaList.addAll(list.loadClasses().stream().filter(cls -> !cls.isInterface()).map(this::toServiceMeta).collect(Collectors.toList()));
+        metaList.addAll(list.loadClasses().stream().filter(cls -> !cls.isInterface()).filter(cls -> !Modifier.isAbstract(cls.getModifiers())).map(this::toServiceMeta).collect(Collectors.toList()));
     }
 }
