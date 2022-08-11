@@ -69,6 +69,12 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> update(conn, tenantId, entity, id)));
     }
 
+    @Override
+    public <T extends Entity> Mono<T> updateChild(String parentTid, String tenantId, T child, String id) {
+        return createTenantIfNotExist(tenantId)
+                .flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> updateChild(conn, parentTid, tenantId, child, id)));
+    }
+
     private void checkGeoEntity(Object child) {
         if (child instanceof GeoData) {
             if (!table.enableGeo()) {
@@ -233,6 +239,27 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         boolean geoApplicable = table.enableGeo() && entity instanceof GeoData && GeoData.class.cast(entity).getGeom() != null;
         if (id.startsWith("id-")) {
             return Mono.just(connection).flatMapMany(conn -> {
+                        Statement stmt = conn.createStatement("update " + table.name() + " set uniqueid=$1, id=$2, entity = $3::JSON , updatedTime = $4 " +
+                                        (geoApplicable ? " , geom = $8" : "") +
+                                        "where parenttid is null and tid= $5 and tenantId= $6 and resourceType=$7 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                .bind("$1", entity.id())
+                                .bind("$2", entity.id())
+                                .bind("$3", json)
+                                .bind("$4", time)
+                                .bind("$5", id)
+                                .bind("$6", tenantId == null ? "default" : tenantId)
+                                .bind("$7", entity.getClass().getName());
+                        if (geoApplicable) {
+                            GeoMetry geo = GeoData.class.cast(entity).getGeom();
+                            stmt.bind("$8", GeoUtil.convertToGeo(geo));
+                        }
+                        return stmt.execute();
+                    }).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
+
+        } else {
+            return Mono.just(connection).flatMapMany(conn -> {
                         Statement stmt = conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
                                         (geoApplicable ? " , geom = $6" : "") +
                                         "where tid= $3 and tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
@@ -249,6 +276,37 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     }).take(1)
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
+        }
+
+    }
+
+    private <T extends Entity> Mono<T> updateChild(Connection connection, String parentTid, String tenantId, T child, String id) {
+        Objects.requireNonNull(parentTid);
+        checkGeoEntity(child);
+        validateObject(child);
+        String json = GsonCodec.encode(child);
+        long time = System.currentTimeMillis();
+        boolean geoApplicable = table.enableGeo() && child instanceof GeoData && GeoData.class.cast(child).getGeom() != null;
+        if (id.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> {
+                        Statement stmt = conn.createStatement("update " + table.name() + " set uniqueid=$1, id=$2, entity = $3::JSON , updatedTime = $4 " +
+                                        (geoApplicable ? " , geom = $8" : "") +
+                                        "where parenttid is not null and tid= $5 and tenantId= $6 and resourceType=$7 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                .bind("$1",parentTid + "/" + child.id())
+                                .bind("$2", child.id())
+                                .bind("$3", json)
+                                .bind("$4", time)
+                                .bind("$5", id)
+                                .bind("$6", tenantId == null ? "default" : tenantId)
+                                .bind("$7", child.getClass().getName());
+                        if (geoApplicable) {
+                            GeoMetry geo = GeoData.class.cast(child).getGeom();
+                            stmt.bind("$8", GeoUtil.convertToGeo(geo));
+                        }
+                        return stmt.execute();
+                    }).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
 
         } else {
             return Mono.just(connection).flatMapMany(conn -> {
@@ -259,9 +317,9 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                                 .bind("$2", time)
                                 .bind("$3", id)
                                 .bind("$4", tenantId == null ? "default" : tenantId)
-                                .bind("$5", entity.getClass().getName());
+                                .bind("$5", child.getClass().getName());
                         if (geoApplicable) {
-                            GeoMetry geo = GeoData.class.cast(entity).getGeom();
+                            GeoMetry geo = GeoData.class.cast(child).getGeom();
                             stmt.bind("$6", GeoUtil.convertToGeo(geo));
                         }
                         return stmt.execute();
@@ -269,7 +327,6 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
                     .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
         }
-
     }
 
     protected Mono<Postgres13ReactiveRepository> createTenantIfNotExist(String tenantId) {
