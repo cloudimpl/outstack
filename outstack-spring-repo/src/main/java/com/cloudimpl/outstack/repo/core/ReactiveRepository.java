@@ -14,4 +14,5 @@ public interface ReactiveRepository extends ReadOnlyReactiveRepository{
     <T extends Entity> Mono<T> delete(String tenantId,String tid);
     <T extends Entity> Mono<T> createChild(String parentTenantId,String parentTid,String tenantId,T child);
     <T extends Entity> Mono<T> update(String tenantId, T entity, String id);
+    <T extends Entity> Mono<T> updateChild(String parentTid, String tenantId, T child, String id);
 }
