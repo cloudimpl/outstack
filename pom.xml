@@ -34,6 +34,8 @@
         <cloudImpl.errorCode.errorFileName>Collection</cloudImpl.errorCode.errorFileName>
         <maven.compiler.source>15</maven.compiler.source>
         <maven.compiler.target>15</maven.compiler.target>
+        <sonar.organization>cloudimpl</sonar.organization>
+        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
     </properties>
     <dependencies>
         <dependency>
