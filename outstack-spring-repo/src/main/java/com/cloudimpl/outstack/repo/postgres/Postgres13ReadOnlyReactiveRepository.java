@@ -79,7 +79,7 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
     public <T extends Entity> Flux<T> findChildsByType(String tenantId,String tid,String childTenantId,Class<T> resourceType,QueryRequest request)
     {
         QueryRequest request2 = QueryRequest.builder()
-                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : " and _resourceType = '" + resourceType.getName() + "'")
+                .query(request.getQuery().isEmpty() ? "_resourceType = '" + resourceType.getName() + "'" : request.getQuery() + " and _resourceType = '" + resourceType.getName() + "'")
                 .orderBy(request.getOrderBy())
                 .pageNum(request.getPageNum())
                 .pageSize(request.getPageSize())
