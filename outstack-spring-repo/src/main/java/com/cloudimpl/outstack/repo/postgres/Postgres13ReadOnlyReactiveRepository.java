@@ -167,6 +167,10 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
     }
 
     private <T extends Entity> Flux<T> query(Connection connection, String tenantId, QueryRequest request) {
+        if(tenantId != null && tenantId.equals("*"))
+        {
+            return queryAllTenants(connection,request);
+        }
         PostgresSqlNode sqlNode = new PostgresSqlNode();
         String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
         String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
@@ -177,6 +181,18 @@ public class Postgres13ReadOnlyReactiveRepository extends Repository implements 
         return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
                         .bind("$1", tenantId2)
                         .bind("$2", request.isMergeNonTenant() ? "default" : tenantId2)
+                        .execute())
+                .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
+    }
+
+    private <T extends Entity> Flux<T> queryAllTenants(Connection connection,QueryRequest request) {
+        PostgresSqlNode sqlNode = new PostgresSqlNode();
+        String whereClause = request.getQuery().isEmpty() ? "" : sqlNode.eval(RestQLParser.parse(request.getQuery()));
+        String orderBy = request.getOrderBy().isEmpty() ? "createdTime" : (new PostgresSqlNode().eval(RestQLParser.parseOrderBy(request.getOrderBy())));
+
+        String sqlPart1 = "select  tenantId,createdTime,updatedTime,tid,resourceType,entity from " + table.name() +  (!whereClause.isEmpty() ? " where " + whereClause  : "");
+        String sql = sqlPart1 + " order by " + orderBy + " limit " + request.getPageSize() + " offset " + (request.getPageNum() * request.getPageSize());
+        return Mono.just(connection).flatMapMany(conn -> conn.createStatement(sql)
                         .execute())
                 .flatMap(it -> it.map((row, meta) -> (T) createEntity(row)));
     }
