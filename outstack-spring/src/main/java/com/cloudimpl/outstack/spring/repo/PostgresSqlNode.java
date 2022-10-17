@@ -20,7 +20,7 @@ public class PostgresSqlNode implements RestQLNode {
         if (node instanceof ConstArrayNode) {
             return ConstArrayNode.class.cast(node).getVals().toString();
         } else if (node instanceof ConstStringNode) {
-            return String.valueOf(ConstStringNode.class.cast(node).getVal());
+            return String.valueOf(ConstStringNode.class.cast(node).getVal()).replaceAll("\\\\'", "''");
         } else if (node instanceof ConstNumberNode) {
             return String.valueOf(ConstNumberNode.class.cast(node).getVal());
         } else if (node instanceof ConstBooleanNode) {
