@@ -312,7 +312,7 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
             return Mono.just(connection).flatMapMany(conn -> {
                         Statement stmt = conn.createStatement("update " + table.name() + " set entity = $1::JSON , updatedTime = $2 " +
                                         (geoApplicable ? " , geom = $6" : "") +
-                                        "where id= $3 tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                        "where id= $3 and tenantId= $4 and resourceType=$5 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
                                 .bind("$1", json)
                                 .bind("$2", time)
                                 .bind("$3", id)
