@@ -76,6 +76,11 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
     }
 
     @Override
+    public <T extends Entity> Mono<T> convertToChild(String tenantId, String parentTid, String id, Class<T> resourceType) {
+        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> convertToChild(conn, tenantId, parentTid, id, resourceType)));
+    }
+
+    @Override
     public <T extends Entity> Mono<T> createOrUpdateChild(String parentTenantId, String parentTid, String tenantId, T child) {
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> createOrUpdateChild(conn, parentTenantId, parentTid, tenantId, child)));
     }
@@ -321,6 +326,41 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                             GeoMetry geo = GeoData.class.cast(entity).getGeom();
                             stmt.bind("$6", GeoUtil.convertToGeo(geo));
                         }
+                        return stmt.execute();
+                    }).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
+        }
+
+    }
+
+    private <T extends Entity> Mono<T> convertToChild(Connection connection, String tenantId, String parentTid, String id, Class<T> resourceType) {
+        long time = System.currentTimeMillis();
+        if (id.startsWith("id-")) {
+            return Mono.just(connection).flatMapMany(conn -> {
+                        Statement stmt = conn.createStatement("update " + table.name() + " set parenttid=$1, uniqueid=$2, updatedTime = $3 " +
+                                        "where parenttid is null and tid= $4 and tenantId= $5 and resourceType=$6 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                .bind("$1", parentTid)
+                                .bind("$2", parentTid + "/" + id)
+                                .bind("$3", time)
+                                .bind("$4", id)
+                                .bind("$5", tenantId == null ? "default" : tenantId)
+                                .bind("$6", resourceType.getName());
+                        return stmt.execute();
+                    }).take(1)
+                    .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
+                    .switchIfEmpty(Mono.defer(() -> Mono.error(new RepoException("entity not exist"))));
+
+        } else {
+            return Mono.just(connection).flatMapMany(conn -> {
+                        Statement stmt = conn.createStatement("update " + table.name() + " set parenttid = $1, uniqueid=$2, updatedTime = $3 " +
+                                        "where parenttid is null and id= $4 and tenantId= $5 and resourceType=$6 returning tenantId,createdTime,updatedTime,tid,resourceType,entity")
+                                .bind("$1", parentTid)
+                                .bind("$2", parentTid + "/" + id)
+                                .bind("$3", time)
+                                .bind("$4", id)
+                                .bind("$5", tenantId == null ? "default" : tenantId)
+                                .bind("$6", resourceType.getName());
                         return stmt.execute();
                     }).take(1)
                     .flatMap(it -> it.map((row, meta) -> (T) (createEntity(row)))).next()
