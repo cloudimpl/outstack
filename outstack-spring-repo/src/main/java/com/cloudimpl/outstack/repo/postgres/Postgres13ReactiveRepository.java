@@ -206,8 +206,8 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         boolean geoApplicable = table.enableGeo() && child instanceof GeoData && GeoData.class.cast(child).getGeom() != null;
 
         String sql = "insert into " + table.name() + " as tab(tenantId, resourceType, parentTenantId, parentTid, uniqueId, id, tid, entity, createdTime, updatedTime" + (geoApplicable ? ",geom" : "") + ") " +
-                "values($1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$11" : "") + ") on conflict (tenantId,resourceType,uniqueId) do update set " +
-                "entity = $12::JSON , updatedTime = $13" + (geoApplicable ? " , geom = $14" : "") + " returning tid,createdTime,updatedTime";
+                "values($1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$13" : "") + ") on conflict (tenantId,resourceType,uniqueId) do update set " +
+                "entity = $11::JSON , updatedTime = $12" + (geoApplicable ? " , geom = $14" : "") + " returning tid,createdTime,updatedTime";
 
         return Mono.just(connection).flatMapMany(conn -> {
                     Statement stmt = conn.createStatement(sql)
