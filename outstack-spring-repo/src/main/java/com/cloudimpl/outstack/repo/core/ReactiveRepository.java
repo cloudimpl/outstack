@@ -15,6 +15,7 @@ public interface ReactiveRepository extends ReadOnlyReactiveRepository{
     <T extends Entity> Mono<T> createChild(String parentTenantId,String parentTid,String tenantId,T child);
     <T extends Entity> Mono<T> update(String tenantId, T entity, String id);
     <T extends Entity> Mono<T> updateChild(String parentTid, String tenantId, T child, String id);
+    <T extends Entity> Mono<T> createOrUpdateChild(String parentTenantId, String parentTid, String tenantId, T child);
     <T extends Entity> Mono<T> convertToChild(String tenantId, String parentTid, String id, Class<T> resourceType);
 
 }

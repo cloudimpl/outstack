@@ -80,6 +80,11 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
         return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> convertToChild(conn, tenantId, parentTid, id, resourceType)));
     }
 
+    @Override
+    public <T extends Entity> Mono<T> createOrUpdateChild(String parentTenantId, String parentTid, String tenantId, T child) {
+        return createTenantIfNotExist(tenantId).flatMap(it -> it.executeMono(config.connectionFromPool(table.config(), tenantId), conn -> createOrUpdateChild(conn, parentTenantId, parentTid, tenantId, child)));
+    }
+
     private void checkGeoEntity(Object child) {
         if (child instanceof GeoData) {
             if (!table.enableGeo()) {
@@ -194,6 +199,50 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                     );
                 }))
                 .map(it -> (T) entity).next();
+    }
+
+    private <T extends Entity> Mono<T> createOrUpdateChild(Connection connection, String parentTenantId, String parentTid, String tenantId, T child) {
+        Objects.requireNonNull(parentTid);
+        checkGeoEntity(child);
+        validateObject(child);
+        String json = GsonCodec.encode(child);
+        String tid = RepoUtil.createUUID();
+        long time = System.currentTimeMillis();
+        boolean geoApplicable = table.enableGeo() && child instanceof GeoData && GeoData.class.cast(child).getGeom() != null;
+
+        String sql = "insert into " + table.name() + " as tab(tenantId, resourceType, parentTenantId, parentTid, uniqueId, id, tid, entity, createdTime, updatedTime" + (geoApplicable ? ",geom" : "") + ") " +
+                "values($1,$2,$3,$4,$5,$6,$7,$8::JSON,$9,$10" + (geoApplicable ? ",$13" : "") + ") on conflict (tenantId,resourceType,uniqueId) do update set " +
+                "entity = $11::JSON , updatedTime = $12" + (geoApplicable ? " , geom = $14" : "") + " returning tid,createdTime,updatedTime";
+
+        return Mono.just(connection).flatMapMany(conn -> {
+                    Statement stmt = conn.createStatement(sql)
+                            .bind("$1", tenantId == null ? "default" : tenantId)
+                            .bind("$2", child.getClass().getName())
+                            .bind("$3", parentTenantId == null ? "default" : parentTenantId)
+                            .bind("$4", parentTid)
+                            .bind("$5", parentTid + "/" + child.id())
+                            .bind("$6", child.id())
+                            .bind("$7", tid)
+                            .bind("$8", json)
+                            .bind("$9", time)
+                            .bind("$10", time)
+                            .bind("$12", json)
+                            .bind("$13", time);
+                    if (geoApplicable) {
+                        GeoMetry geo = GeoData.class.cast(child).getGeom();
+                        stmt.bind("$11", GeoUtil.convertToGeo(geo));
+                        stmt.bind("$14", GeoUtil.convertToGeo(geo));
+                    }
+                    return stmt.execute();
+                }).take(1)
+                .flatMap(it -> it.map((row, meta) -> {
+                    return EntityUtil.with(child
+                            , row.get("tid", String.class), tenantId
+                            , row.get("createdTime", Long.class)
+                            , row.get("updatedTime", Long.class)
+                    );
+                }))
+                .map(it -> (T) child).next();
     }
 
     private <T extends Entity> Mono<T> delete(Connection connection, String tenantId, Class<T> resourceType, String id) {
