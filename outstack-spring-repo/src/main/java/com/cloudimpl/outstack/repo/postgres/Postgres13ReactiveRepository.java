@@ -226,11 +226,11 @@ public class Postgres13ReactiveRepository extends Postgres13ReadOnlyReactiveRepo
                             .bind("$8", json)
                             .bind("$9", time)
                             .bind("$10", time)
-                            .bind("$12", json)
-                            .bind("$13", time);
+                            .bind("$11", json)
+                            .bind("$12", time);
                     if (geoApplicable) {
                         GeoMetry geo = GeoData.class.cast(child).getGeom();
-                        stmt.bind("$11", GeoUtil.convertToGeo(geo));
+                        stmt.bind("$13", GeoUtil.convertToGeo(geo));
                         stmt.bind("$14", GeoUtil.convertToGeo(geo));
                     }
                     return stmt.execute();
